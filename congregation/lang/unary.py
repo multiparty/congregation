@@ -11,7 +11,7 @@ def create(name: str, columns: list, stored_with: set):
         for idx, (col_name, type_str, trust_set, plaintext_set) in enumerate(columns)
     ]
 
-    out_rel = Relation(name, cols_in_rel, stored_with)
+    out_rel = Relation(name, cols_in_rel, [stored_with])
     op = Create(out_rel)
 
     return op
@@ -68,6 +68,7 @@ def project(input_op_node: OpNode, name: str, selected_col_names: list):
 def index(input_op_node: OpNode, name: str, idx_col_name: str = "index"):
 
     in_rel = input_op_node.out_rel
+    min_trust_set = min_trust_with_from_columns(in_rel.columns)
     index_col = Column(name, idx_col_name, len(in_rel.columns), "INTEGER", set())
     out_rel_cols = [index_col] + copy.deepcopy(in_rel.columns)
 
@@ -115,7 +116,7 @@ def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: l
     out_rel_cols = copy.deepcopy(in_rel.columns)
     operands = build_operands_from_in_rel(in_rel, operands)
 
-    target_col = find(in_rel.columns, target_col_name)
+    target_col = find(out_rel_cols, target_col_name)
     if target_col is None:
 
         cols_only = [col for col in operands if isinstance(col, Column)]
@@ -125,6 +126,14 @@ def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: l
 
         target_col = Column(name, target_col_name, len(in_rel.columns), col_type, target_col_trust_set, plaintext=pt)
         out_rel_cols.append(target_col)
+    else:
+        # need to re-compute target column's trust set to reflect min trust set across
+        # all target column + all operand columns. same for pt
+        all_cols = [col for col in operands if isinstance(col, Column)] + [target_col]
+        target_col_trust_set = min_trust_with_from_columns(all_cols)
+        pt = min_pt_set_from_cols(all_cols)
+        target_col.trust_with = target_col_trust_set
+        target_col.plaintext = pt
 
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
@@ -193,7 +202,7 @@ def divide(input_op_node: OpNode, name: str, target_col_name: str, operands: lis
     out_rel_cols = copy.deepcopy(in_rel.columns)
     operands = build_operands_from_in_rel(in_rel, operands)
 
-    target_col = find(in_rel.columns, target_col_name)
+    target_col = find(out_rel_cols, target_col_name)
     if target_col is None:
 
         cols_only = [col for col in operands if isinstance(col, Column)]
@@ -203,6 +212,16 @@ def divide(input_op_node: OpNode, name: str, target_col_name: str, operands: lis
 
         target_col = Column(name, target_col_name, len(in_rel.columns), col_type, target_col_trust_set, plaintext=pt)
         out_rel_cols.append(target_col)
+
+    else:
+
+        # need to re-compute target column's trust set to reflect min trust set across
+        # all target column + all operand columns. same for pt
+        all_cols = [col for col in operands if isinstance(col, Column)] + [target_col]
+        target_col_trust_set = min_trust_with_from_columns(all_cols)
+        pt = min_pt_set_from_cols(all_cols)
+        target_col.trust_with = target_col_trust_set
+        target_col.plaintext = pt
 
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
@@ -250,7 +269,7 @@ def collect(input_op_node: OpNode, target_parties: set):
     in_rel = input_op_node.out_rel
     out_rel_cols = copy.deepcopy(in_rel.columns)
 
-    out_rel = Relation(f"{in_rel.name}->collect", out_rel_cols, target_parties)
+    out_rel = Relation(f"{in_rel.name}->collect", out_rel_cols, [target_parties])
     out_rel.update_columns()
     op = Collect(out_rel, input_op_node)
     input_op_node.children.add(op)

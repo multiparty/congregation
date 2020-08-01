@@ -52,8 +52,3 @@ def _comp_neighs(input_op_node: OpNode, name: str, comp_col_name: str):
     input_op_node.children.add(op)
 
     return op
-
-
-
-
-

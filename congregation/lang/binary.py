@@ -2,9 +2,18 @@ import copy
 from congregation.datasets import Relation, Column
 from congregation.dag.nodes.binary import *
 from congregation.utils.col import *
+from congregation.utils.rel import *
 
 
 def cols_from_rel(output_name, start_idx: int, rel: Relation, key_col_idxs: list):
+    """
+    TODO: Might need to rethink how I propagate trust_with sets here. Main concern
+     is whether some out_rel (non-key) column c should inherit it's parent trust_with
+     set. The output column will be made up of all the data in the original column, but
+     with removals & duplications in accordance with the output of the join. Will need
+     to think more on what this (on it's own) leaks before determining how to propagate
+     trust sets. For now, it will just pass normal inheritance.
+    """
 
     ret_cols = []
     for i, col in enumerate(rel.columns):
@@ -37,6 +46,7 @@ def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
 
     left_in_rel = left_input_node.out_rel
     right_in_rel = right_input_node.out_rel
+    check_input_stored_with([left_in_rel, right_in_rel])
 
     left_join_cols = [find(left_in_rel.columns, col_name) for col_name in left_col_names]
     check_cols_for_missing_entries(left_join_cols, left_in_rel.name)
@@ -48,8 +58,8 @@ def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
         col_from_left = copy.copy(left_join_cols[i])
         col_from_right = copy.copy(right_join_cols[i])
 
-        min_trust_set = col_from_left.trust_with.union(col_from_right.trust_with)
-        min_plaintext_set = col_from_left.plaintext.union(col_from_right.plaintext)
+        min_trust_set = col_from_left.trust_with.intersection(col_from_right.trust_with)
+        min_plaintext_set = col_from_left.plaintext.intersection(col_from_right.plaintext)
 
         if left_join_cols[i].type_str != right_join_cols[i].type_str:
             raise Exception(
@@ -68,7 +78,7 @@ def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
     right_non_key_cols = cols_from_rel(name, continue_idx, right_in_rel, [rcol.idx for rcol in right_join_cols])
 
     out_rel_cols = out_key_cols + left_non_key_cols + right_non_key_cols
-    out_stored_with = left_in_rel.stored_with.union(right_in_rel.stored_with)
+    out_stored_with = copy.copy(left_in_rel.stored_with) + copy.copy(right_in_rel.stored_with)
     out_rel = Relation(name, out_rel_cols, out_stored_with)
     out_rel.update_columns()
 
@@ -79,51 +89,4 @@ def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
     return op
 
 
-def member_filter(input_op_node: OpNode, name: str, filter_col_name: str, by_op_node: OpNode, in_flag: bool = True):
 
-    in_rel = input_op_node.out_rel
-    out_rel_cols = copy.deepcopy(in_rel.columns)
-
-    filter_col = find(in_rel.columns, filter_col_name)
-    if filter_col is None:
-        raise Exception(f"Column {filter_col_name} not found in relation {in_rel.name}.")
-
-    out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
-    out_rel.update_columns()
-
-    op = MemberFilter(out_rel, input_op_node, by_op_node, filter_col, in_flag)
-    input_op_node.children.add(op)
-    by_op_node.children.add(op)
-
-    return op
-
-
-def column_union(left_input_node: OpNode, right_input_node: OpNode,
-                 name: str, left_col_name: str, right_col_name: str):
-
-    left_in_rel = left_input_node.out_rel
-    right_in_rel = right_input_node.out_rel
-
-    left_col = find(left_in_rel.columns, left_col_name)
-    if left_col is None:
-        raise Exception(f"Column {left_col_name} not found in relation {left_in_rel.name}.")
-
-    right_col = find(right_input_node.out_rel.columns, right_col_name)
-    if right_col is None:
-        raise Exception(f"Column {right_col_name} not found in relation {right_in_rel.name}.")
-
-    new_trust_set = min_trust_with_from_columns([left_col, right_col])
-    pt = all_plaintext([left_col, right_col])
-    out_col = Column(name, left_col_name, 0, "INTEGER", new_trust_set, plaintext=pt)
-
-    left_stored_with = left_in_rel.stored_with
-    right_stored_with = right_in_rel.stored_with
-
-    out_rel = Relation(name, [out_col], left_stored_with.union(right_stored_with))
-    out_rel.update_columns()
-
-    op = ColumnUnion(out_rel, left_input_node, right_input_node, left_col, right_col)
-    left_input_node.children.add(op)
-    right_input_node.children.add(op)
-
-    return op
