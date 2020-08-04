@@ -40,15 +40,26 @@ class Column:
             raise Exception(f"Type not supported {type_str}.")
         return type_str
 
-    def merge_trust_sets_in(self, other_trust_sets: [set, list]):
+    def merge_trust_sets_in(self, other: [set, list]):
 
-        if isinstance(other_trust_sets, list):
-            self.trust_with = self.trust_with.intersection(*other_trust_sets)
-        elif isinstance(other_trust_sets, set):
-            self.trust_with = self.trust_with.intersection(other_trust_sets)
+        if isinstance(other, list):
+            self.trust_with = self.trust_with.intersection(*other)
+        elif isinstance(other, set):
+            self.trust_with = self.trust_with.intersection(other)
         else:
             raise Exception(
-                f"WARN: Unrecognized type for other_coll_sets argument: {type(other_trust_sets)}."
+                f"WARN: Unrecognized type for other trust set(s) argument: {type(other)}."
+            )
+
+    def merge_plaintext_sets_in(self, other: [set, list]):
+
+        if isinstance(other, list):
+            self.plaintext = self.plaintext.intersection(*other)
+        elif isinstance(other, set):
+            self.plaintext = self.plaintext.intersection(other)
+        else:
+            raise Exception(
+                f"WARN: Unrecognized type for other plaintext set(s) argument: {type(other)}."
             )
 
 

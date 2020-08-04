@@ -1,3 +1,4 @@
+import copy
 
 
 def all_rels_have_equal_num_cols(in_rels: list):
@@ -48,7 +49,7 @@ def resolve_trust_sets_from_rels(in_rels: list):
     return ret
 
 
-def _get_stored_with_len(in_rel):
+def get_stored_with_len(in_rel):
 
     sets_len = set([len(s) for s in in_rel.stored_with])
     if len(sets_len) > 1:
@@ -59,29 +60,11 @@ def _get_stored_with_len(in_rel):
     return sets_len.pop()
 
 
-def check_input_stored_with(in_rels):
-    """
-    Check for illegal stored_with set merging before combining two or more relations.
+def stored_with_from_rels(in_rels):
 
-    Overview: Make sure every stored_with set between all relations is of the same
-    length. This is to ensure something like the following doesn't happen:
-
-    rel1.stored_with = [{1,2,3}]
-    rel2.stored_with = [{4,5,6,7}]
-
-    These two relations can't be combined because the secret sharing schemes between
-    the two would (I assume) be incompatible.
-
-    TODO: Can there be overlap between the stored_with parties? This will depend on
-     limitations within JIFF / RIFF
-    """
-
-    stored_with_sets = set([_get_stored_with_len(in_rel) for in_rel in in_rels])
-
-    if len(stored_with_sets) > 1:
-        in_rels_str = ", ".join([in_rel.name for in_rel in in_rels])
-        raise Exception(
-            f"All stored with sets should be of the same length. "
-            f"Found mismatched sizes in on of the following relations: "
-            f"{in_rels_str}"
-        )
+    ret = []
+    for in_rel in in_rels:
+        for sw in in_rel.stored_with:
+            if sw not in ret:
+                ret.append(copy.copy(sw))
+    return ret

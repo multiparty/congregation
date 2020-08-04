@@ -27,13 +27,6 @@ def cols_from_rel(output_name, start_idx: int, rel: Relation, key_col_idxs: list
     return ret_cols
 
 
-def check_cols_for_missing_entries(cols: list, rel_name: str):
-
-    for col in cols:
-        if col is None:
-            raise Exception(f"Join column from relation {rel_name} not found.")
-
-
 def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
          left_col_names: list, right_col_names: list):
 
@@ -46,7 +39,6 @@ def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
 
     left_in_rel = left_input_node.out_rel
     right_in_rel = right_input_node.out_rel
-    check_input_stored_with([left_in_rel, right_in_rel])
 
     left_join_cols = [find(left_in_rel.columns, col_name) for col_name in left_col_names]
     check_cols_for_missing_entries(left_join_cols, left_in_rel.name)
@@ -78,7 +70,7 @@ def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
     right_non_key_cols = cols_from_rel(name, continue_idx, right_in_rel, [rcol.idx for rcol in right_join_cols])
 
     out_rel_cols = out_key_cols + left_non_key_cols + right_non_key_cols
-    out_stored_with = copy.copy(left_in_rel.stored_with) + copy.copy(right_in_rel.stored_with)
+    out_stored_with = stored_with_from_rels([left_in_rel, right_in_rel])
     out_rel = Relation(name, out_rel_cols, out_stored_with)
     out_rel.update_columns()
 

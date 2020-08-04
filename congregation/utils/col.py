@@ -55,6 +55,13 @@ def build_operands_from_in_rel(in_rel, operands):
     return ret
 
 
+def check_cols_for_missing_entries(cols: list, rel_name: str):
+
+    for col in cols:
+        if col is None:
+            raise Exception(f"Join column from relation {rel_name} not found.")
+
+
 def create_column(name: str, type_str: str, trust_set: [set, None] = None, plaintext_set: [set, None] = None):
 
     if isinstance(trust_set, dict):

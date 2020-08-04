@@ -297,7 +297,7 @@ class FilterAgainstScalar(UnaryOpNode):
 
     @staticmethod
     def verify_operator(op):
-        if op not in [">", "<", "="]:
+        if op not in [">", "<", "=="]:
             raise Exception("Filter operation only supports {<, >, =} operators.")
         return op
 
