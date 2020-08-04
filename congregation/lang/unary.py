@@ -207,7 +207,7 @@ def filter_by(input_op_node: OpNode, name: str, filter_col_name: str, operator: 
     return op
 
 
-def sort_by(input_op_node: OpNode, name, sort_by_col_name: str, increasing: [bool, None] = True):
+def sort_by(input_op_node: OpNode, name: str, sort_by_col_name: str, increasing: [bool, None] = True):
 
     in_rel = input_op_node.out_rel
     out_rel_cols = copy.deepcopy(in_rel.columns)
@@ -220,6 +220,25 @@ def sort_by(input_op_node: OpNode, name, sort_by_col_name: str, increasing: [boo
     out_rel.update_columns()
 
     op = SortBy(out_rel, input_op_node, sort_by_col, increasing=increasing)
+    input_op_node.children.add(op)
+
+    return op
+
+
+def num_rows(input_op_node: OpNode, name: str, count_col_name: str = "num_rows"):
+
+    in_rel = input_op_node.out_rel
+    cols_in_rel = copy.deepcopy(in_rel.columns)
+
+    min_trust_set = min_trust_with_from_columns(cols_in_rel)
+    min_pt_set = min_pt_set_from_cols(cols_in_rel)
+    count_col = Column(name, count_col_name, len(in_rel.columns), "INTEGER", min_trust_set, min_pt_set)
+    out_rel_col = [count_col]
+
+    out_rel = Relation(name, out_rel_col, copy.copy(in_rel.stored_with))
+    out_rel.update_columns()
+
+    op = NumRows(out_rel, input_op_node, count_col_name)
     input_op_node.children.add(op)
 
     return op

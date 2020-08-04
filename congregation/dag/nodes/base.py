@@ -30,6 +30,7 @@ class OpNode(Node):
         super(OpNode, self).__init__(name)
         self.out_rel = out_rel
         self.is_mpc = False
+        self.is_boundary = False
         self.is_local = self.out_rel.is_local()
 
     def __str__(self):
@@ -89,3 +90,9 @@ class OpNode(Node):
     def get_sorted_parents(self):
         """ Return a list of this node's parent nodes in alphabetical order. """
         return sorted(list(self.parents), key=lambda x: x.out_rel.name)
+
+    def is_upper_boundary(self):
+        return self.is_mpc and not any([par.is_mpc and not par.is_boundary for par in self.parents])
+
+    def is_lower_boundary(self):
+        return self.is_mpc and not any([child.is_mpc and not child.is_boundary for child in self.children])

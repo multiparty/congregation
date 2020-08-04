@@ -1,5 +1,6 @@
 import copy
-from congregation.datasets import Relation, Column
+from congregation.datasets import Relation
+from congregation.datasets import Column
 from congregation.dag.nodes.binary import *
 from congregation.utils.col import *
 from congregation.utils.rel import *

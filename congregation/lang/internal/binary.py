@@ -1,10 +1,10 @@
 import copy
 from congregation.datasets import Relation, Column
 from congregation.utils.col import *
-from congregation.dag.nodes import *
+from congregation.dag.nodes.internal import *
 
 
-def _member_filter(input_op_node: OpNode, name: str, filter_col_name: str, by_op_node: OpNode, in_flag: bool = True):
+def member_filter(input_op_node: OpNode, name: str, filter_col_name: str, by_op_node: OpNode, in_flag: bool = True):
 
     in_rel = input_op_node.out_rel
     out_rel_cols = copy.deepcopy(in_rel.columns)

@@ -1,5 +1,5 @@
 import copy
-from congregation.dag.nodes import OpNode
+from congregation.dag.nodes.base import OpNode
 from congregation.datasets import Relation
 from congregation.datasets import Column
 
@@ -15,7 +15,7 @@ class UnaryOpNode(OpNode):
         return self.parent.out_rel
 
     def requires_mpc(self):
-        return self.get_in_rel().is_shared() and not self.is_local
+        return self.get_in_rel().is_shared()
 
     def update_stored_with(self):
         self.out_rel.stored_with = copy.copy(self.get_in_rel().stored_with)
@@ -37,75 +37,10 @@ class UnaryOpNode(OpNode):
         super(UnaryOpNode, self).remove_parent(parent)
         self.parent = None
 
-    def is_upper_boundary(self):
-        return self.is_mpc and not any([par.is_mpc and not isinstance(par, Close) for par in self.parents])
-
-    def is_lower_boundary(self):
-        return self.is_mpc and not any([child.is_mpc and not isinstance(child, Open) for child in self.children])
-
 
 class Create(UnaryOpNode):
     def __init__(self, out_rel: Relation):
         super(Create, self).__init__(f"create-{out_rel.name}", out_rel, None)
-
-    def requires_mpc(self):
-        """
-        Requires MPC if it's out relation is stored between multiple
-        parties, i.e. - if it is submitted to the computation as secret
-        shares.
-        """
-        return len(self.out_rel.stored_with) > 1
-
-
-class Store(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode):
-        super(Store, self).__init__("store", out_rel, parent)
-
-    def is_reversible(self):
-        return True
-
-
-class Collect(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode):
-        super(Collect, self).__init__("collect", out_rel, parent)
-
-    def is_reversible(self):
-        return True
-
-
-class Persist(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode):
-        super(Persist, self).__init__("persist", out_rel, parent)
-
-    def is_reversible(self):
-        return True
-
-
-class Open(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: [OpNode, None]):
-        """ Initialize Open object. """
-        super(Open, self).__init__("open", out_rel, parent)
-        self.is_mpc = True
-
-    def is_reversible(self):
-        return True
-
-
-class Close(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: [OpNode, None]):
-        super(Close, self).__init__("close", out_rel, parent)
-        self.is_mpc = True
-
-    def is_reversible(self):
-        return True
-
-
-class Send(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode):
-        super(Send, self).__init__("send", out_rel, parent)
-
-    def is_reversible(self):
-        return True
 
 
 class AggregateSum(UnaryOpNode):
@@ -167,26 +102,6 @@ class Project(UnaryOpNode):
         self.selected_cols = [temp_cols[col.idx] for col in self.selected_cols]
 
 
-class Index(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, idx_col_name: str):
-        super(Index, self).__init__("index", out_rel, parent)
-        self.idx_col_name = idx_col_name
-
-
-class NumRows(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, col_name: str):
-        super(NumRows, self).__init__("num_rows", out_rel, parent)
-        self.col_name = col_name
-
-
-class Shuffle(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode):
-        super(Shuffle, self).__init__("shuffle", out_rel, parent)
-
-    def is_reversible(self):
-        return True
-
-
 class Multiply(UnaryOpNode):
 
     def __init__(self, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
@@ -204,51 +119,6 @@ class Multiply(UnaryOpNode):
         self.operands = [temp_cols[col.idx] if isinstance(col, Column) else col for col in old_operands]
 
 
-class Limit(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, num: int):
-        super(Limit, self).__init__("limit", out_rel, parent)
-        self.num = num
-
-
-class SortBy(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, sort_by_col: Column, increasing: [bool, None] = True):
-        super(SortBy, self).__init__("sort_by", out_rel, parent)
-        self.sort_by_col = sort_by_col
-        self.increasing = increasing
-
-    def update_op_specific_cols(self):
-        self.sort_by_col = self.get_in_rel().columns[self.sort_by_col.idx]
-
-
-class CompareNeighbors(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, comp_col: Column):
-        super(CompareNeighbors, self).__init__("compare_neighbors", out_rel, parent)
-        self.comp_col = comp_col
-
-    def update_op_specific_cols(self):
-        self.comp_col = self.get_in_rel().columns[self.comp_col.idx]
-
-
-class Distinct(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, selected_cols: list):
-        super(Distinct, self).__init__("distinct", out_rel, parent)
-        self.selected_cols = self.verify_selected_cols(selected_cols)
-
-    @staticmethod
-    def verify_selected_cols(cols):
-
-        for col in cols:
-            if not isinstance(col, Column):
-                raise Exception("Input selected_cols to Distinct operator must be Column objects.")
-        return cols
-
-    def update_op_specific_cols(self):
-
-        temp_cols = self.get_in_rel().columns
-        old_cols = copy.copy(self.selected_cols)
-        self.selected_cols = [temp_cols[col.idx] for col in old_cols]
-
-
 class Divide(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
         super(Divide, self).__init__("divide", out_rel, parent)
@@ -262,6 +132,24 @@ class Divide(UnaryOpNode):
         temp_cols = self.get_in_rel().columns
         old_operands = copy.copy(self.operands)
         self.operands = [temp_cols[col.idx] if isinstance(col, Column) else col for col in old_operands]
+
+
+class Limit(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode, num: int):
+        super(Limit, self).__init__("limit", out_rel, parent)
+        self.num = num
+
+
+class Distinct(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode, selected_cols: list):
+        super(Distinct, self).__init__("distinct", out_rel, parent)
+        self.selected_cols = selected_cols
+
+    def update_op_specific_cols(self):
+
+        temp_cols = self.get_in_rel().columns
+        old_cols = copy.copy(self.selected_cols)
+        self.selected_cols = [temp_cols[col.idx] for col in old_cols]
 
 
 class FilterAgainstCol(UnaryOpNode):
@@ -310,23 +198,25 @@ class FilterAgainstScalar(UnaryOpNode):
         self.filter_col = temp_cols[self.filter_col.idx]
 
 
+class SortBy(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode, sort_by_col: Column, increasing: [bool, None] = True):
+        super(SortBy, self).__init__("sort_by", out_rel, parent)
+        self.sort_by_col = sort_by_col
+        self.increasing = increasing
+
+    def update_op_specific_cols(self):
+        self.sort_by_col = self.get_in_rel().columns[self.sort_by_col.idx]
 
 
+class NumRows(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode, col_name: str):
+        super(NumRows, self).__init__("num_rows", out_rel, parent)
+        self.col_name = col_name
 
 
+class Collect(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode):
+        super(Collect, self).__init__("collect", out_rel, parent)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def is_reversible(self):
+        return True

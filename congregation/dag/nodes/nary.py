@@ -1,6 +1,5 @@
 import copy
-from congregation.dag.nodes import OpNode
-from congregation.dag.nodes.unary import Open, Close
+from congregation.dag.nodes.base import OpNode
 from congregation.datasets.relation import Relation
 
 
@@ -14,15 +13,8 @@ class NaryOpNode(OpNode):
 
     def requires_mpc(self):
 
-        in_stored_with_sets = [in_rel.stored_with for in_rel in self.get_in_rels()]
-        is_shared = len(set().union(*in_stored_with_sets)) > 1
-        return is_shared and not self.is_local
-
-    def is_upper_boundary(self):
-        return self.is_mpc and not any([par.is_mpc and not isinstance(par, Close) for par in self.parents])
-
-    def is_lower_boundary(self):
-        return self.is_mpc and not any([child.is_mpc and not isinstance(child, Open) for child in self.children])
+        is_shared = any([in_rel.is_shared() for in_rel in self.get_in_rels()])
+        return is_shared
 
 
 class Concat(NaryOpNode):
