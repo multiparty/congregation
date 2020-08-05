@@ -17,12 +17,13 @@ class BinaryOpNode(OpNode):
     def get_right_in_rel(self):
         return self.right_parent.out_rel
 
+    def get_in_rels(self):
+        return [self.left_parent.out_rel, self.right_parent.out_rel]
+
     def requires_mpc(self):
 
-        left_stored_with = self.get_left_in_rel().stored_with
-        right_stored_with = self.get_right_in_rel().stored_with
-        combined = left_stored_with.union(right_stored_with)
-        return (len(combined) > 1) and not self.is_local
+        is_shared = any([in_rel.is_shared() for in_rel in self.get_in_rels()])
+        return is_shared
 
     def make_orphan(self):
 

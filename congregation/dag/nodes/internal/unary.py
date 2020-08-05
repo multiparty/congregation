@@ -1,6 +1,7 @@
 from congregation.dag.nodes import UnaryOpNode
 from congregation.dag.nodes.base import OpNode
 from congregation.datasets import Relation
+from congregation.datasets import Column
 
 
 class Store(UnaryOpNode):
@@ -60,3 +61,15 @@ class Close(UnaryOpNode):
 
     def is_reversible(self):
         return True
+
+
+class AggregateSumCountCol(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column):
+        super(AggregateSumCountCol, self).__init__("aggregate_sum_count_col", out_rel, parent)
+        self.group_cols = group_cols
+        self.agg_col = agg_col
+
+    def update_op_specific_cols(self):
+
+        self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
+        self.agg_col = self.get_in_rel().columns[self.agg_col.idx]

@@ -42,6 +42,9 @@ class Create(UnaryOpNode):
     def __init__(self, out_rel: Relation):
         super(Create, self).__init__(f"create-{out_rel.name}", out_rel, None)
 
+    def requires_mpc(self):
+        return False
+
 
 class AggregateSum(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column):
@@ -56,19 +59,22 @@ class AggregateSum(UnaryOpNode):
 
 
 class AggregateCount(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, with_count_col: [bool, None] = False):
         super(AggregateCount, self).__init__("aggregate_count", out_rel, parent)
         self.group_cols = group_cols
+        self.with_count_col = with_count_col
 
     def update_op_specific_cols(self):
         self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
 
 
 class AggregateMean(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column,
+                 with_count_col: [bool, None] = False):
         super(AggregateMean, self).__init__("aggregate_mean", out_rel, parent)
         self.group_cols = group_cols
         self.agg_col = agg_col
+        self.with_count_col = with_count_col
 
     def update_op_specific_cols(self):
 
@@ -77,10 +83,12 @@ class AggregateMean(UnaryOpNode):
 
 
 class AggregateStdDev(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column,
+                 with_count_col: [bool, None] = False):
         super(AggregateStdDev, self).__init__("aggregate_std_dev", out_rel, parent)
         self.group_cols = group_cols
         self.agg_col = agg_col
+        self.with_count_col = with_count_col
 
     def update_op_specific_cols(self):
 

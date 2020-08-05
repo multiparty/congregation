@@ -1,5 +1,6 @@
 import copy
 from congregation.dag.nodes import OpNode
+from congregation.dag.nodes import Concat
 from congregation.dag.nodes import UnaryOpNode
 
 
@@ -80,3 +81,50 @@ def insert_between(parent: OpNode, child: OpNode, to_insert: OpNode):
 
     if child:
         _update_child_on_insert(parent, child, to_insert)
+
+
+def push_op_node_down(top_node: OpNode, bottom_node: OpNode):
+
+    if not len(bottom_node.children) <= 1:
+        print("TODO: Push OpNode down for children > 1.")
+        return
+
+    child = next(iter(bottom_node.children), None)
+    remove_between(top_node, child, bottom_node)
+    top_node_parents = copy.copy(top_node.get_sorted_parents())
+
+    for idx, top_node_parent in enumerate(top_node_parents):
+        node_to_insert = copy.deepcopy(bottom_node)
+        node_to_insert.out_rel.rename(f"{node_to_insert.out_rel.name}_{str(idx)}")
+        node_to_insert.parents = set()
+        node_to_insert.children = set()
+        insert_between(top_node_parent, top_node, node_to_insert)
+        node_to_insert.update_stored_with()
+
+
+def fork_node(node: Concat):
+    """
+    Concat nodes are often MPC boundaries. This method forks a Concat
+    node that has more than one child node into a separate Concat node
+    for each of it's children.
+    """
+
+    # skip first child
+    child_iter = enumerate(copy.copy(node.get_sorted_children()))
+    next(child_iter)
+
+    for idx, child in child_iter:
+
+        clone = copy.deepcopy(node)
+        clone.out_rel.rename(f"{node.out_rel.name}_{str(idx)}")
+        clone.parents = copy.copy(node.parents)
+        clone.ordered = copy.copy(node.ordered)
+        clone.children = {child}
+
+        for parent in clone.parents:
+            parent.children.add(clone)
+
+        node.children.remove(child)
+        # make cloned node the child's new parent
+        child.replace_parent(node, clone)
+        child.update_op_specific_cols()

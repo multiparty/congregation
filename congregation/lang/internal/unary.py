@@ -27,6 +27,7 @@ def persist(input_op_node: OpNode, name: str):
 
 
 def send(input_op_node: OpNode, name: str):
+    # TODO: figure out SW / TW / PT sets here
 
     out_rel = copy.deepcopy(input_op_node.out_rel)
     out_rel.rename(name)

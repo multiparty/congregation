@@ -38,30 +38,33 @@ class OpNode(Node):
 
     def is_reversible(self):
         """
-        Reversible in the sense that, given the output of the operation, we reconstruct it's inputs. An
-        example of this property could be Multiplication, where if you have the output and knowledge
-        that the second column was multiplied by 3, you could reconstruct the original column. An example
-        of a non-reversible operation is Aggregation, where you cannot infer the original data given only
-        the output, the aggregator, and the columns that were grouped over. At present, we consider whether
-        an entire relation is reversible as opposed to column-level reversibility. OpNodes are not reversible
-        by default.
+        Reversible in the sense that, given the output of the operation, we reconstruct it's inputs.
+
+        An example of this property could be Multiplication, where if you have the output and knowledge
+        that the second column was multiplied by 3, you could reconstruct the original column.
+
+        An example of a non-reversible operation is Aggregation, where you cannot infer the original data
+        given only the output, the aggregator, and the columns that were grouped over. At present, we
+        consider whether an entire relation is reversible as opposed to column-level reversibility.
+        OpNodes are not reversible by default.
         """
         return False
 
-    def requires_mpc(self):
-        return True
-
     def update_op_specific_cols(self):
         """ Overridden in subclasses. """
-        return
+        pass
 
     def update_out_rel_cols(self):
         """ Overridden in subclasses. """
-        return
+        pass
+
+    def requires_mpc(self):
+        """Overridden in subclasses."""
+        pass
 
     def update_stored_with(self):
         """ Overridden in subclasses. """
-        return
+        pass
 
     def make_orphan(self):
         """ Remove link between this node and it's parent nodes. """
