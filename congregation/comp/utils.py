@@ -1,7 +1,9 @@
 import copy
 from congregation.dag.nodes import OpNode
 from congregation.dag.nodes import Concat
+from congregation.dag.nodes import AggregateSum
 from congregation.dag.nodes import UnaryOpNode
+from congregation.lang import aggregate
 
 
 def remove_between(parent: OpNode, child: OpNode, to_remove: OpNode):
@@ -9,7 +11,7 @@ def remove_between(parent: OpNode, child: OpNode, to_remove: OpNode):
     TODO: extend to general case (currently limited to UnaryOpNode)
     """
 
-    if len(to_remove.children) < 2 or len(to_remove.parents) != 1:
+    if not len(to_remove.children) < 2 or len(to_remove.parents) != 1:
         raise Exception(
             f"Removed node should be Unary."
             f"\nNumber of children: {len(to_remove.children)} (should be < 2)."
@@ -83,7 +85,7 @@ def insert_between(parent: OpNode, child: OpNode, to_insert: OpNode):
         _update_child_on_insert(parent, child, to_insert)
 
 
-def push_op_node_down(top_node: OpNode, bottom_node: OpNode):
+def push_parent_op_node_down(top_node: OpNode, bottom_node: OpNode):
 
     if not len(bottom_node.children) <= 1:
         print("TODO: Push OpNode down for children > 1.")
@@ -128,3 +130,28 @@ def fork_node(node: Concat):
         # make cloned node the child's new parent
         child.replace_parent(node, clone)
         child.update_op_specific_cols()
+
+
+def split_agg_simple(node: AggregateSum):
+    """
+    Splits an aggregation into two aggregations, one local, the other MPC.
+
+    For now, deals with case where there is a Concat into an
+    Aggregate. Here, local aggregation can be computed before
+    concatenation, and then another aggregation under MPC.
+
+    TODO cleanup / verify
+    """
+
+    if not len(node.children) <= 1:
+        print("TODO: Split agg for children > 1.")
+        return
+
+    clone = copy.deepcopy(node)
+    clone.out_rel.rename(node.out_rel.name + "_obl")
+    clone.parents = set()
+    clone.children = set()
+    clone.is_mpc = True
+
+    child = next(iter(node.children), None)
+    insert_between(node, child, clone)

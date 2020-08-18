@@ -24,12 +24,12 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: list, agg_col_n
 
     in_rel = input_op_node.out_rel
     in_cols = in_rel.columns
-    group_cols = [find(in_cols, group_col_name) for group_col_name in group_col_names]
+    group_cols = sorted([find(in_cols, group_col_name) for group_col_name in group_col_names], key=lambda c: c.idx)
     agg_col = find(in_cols, agg_col_name)
 
     agg_out_col = copy.deepcopy(agg_col)
-    if agg_out_col_name is None:
-        agg_out_col.name = agg_out_col.name
+    if agg_out_col_name is not None:
+        agg_out_col.name = agg_out_col_name
 
     out_rel_cols = [copy.deepcopy(group_col) for group_col in group_cols] + [copy.deepcopy(agg_out_col)]
     min_pt = min_pt_set_from_cols(out_rel_cols)

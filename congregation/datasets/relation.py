@@ -1,3 +1,4 @@
+from congregation.utils.col import *
 
 
 class Relation:
@@ -5,6 +6,7 @@ class Relation:
         self.name = name
         self.columns = columns
         self.stored_with = self._resolve_stored_with(stored_with)
+        self.format_cols_from_stored_with()
 
     def __str__(self):
 
@@ -13,6 +15,15 @@ class Relation:
         return f"NAME: {self.name}\n" \
                f"STORED WITH: {stored_with_str}\n" \
                f"COLUMNS: {col_str}\n"
+
+    def format_cols_from_stored_with(self):
+
+        all_sw = [sw for sw in self.stored_with]
+        union_sw = set().union(*all_sw)
+        if len(union_sw) == 1:
+            for col in self.columns:
+                col.plaintext = col.plaintext.union(union_sw)
+                col.trust_with = col.trust_with.union(union_sw)
 
     def _resolve_stored_with(self, stored_with):
 
@@ -64,19 +75,27 @@ class Relation:
 
         return ret
 
+    def plaintext_party_exists(self):
+        return len(self.plaintext_min_set()) > 0
+
+    def plaintext_min_set(self):
+        return min_pt_set_from_cols(self.columns)
+
+    def trust_party_exists(self):
+        return len(self.trust_party_min_set()) > 0
+
+    def trust_party_min_set(self):
+        return min_trust_with_from_columns(self.columns)
+
     def is_local(self):
         """
         Returns whether there exists a plaintext copy of all data in
         this relation at some single party. Does not indicate whether
         multiple parties have plaintext copies of the data in this relation.
         """
-
-        if len(self.columns) > 1:
-            all_pt = [col.plaintext for col in self.columns]
-            common_pt = all_pt[0].intersection(*all_pt[1:])
-            return len(common_pt) > 0
-        else:
-            return len(self.columns[0].plaintext) > 0
+        if self.plaintext_party_exists():
+            return True
+        return False
 
     def is_shared(self):
         return not self.is_local()
@@ -92,7 +111,8 @@ class Relation:
         for col in self.columns:
             col.rel_name = self.name
 
-    def get_stored_with_lens(self, stored_with: list):
+    @staticmethod
+    def get_stored_with_lens(stored_with: list):
         """
         Check for illegal stored_with set merging before creating a relation.
 

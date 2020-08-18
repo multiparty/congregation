@@ -8,14 +8,6 @@ class NaryOpNode(OpNode):
         super(NaryOpNode, self).__init__(name, out_rel)
         self.parents = parents
 
-    def get_in_rels(self):
-        return set([parent.out_rel for parent in self.parents])
-
-    def requires_mpc(self):
-
-        is_shared = any([in_rel.is_shared() for in_rel in self.get_in_rels()])
-        return is_shared
-
 
 class Concat(NaryOpNode):
     def __init__(self, out_rel: Relation, parents: list):

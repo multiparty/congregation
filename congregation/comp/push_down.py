@@ -25,8 +25,8 @@ class PushDown(DagRewriter):
 
         parent_node = next(iter(node.parents))
         if parent_node.requires_mpc():
-            if isinstance(parent_node, Concat) and parent_node.is_boundary():
-                push_op_node_down(parent_node, node)
+            if isinstance(parent_node, Concat) and parent_node.is_upper_boundary():
+                push_parent_op_node_down(parent_node, node)
                 parent_node.update_out_rel_cols()
             else:
                 node.is_mpc = True
@@ -34,8 +34,18 @@ class PushDown(DagRewriter):
             pass
 
     def _rewrite_aggregate_sum(self, node: AggregateSum):
-        # TODO SPLIT OP
-        pass
+
+        parent = next(iter(node.parents))
+        if parent.requires_mpc():
+            if isinstance(parent, Concat) and parent.is_upper_boundary():
+                split_agg_simple(node)
+                push_parent_op_node_down(parent, node)
+                parent.update_out_rel_cols()
+                # TODO: node parent is coming up as None
+            else:
+                node.is_mpc = True
+        else:
+            pass
 
     def _rewrite_aggregate_count(self, node: AggregateCount):
         # TODO SPLIT OP
@@ -87,7 +97,6 @@ class PushDown(DagRewriter):
     def _rewrite_concat(self, node: Concat):
 
         if node.requires_mpc():
-            node.is_mpc = True
             if len(node.children) > 1 and node.is_upper_boundary():
                 fork_node(node)
 

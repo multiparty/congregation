@@ -1,7 +1,7 @@
 import copy
 
 
-def _min_set(all_sets: list):
+def min_set(all_sets: list):
 
     if len(all_sets) > 1:
         return all_sets[0].intersection(*all_sets[1:])
@@ -9,7 +9,7 @@ def _min_set(all_sets: list):
         return all_sets[0]
 
 
-def _max_set(all_sets: list):
+def max_set(all_sets: list):
 
     if len(all_sets) > 1:
         return set().union(*all_sets)
@@ -20,25 +20,25 @@ def _max_set(all_sets: list):
 def min_trust_with_from_columns(columns: list):
 
     all_trust_sets = [copy.copy(col.trust_with) for col in columns if col.trust_with is not None]
-    return _min_set(all_trust_sets)
+    return min_set(all_trust_sets)
 
 
 def max_trust_with_from_columns(columns: list):
 
     all_trust_sets = [copy.copy(col.trust_with) for col in columns if col.trust_with is not None]
-    return _max_set(all_trust_sets)
+    return max_set(all_trust_sets)
 
 
 def min_pt_set_from_cols(columns: list):
 
     all_pt_sets = [copy.copy(col.plaintext) for col in columns]
-    return _min_set(all_pt_sets)
+    return min_set(all_pt_sets)
 
 
 def max_pt_set_from_cols(columns: list):
 
     all_pt_sets = [copy.copy(col.plaintext) for col in columns]
-    return _max_set(all_pt_sets)
+    return max_set(all_pt_sets)
 
 
 def infer_output_type(columns: list):

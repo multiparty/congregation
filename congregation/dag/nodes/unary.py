@@ -14,9 +14,6 @@ class UnaryOpNode(OpNode):
     def get_in_rel(self):
         return self.parent.out_rel
 
-    def requires_mpc(self):
-        return self.get_in_rel().is_shared()
-
     def update_stored_with(self):
         self.out_rel.stored_with = copy.copy(self.get_in_rel().stored_with)
 
