@@ -33,25 +33,48 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: list, agg_col_n
 
     out_rel_cols = [copy.deepcopy(group_col) for group_col in group_cols] + [copy.deepcopy(agg_out_col)]
     min_pt = min_pt_set_from_cols(out_rel_cols)
+    min_trust = min_trust_with_from_columns(out_rel_cols)
     for col in out_rel_cols:
         col.plaintext = min_pt
+        col.min_trust = min_trust
 
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
 
     if agg_type == "sum":
         op = AggregateSum(out_rel, input_op_node, group_cols, agg_col)
-    elif agg_type == "count":
-        op = AggregateCount(out_rel, input_op_node, group_cols)
     elif agg_type == "mean":
         op = AggregateMean(out_rel, input_op_node, group_cols, agg_col)
     elif agg_type == "std_dev":
         op = AggregateStdDev(out_rel, input_op_node, group_cols, agg_col)
     else:
         raise Exception(
-            f"Aggregate type {agg_type} not recognized. Must be of the following: [sum, count, mean, std_dev]."
+            f"Aggregate type {agg_type} not recognized. Must be of the following: [sum, mean, std_dev]."
         )
 
+    input_op_node.children.add(op)
+    return op
+
+
+def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, count_col_name: [str, None] = "count"):
+
+    in_rel = input_op_node.out_rel
+    in_cols = in_rel.columns
+    group_cols = sorted([find(in_cols, group_col_name) for group_col_name in group_col_names], key=lambda c: c.idx)
+    count_col = Column(name, count_col_name, len(group_cols), "INTEGER", set(), set())
+
+    min_trust = min_trust_with_from_columns(group_cols)
+    min_pt = min_pt_set_from_cols(group_cols)
+    out_rel_cols = [copy.deepcopy(group_col) for group_col in group_cols] + [count_col]
+
+    for col in out_rel_cols:
+        col.plaintext = min_pt
+        col.trust_with = min_trust
+
+    out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
+    out_rel.update_columns()
+
+    op = AggregateCount(out_rel, input_op_node, group_cols, count_col)
     input_op_node.children.add(op)
     return op
 
@@ -248,11 +271,12 @@ def collect(input_op_node: OpNode, target_parties: set):
 
     in_rel = input_op_node.out_rel
     out_rel_cols = copy.deepcopy(in_rel.columns)
+
     for col in out_rel_cols:
         col.trust_with = col.trust_with.union(target_parties)
         col.plaintext = col.plaintext.union(target_parties)
 
-    out_rel = Relation(f"{in_rel.name}->collect", out_rel_cols, [target_parties])
+    out_rel = Relation(f"{in_rel.name}->collect", out_rel_cols, [set([p]) for p in target_parties])
     out_rel.update_columns()
     op = Collect(out_rel, input_op_node)
     input_op_node.children.add(op)

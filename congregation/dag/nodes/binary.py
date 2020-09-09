@@ -65,12 +65,6 @@ class Join(BinaryOpNode):
                     raise Exception(f"Value {col} passed to Join operator is not Column type.")
 
     def update_op_specific_cols(self):
-        """
-        TODO: this is wrong
-        A["a", "b", "c"] JOIN B["d", "e", "f"] OVER A["b"] & B["f"]
-        --> AB["b", "a", "c", "d", "e"]
-        wait, maybe nevermind
-        """
 
         self.left_join_cols = [self.get_left_in_rel().columns[left_join_col.idx]
                                for left_join_col in self.left_join_cols]

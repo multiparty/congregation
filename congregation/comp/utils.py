@@ -1,9 +1,9 @@
 import copy
 from congregation.dag.nodes import OpNode
 from congregation.dag.nodes import Concat
-from congregation.dag.nodes import AggregateSum
+from congregation.dag.nodes import AggregateSum, AggregateCount, AggregateMean, AggregateStdDev
 from congregation.dag.nodes import UnaryOpNode
-from congregation.lang import aggregate
+from congregation.dag.nodes.internal import *
 
 
 def remove_between(parent: OpNode, child: OpNode, to_remove: OpNode):
@@ -102,6 +102,7 @@ def push_parent_op_node_down(top_node: OpNode, bottom_node: OpNode):
         node_to_insert.children = set()
         insert_between(top_node_parent, top_node, node_to_insert)
         node_to_insert.update_stored_with()
+        node_to_insert.update_out_rel_cols()
 
 
 def fork_node(node: Concat):
@@ -132,26 +133,48 @@ def fork_node(node: Concat):
         child.update_op_specific_cols()
 
 
-def split_agg_simple(node: AggregateSum):
+def split_agg_sum(node: [AggregateSum, AggregateCount]):
     """
-    Splits an aggregation into two aggregations, one local, the other MPC.
-
-    For now, deals with case where there is a Concat into an
-    Aggregate. Here, local aggregation can be computed before
-    concatenation, and then another aggregation under MPC.
-
-    TODO cleanup / verify
+    clone an AggregateSum or AggregateCount node
     """
 
     if not len(node.children) <= 1:
-        print("TODO: Split agg for children > 1.")
+        print("WARN: Can't split aggregate for children > 1.")
         return
 
     clone = copy.deepcopy(node)
-    clone.out_rel.rename(node.out_rel.name + "_obl")
+    clone.out_rel.rename(f"{node.out_rel.name}_obl")
     clone.parents = set()
     clone.children = set()
-    clone.is_mpc = True
 
     child = next(iter(node.children), None)
     insert_between(node, child, clone)
+
+
+def split_agg_count(node: AggregateCount):
+
+    if not len(node.children) <= 1:
+        print("WARN: Can't split aggregate for children > 1.")
+        return
+
+    clone = AggregateSum.from_agg_count(node)
+    clone.out_rel.rename(f"{node.out_rel.name}_obl")
+    clone.parents = set()
+    clone.children = set()
+
+    child = next(iter(node.children), None)
+    insert_between(node, child, clone)
+
+
+def split_agg_mean(node: AggregateMean, parent: Concat):
+
+    if not len(node.children) <= 1:
+        print("WARN: Can't split aggregate for children > 1.")
+        return
+
+    clone = AggregateSumCountCol.from_agg_mean(node)
+    clone.parents = set()
+    clone.children = set()
+
+    insert_between(parent, node, clone)
+

@@ -2,6 +2,7 @@ import copy
 from congregation.dag.nodes.base import OpNode
 from congregation.datasets import Relation
 from congregation.datasets import Column
+from congregation.utils import *
 
 
 class UnaryOpNode(OpNode):
@@ -43,6 +44,31 @@ class Create(UnaryOpNode):
         return False
 
 
+class AggregateCount(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, count_col: Column):
+        super(AggregateCount, self).__init__("aggregate_count", out_rel, parent)
+        self.group_cols = group_cols
+        self.count_col = count_col
+
+    def update_op_specific_cols(self):
+        self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
+        self.count_col = self.update_count_col()
+
+    def update_count_col(self):
+
+        min_trust = min_trust_with_from_columns(self.group_cols)
+        min_pt = min_pt_set_from_cols(self.group_cols)
+        return Column(
+            self.get_in_rel().name, self.count_col.name, len(self.group_cols),
+            self.count_col.type_str, min_trust, min_pt
+        )
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        self.out_rel.columns = self.group_cols + [self.count_col]
+
+
 class AggregateSum(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column):
         super(AggregateSum, self).__init__("aggregate_sum", out_rel, parent)
@@ -50,19 +76,23 @@ class AggregateSum(UnaryOpNode):
         self.agg_col = agg_col
 
     def update_op_specific_cols(self):
-
         self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
         self.agg_col = self.get_in_rel().columns[self.agg_col.idx]
 
+    def update_out_rel_cols(self):
+        self.update_op_specific_cols()
+        self.out_rel.columns = self.group_cols + [self.agg_col]
+        self.out_rel.update_columns()
 
-class AggregateCount(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, with_count_col: [bool, None] = False):
-        super(AggregateCount, self).__init__("aggregate_count", out_rel, parent)
-        self.group_cols = group_cols
-        self.with_count_col = with_count_col
+    @staticmethod
+    def from_agg_count(node: AggregateCount):
 
-    def update_op_specific_cols(self):
-        self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
+        out_rel = copy.deepcopy(node.out_rel)
+        parent = copy.deepcopy(node.parent)
+        group_cols = copy.deepcopy(node.group_cols)
+        agg_col = copy.deepcopy(node.count_col)
+
+        return AggregateSum(out_rel, parent, group_cols, agg_col)
 
 
 class AggregateMean(UnaryOpNode):

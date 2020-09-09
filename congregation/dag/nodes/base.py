@@ -63,8 +63,9 @@ class OpNode(Node):
         in_rels = self.get_in_rels()
         all_sw_sets = min_set([min_set(copy.copy(in_rel.stored_with)) for in_rel in in_rels])
         all_pt_sets = min_set([in_rel.plaintext_min_set() for in_rel in in_rels])
+        all_tw_sets = min_set([in_rel.trust_party_min_set() for in_rel in in_rels])
 
-        if len(all_sw_sets) > 0 or len(all_pt_sets) > 0:
+        if len(all_sw_sets) > 0 or len(all_pt_sets) > 0 or len(all_tw_sets) > 0:
             return False
         else:
             return True

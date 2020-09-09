@@ -1,6 +1,7 @@
 import copy
 from congregation.dag.nodes.base import OpNode
 from congregation.datasets.relation import Relation
+from congregation.utils import *
 
 
 class NaryOpNode(OpNode):
@@ -41,6 +42,14 @@ class Concat(NaryOpNode):
 
     def update_out_rel_cols(self):
 
-        in_rel_cols = copy.deepcopy(self.get_in_rels()[0].columns)
-        self.out_rel.columns = in_rel_cols
+        all_in_rels = self.get_in_rels()
+        in_cols_copy = copy.deepcopy(all_in_rels[0].columns)
+        all_trust_sets = resolve_trust_sets_from_rels(all_in_rels)
+        all_plaintext_sets = resolve_plaintext_sets_from_rels(all_in_rels)
+
+        for (i, c) in enumerate(in_cols_copy):
+            c.trust_with = all_trust_sets[i]
+            c.plaintext = all_plaintext_sets[i]
+
+        self.out_rel.columns = in_cols_copy
         self.out_rel.update_columns()
