@@ -62,7 +62,7 @@ class PushDown(DagRewriter):
             pass
 
     def _rewrite_aggregate_std_dev(self, node: AggregateStdDev):
-        # TODO SPLIT OP
+        # TODO THINK ABOUT HOW TO DO SPLIT OP
         pass
 
     def _rewrite_project(self, node: Project):

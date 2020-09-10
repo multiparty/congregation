@@ -41,7 +41,21 @@ class Create(UnaryOpNode):
         super(Create, self).__init__(f"create-{out_rel.name}", out_rel, None)
 
     def requires_mpc(self):
-        return False
+        """
+        Stored with sets for Create nodes are either:
+            1. Of length 1, ex. [{1}], which indicates that the data
+            is held by a single party in plaintext.
+            2. Of length > 1 ex. [{1, 2}], which indicates that the data
+            is held as secret shares between parties 1 & 2
+        -> A Create node can only require mpc in the second case
+
+        TODO: Might want to think more about TW and PT sets here. It will
+         influence where a Send node is inserted in cases where we're only
+         operating over columns that can be revealed to a particular party.
+        """
+
+        min_sw = min_set(self.out_rel.stored_with)
+        return not len(min_sw) == 1
 
 
 class AggregateCount(UnaryOpNode):
@@ -51,6 +65,7 @@ class AggregateCount(UnaryOpNode):
         self.count_col = count_col
 
     def update_op_specific_cols(self):
+
         self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
         self.count_col = self.update_count_col()
 
@@ -76,10 +91,12 @@ class AggregateSum(UnaryOpNode):
         self.agg_col = agg_col
 
     def update_op_specific_cols(self):
+
         self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
         self.agg_col = self.get_in_rel().columns[self.agg_col.idx]
 
     def update_out_rel_cols(self):
+
         self.update_op_specific_cols()
         self.out_rel.columns = self.group_cols + [self.agg_col]
         self.out_rel.update_columns()
@@ -108,6 +125,12 @@ class AggregateMean(UnaryOpNode):
         self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
         self.agg_col = self.get_in_rel().columns[self.agg_col.idx]
 
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        self.out_rel.columns = self.group_cols + [self.agg_col]
+        self.out_rel.update_columns()
+
 
 class AggregateStdDev(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column,
@@ -121,6 +144,12 @@ class AggregateStdDev(UnaryOpNode):
 
         self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
         self.agg_col = self.get_in_rel().columns[self.agg_col.idx]
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        self.out_rel.columns = self.group_cols + [self.agg_col]
+        self.out_rel.update_columns()
 
 
 class Project(UnaryOpNode):
@@ -136,6 +165,12 @@ class Project(UnaryOpNode):
         temp_cols = self.get_in_rel().columns
         self.selected_cols = [temp_cols[col.idx] for col in self.selected_cols]
 
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        self.out_rel.columns = self.selected_cols
+        self.out_rel.update_columns()
+
 
 class Multiply(UnaryOpNode):
 
@@ -149,9 +184,36 @@ class Multiply(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        temp_cols = self.get_in_rel().columns
-        old_operands = copy.copy(self.operands)
-        self.operands = [temp_cols[col.idx] if isinstance(col, Column) else col for col in old_operands]
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        old_operands = copy.deepcopy(self.operands)
+        self.operands = [temp_cols[o.idx] if isinstance(o, Column) else o for o in old_operands]
+
+        if self.target_col.idx == len(temp_cols):
+            temp_target_col = copy.deepcopy(self.target_col)
+            all_cols = [o for o in self.operands if isinstance(o, Column)]
+        else:
+            temp_target_col = copy.deepcopy(temp_cols[self.target_col.idx])
+            all_cols = [o for o in self.operands if isinstance(o, Column)] + [temp_target_col]
+
+        target_col_trust_set = min_trust_with_from_columns(all_cols)
+        target_col_pt_set = min_pt_set_from_cols(all_cols)
+        temp_target_col.trust_with = target_col_trust_set
+        temp_target_col.plaintext = target_col_pt_set
+
+        self.target_col = temp_target_col
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        out_rel_cols = copy.deepcopy(self.get_in_rel().columns)
+
+        if self.target_col.idx == len(out_rel_cols):
+            out_rel_cols = out_rel_cols + [self.target_col]
+        else:
+            out_rel_cols[self.target_col.idx] = self.target_col
+
+        self.out_rel.columns = out_rel_cols
+        self.out_rel.update_columns()
 
 
 class Divide(UnaryOpNode):
@@ -164,9 +226,37 @@ class Divide(UnaryOpNode):
         return True
 
     def update_op_specific_cols(self):
-        temp_cols = self.get_in_rel().columns
-        old_operands = copy.copy(self.operands)
-        self.operands = [temp_cols[col.idx] if isinstance(col, Column) else col for col in old_operands]
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        old_operands = copy.deepcopy(self.operands)
+        self.operands = [temp_cols[o.idx] if isinstance(o, Column) else o for o in old_operands]
+
+        if self.target_col.idx == len(temp_cols):
+            temp_target_col = copy.deepcopy(self.target_col)
+            all_cols = [o for o in self.operands if isinstance(o, Column)]
+        else:
+            temp_target_col = copy.deepcopy(temp_cols[self.target_col.idx])
+            all_cols = [o for o in self.operands if isinstance(o, Column)] + [temp_target_col]
+
+        target_col_trust_set = min_trust_with_from_columns(all_cols)
+        target_col_pt_set = min_pt_set_from_cols(all_cols)
+        temp_target_col.trust_with = target_col_trust_set
+        temp_target_col.plaintext = target_col_pt_set
+
+        self.target_col = temp_target_col
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        out_rel_cols = copy.deepcopy(self.get_in_rel().columns)
+
+        if self.target_col.idx == len(out_rel_cols):
+            out_rel_cols = out_rel_cols + [self.target_col]
+        else:
+            out_rel_cols[self.target_col.idx] = self.target_col
+
+        self.out_rel.columns = out_rel_cols
+        self.out_rel.update_columns()
 
 
 class Limit(UnaryOpNode):

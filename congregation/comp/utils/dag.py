@@ -80,6 +80,7 @@ def insert_between(parent: OpNode, child: OpNode, to_insert: OpNode):
     to_insert.parent = parent
     parent.children.add(to_insert)
     to_insert.update_op_specific_cols()
+    to_insert.update_out_rel_cols()
 
     if child:
         _update_child_on_insert(parent, child, to_insert)
@@ -131,50 +132,3 @@ def fork_node(node: Concat):
         # make cloned node the child's new parent
         child.replace_parent(node, clone)
         child.update_op_specific_cols()
-
-
-def split_agg_sum(node: [AggregateSum, AggregateCount]):
-    """
-    clone an AggregateSum or AggregateCount node
-    """
-
-    if not len(node.children) <= 1:
-        print("WARN: Can't split aggregate for children > 1.")
-        return
-
-    clone = copy.deepcopy(node)
-    clone.out_rel.rename(f"{node.out_rel.name}_obl")
-    clone.parents = set()
-    clone.children = set()
-
-    child = next(iter(node.children), None)
-    insert_between(node, child, clone)
-
-
-def split_agg_count(node: AggregateCount):
-
-    if not len(node.children) <= 1:
-        print("WARN: Can't split aggregate for children > 1.")
-        return
-
-    clone = AggregateSum.from_agg_count(node)
-    clone.out_rel.rename(f"{node.out_rel.name}_obl")
-    clone.parents = set()
-    clone.children = set()
-
-    child = next(iter(node.children), None)
-    insert_between(node, child, clone)
-
-
-def split_agg_mean(node: AggregateMean, parent: Concat):
-
-    if not len(node.children) <= 1:
-        print("WARN: Can't split aggregate for children > 1.")
-        return
-
-    clone = AggregateSumCountCol.from_agg_mean(node)
-    clone.parents = set()
-    clone.children = set()
-
-    insert_between(parent, node, clone)
-

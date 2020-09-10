@@ -1,7 +1,6 @@
 from congregation.lang import *
 from congregation.utils import create_column
 from congregation.dag import Dag
-from congregation.dag.nodes.internal import AggregateSumCountCol
 from congregation.comp.push_down import PushDown
 import pytest
 
@@ -39,8 +38,8 @@ def _create_cols(party_data):
             }
         ],
         {
-            "node_order": [Create, AggregateCount, Create, AggregateCount, Concat, AggregateSum, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "node_order": [Create, Create, Multiply, Multiply, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -48,6 +47,11 @@ def _create_cols(party_data):
                     "trust_with_sets": [{1}, {1}]
                 },
                 {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
                     "stored_with": [{1}],
                     "plaintext_sets": [{1}, {1}],
                     "trust_with_sets": [{1}, {1}]
@@ -58,6 +62,53 @@ def _create_cols(party_data):
                     "trust_with_sets": [{2}, {2}]
                 },
                 {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [set(), set()],
+                    "trust_with_sets": [set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [{1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            },
+            {
+                "col_names": ["c", "d"],
+                "stored_with": {2},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            }
+        ],
+        {
+            "node_order": [Create, Create, Multiply, Multiply, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
+            "ownership_data": [
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1}]
+                },
+                {
                     "stored_with": [{2}],
                     "plaintext_sets": [{2}, {2}],
                     "trust_with_sets": [{2}, {2}]
@@ -69,224 +120,19 @@ def _create_cols(party_data):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1}, {2}],
                     "plaintext_sets": [{1, 2}, {1, 2}],
                     "trust_with_sets": [{1, 2}, {1, 2}]
                 }
             ]
         }
     ),
-    (
-            [
-                {
-                    "col_names": ["a", "b"],
-                    "stored_with": {1},
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "col_names": ["c", "d"],
-                    "stored_with": {2},
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                }
-            ],
-            {
-                "node_order": [Create, AggregateCount, Create, AggregateCount, Concat, AggregateSum, Collect],
-                "requires_mpc": [False, False, False, False, True, True, True],
-                "ownership_data": [
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1}, {1}]
-                    },
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1}, {1}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [set(), set()]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [set(), set()]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [{1, 2}, {1, 2}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
-                    }
-                ]
-            }
-    ),
-    (
-            [
-                {
-                    "col_names": ["a", "b"],
-                    "stored_with": {1},
-                    "plaintext_sets": [{1}, {1}],
-                    "trust_with_sets": [{1, 2}, {1}]
-                },
-                {
-                    "col_names": ["c", "d"],
-                    "stored_with": {2},
-                    "plaintext_sets": [{2}, {2}],
-                    "trust_with_sets": [{2}, {2}]
-                }
-            ],
-            {
-                "node_order": [Create, AggregateCount, Create, AggregateCount, Concat, AggregateSum, Collect],
-                "requires_mpc": [False, False, False, False, False, False, False],
-                "ownership_data": [
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1, 2}, {1}]
-                    },
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [{1, 2}, {1, 2}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
-                    }
-                ]
-            }
-    ),
-    (
-        [
-            {
-                "col_names": ["a", "b"],
-                "stored_with": {1, 2},
-                "plaintext_sets": [set(), set()],
-                "trust_with_sets": [set(), set()]
-            },
-            {
-                "col_names": ["c", "d"],
-                "stored_with": {1, 2},
-                "plaintext_sets": [set(), set()],
-                "trust_with_sets": [set(), set()]
-            }
-        ],
-        {
-            "node_order": [Create, Create, Concat, AggregateCount, Collect],
-            "requires_mpc": [True, True, True, True, True],
-            "ownership_data": [
-                {
-                    "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
-                }
-            ]
-        }
-    )
-])
-def test_count(party_data, expected):
-
-    cols_in_one = _create_cols(party_data[0])
-    cols_in_two = _create_cols(party_data[1])
-
-    rel_one = create("in1", cols_in_one, party_data[0]["stored_with"])
-    rel_two = create("in2", cols_in_two, party_data[1]["stored_with"])
-
-    cc = concat([rel_one, rel_two], "concat", party_data[0]["col_names"])
-    ac = aggregate_count(cc, "counted", [party_data[0]["col_names"][0]], "count_col")
-    collect(ac, {1, 2})
-
-    d = Dag({rel_one, rel_two})
-    pd = PushDown()
-    pd.rewrite(d)
-
-    zip_node_order = zip(d.top_sort(), expected["node_order"])
-    node_order_checks = [isinstance(z[0], z[1]) for z in zip_node_order]
-    assert all(node_order_checks)
-
-    zip_requires_mpc = zip(d.top_sort(), expected["requires_mpc"])
-    requires_mpc_checks = [z[0].requires_mpc() == z[1] for z in zip_requires_mpc]
-    assert all(requires_mpc_checks)
-
-    zip_stored_with = zip(d.top_sort(), [e["stored_with"] for e in expected["ownership_data"]])
-    ownership_checks = [z[0].out_rel.stored_with == z[1] for z in zip_stored_with]
-    assert all(ownership_checks)
-
-    zip_plaintext = zip(d.top_sort(), [e["plaintext_sets"] for e in expected["ownership_data"]])
-    plaintext_checks = [[c.plaintext for c in z[0].out_rel.columns] == z[1] for z in zip_plaintext]
-    assert all(plaintext_checks)
-
-    zip_trust_with = zip(d.top_sort(), [e["trust_with_sets"] for e in expected["ownership_data"]])
-    trust_with_checks = [[c.trust_with for c in z[0].out_rel.columns] == z[1] for z in zip_trust_with]
-    assert all(trust_with_checks)
-
-
-@pytest.mark.parametrize("party_data, expected", [
     (
         [
             {
                 "col_names": ["a", "b"],
                 "stored_with": {1},
                 "plaintext_sets": [{1}, {1}],
-                "trust_with_sets": [{1}, {1}]
+                "trust_with_sets": [{1}, {1, 2}]
             },
             {
                 "col_names": ["c", "d"],
@@ -296,327 +142,13 @@ def test_count(party_data, expected):
             }
         ],
         {
-            "node_order": [Create, Create, AggregateSum, AggregateSum, Concat, AggregateSum, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
-            "ownership_data":[
-                {
-                    "stored_with": [{1}],
-                    "plaintext_sets": [{1}, {1}],
-                    "trust_with_sets": [{1}, {1}]
-                },
-                {
-                    "stored_with": [{2}],
-                    "plaintext_sets": [{2}, {2}],
-                    "trust_with_sets": [{2}, {2}]
-                },
-                {
-                    "stored_with": [{1}],
-                    "plaintext_sets": [{1}, {1}],
-                    "trust_with_sets": [{1}, {1}]
-                },
-                {
-                    "stored_with": [{2}],
-                    "plaintext_sets": [{2}, {2}],
-                    "trust_with_sets": [{2}, {2}]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
-                }
-            ]
-        }
-    ),
-    (
-            [
-                {
-                    "col_names": ["a", "b"],
-                    "stored_with": {1},
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "col_names": ["c", "d"],
-                    "stored_with": {2},
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                }
-            ],
-            {
-                "node_order": [Create, Create, AggregateSum, AggregateSum, Concat, AggregateSum, Collect],
-                "requires_mpc": [False, False, False, False, True, True, True],
-                "ownership_data": [
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1}, {1}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1}, {1}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [set(), set()]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [set(), set()]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [{1, 2}, {1, 2}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
-                    }
-                ]
-            }
-    ),
-    (
-            [
-                {
-                    "col_names": ["a", "b"],
-                    "stored_with": {1},
-                    "plaintext_sets": [{1}, {1}],
-                    "trust_with_sets": [{1, 2}, {1}]
-                },
-                {
-                    "col_names": ["c", "d"],
-                    "stored_with": {2},
-                    "plaintext_sets": [{2}, {2}],
-                    "trust_with_sets": [{2}, {2}]
-                }
-            ],
-            {
-                "node_order": [Create, Create, AggregateSum, AggregateSum, Concat, AggregateSum, Collect],
-                "requires_mpc": [False, False, False, False, True, True, True],
-                "ownership_data": [
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1, 2}, {1}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1, 2}, {1}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [{2}, set()]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [{2}, set()]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [{1, 2}, {1, 2}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
-                    }
-                ]
-            }
-    ),
-    (
-        [
-            {
-                "col_names": ["a", "b"],
-                "stored_with": {1, 2},
-                "plaintext_sets": [set(), set()],
-                "trust_with_sets": [set(), set()]
-            },
-            {
-                "col_names": ["c", "d"],
-                "stored_with": {1, 2},
-                "plaintext_sets": [set(), set()],
-                "trust_with_sets": [set(), set()]
-            }
-        ],
-        {
-            "node_order": [Create, Create, Concat, AggregateSum, Collect],
-            "requires_mpc": [True, True, True, True, True],
-            "ownership_data": [
-                {
-                    "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
-                }
-            ]
-        }
-    )
-])
-def test_sum(party_data, expected):
-
-    cols_in_one = _create_cols(party_data[0])
-    cols_in_two = _create_cols(party_data[1])
-
-    rel_one = create("in1", cols_in_one, party_data[0]["stored_with"])
-    rel_two = create("in2", cols_in_two, party_data[1]["stored_with"])
-
-    cc = concat([rel_one, rel_two], "concat", party_data[0]["col_names"])
-    asum = aggregate(cc, "sum", [party_data[0]["col_names"][0]], party_data[0]["col_names"][1], "sum")
-    collect(asum, {1, 2})
-
-    d = Dag({rel_one, rel_two})
-    pd = PushDown()
-    pd.rewrite(d)
-
-    zip_node_order = zip(d.top_sort(), expected["node_order"])
-    node_order_checks = [isinstance(z[0], z[1]) for z in zip_node_order]
-    assert all(node_order_checks)
-
-    zip_requires_mpc = zip(d.top_sort(), expected["requires_mpc"])
-    requires_mpc_checks = [z[0].requires_mpc() == z[1] for z in zip_requires_mpc]
-    assert all(requires_mpc_checks)
-
-    zip_stored_with = zip(d.top_sort(), [e["stored_with"] for e in expected["ownership_data"]])
-    ownership_checks = [z[0].out_rel.stored_with == z[1] for z in zip_stored_with]
-    assert all(ownership_checks)
-
-    zip_plaintext = zip(d.top_sort(), [e["plaintext_sets"] for e in expected["ownership_data"]])
-    plaintext_checks = [[c.plaintext for c in z[0].out_rel.columns] == z[1] for z in zip_plaintext]
-    assert all(plaintext_checks)
-
-    zip_trust_with = zip(d.top_sort(), [e["trust_with_sets"] for e in expected["ownership_data"]])
-    trust_with_checks = [[c.trust_with for c in z[0].out_rel.columns] == z[1] for z in zip_trust_with]
-    assert all(trust_with_checks)
-
-
-@pytest.mark.parametrize("party_data, expected", [
-    (
-        [
-            {
-                "col_names": ["a", "b"],
-                "stored_with": {1},
-                "plaintext_sets": [{1}, {1}],
-                "trust_with_sets": [{1}, {1}]
-            },
-            {
-                "col_names": ["c", "d"],
-                "stored_with": {2},
-                "plaintext_sets": [{2}, {2}],
-                "trust_with_sets": [{2}, {2}]
-            }
-        ],
-        {
-            "node_order": [Create, Create, AggregateSumCountCol, AggregateSumCountCol, Concat, AggregateMean, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
-            "ownership_data":[
-                {
-                    "stored_with": [{1}],
-                    "plaintext_sets": [{1}, {1}],
-                    "trust_with_sets": [{1}, {1}]
-                },
-                {
-                    "stored_with": [{2}],
-                    "plaintext_sets": [{2}, {2}],
-                    "trust_with_sets": [{2}, {2}]
-                },
-                {
-                    "stored_with": [{1}],
-                    "plaintext_sets": [{1}, {1}, {1}],
-                    "trust_with_sets": [{1}, {1}, {1}]
-                },
-                {
-                    "stored_with": [{2}],
-                    "plaintext_sets": [{2}, {2}, {2}],
-                    "trust_with_sets": [{2}, {2}, {2}]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set(), set()],
-                    "trust_with_sets": [set(), set(), set()]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
-                }
-            ]
-        }
-    ),
-    (
-        [
-            {
-                "col_names": ["a", "b"],
-                "stored_with": {1},
-                "plaintext_sets": [set(), set()],
-                "trust_with_sets": [set(), set()]
-            },
-            {
-                "col_names": ["c", "d"],
-                "stored_with": {2},
-                "plaintext_sets": [set(), set()],
-                "trust_with_sets": [set(), set()]
-            }
-        ],
-        {
-            "node_order": [Create, Create, AggregateSumCountCol, AggregateSumCountCol, Concat, AggregateMean, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "node_order": [Create, Create, Multiply, Multiply, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
                     "plaintext_sets": [{1}, {1}],
-                    "trust_with_sets": [{1}, {1}]
+                    "trust_with_sets": [{1}, {1, 2}]
                 },
                 {
                     "stored_with": [{2}],
@@ -625,23 +157,18 @@ def test_sum(party_data, expected):
                 },
                 {
                     "stored_with": [{1}],
-                    "plaintext_sets": [{1}, {1}, {1}],
-                    "trust_with_sets": [{1}, {1}, {1}]
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1, 2}]
                 },
                 {
                     "stored_with": [{2}],
-                    "plaintext_sets": [{2}, {2}, {2}],
-                    "trust_with_sets": [{2}, {2}, {2}]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set(), set()],
-                    "trust_with_sets": [set(), set(), set()]
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
                     "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
+                    "trust_with_sets": [set(), {2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -667,8 +194,8 @@ def test_sum(party_data, expected):
             }
         ],
         {
-            "node_order": [Create, Create, AggregateSumCountCol, AggregateSumCountCol, Concat, AggregateMean, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "node_order": [Create, Create, Multiply, Multiply, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
@@ -682,23 +209,18 @@ def test_sum(party_data, expected):
                 },
                 {
                     "stored_with": [{1}],
-                    "plaintext_sets": [{1}, {1}, {1}],
-                    "trust_with_sets": [{1, 2}, {1}, {1, 2}]
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1}]
                 },
                 {
                     "stored_with": [{2}],
-                    "plaintext_sets": [{2}, {2}, {2}],
-                    "trust_with_sets": [{2}, {2}, {2}]
-                },
-                {
-                    "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set(), set()],
-                    "trust_with_sets": [{2}, set(), {2}]
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
                     "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [{2}, set()]
+                    "trust_with_sets": [set(), set()]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -724,7 +246,7 @@ def test_sum(party_data, expected):
             }
         ],
         {
-            "node_order": [Create, Create, Concat, AggregateMean, Collect],
+            "node_order": [Create, Create, Concat, Multiply, Collect],
             "requires_mpc": [True, True, True, True, True],
             "ownership_data": [
                 {
@@ -756,7 +278,7 @@ def test_sum(party_data, expected):
         }
     )
 ])
-def test_mean(party_data, expected):
+def test_multiply_target_existing(party_data, expected):
 
     cols_in_one = _create_cols(party_data[0])
     cols_in_two = _create_cols(party_data[1])
@@ -765,14 +287,13 @@ def test_mean(party_data, expected):
     rel_two = create("in2", cols_in_two, party_data[1]["stored_with"])
 
     cc = concat([rel_one, rel_two], "concat", party_data[0]["col_names"])
-    asum = aggregate(cc, "mean", [party_data[0]["col_names"][0]], party_data[0]["col_names"][1], "mean")
-    collect(asum, {1, 2})
+    p = multiply(cc, "mult", party_data[0]["col_names"][0], [party_data[0]["col_names"][1], 10])
+    collect(p, {1, 2})
 
     d = Dag({rel_one, rel_two})
     pd = PushDown()
     pd.rewrite(d)
 
-    f = d.top_sort()
     zip_node_order = zip(d.top_sort(), expected["node_order"])
     node_order_checks = [isinstance(z[0], z[1]) for z in zip_node_order]
     assert all(node_order_checks)
@@ -794,3 +315,295 @@ def test_mean(party_data, expected):
     assert all(trust_with_checks)
 
 
+@pytest.mark.parametrize("party_data, expected", [
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1},
+                "plaintext_sets": [{1}, {1}],
+                "trust_with_sets": [{1}, {1}]
+            },
+            {
+                "col_names": ["c", "d"],
+                "stored_with": {2},
+                "plaintext_sets": [{2}, {2}],
+                "trust_with_sets": [{2}, {2}]
+            }
+        ],
+        {
+            "node_order": [Create, Create, Multiply, Multiply, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
+            "ownership_data":[
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}, {1}],
+                    "trust_with_sets": [{1}, {1}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}, {2}],
+                    "trust_with_sets": [{2}, {2}, {2}]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [set(), set(), set()],
+                    "trust_with_sets": [set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            },
+            {
+                "col_names": ["c", "d"],
+                "stored_with": {2},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            }
+        ],
+        {
+            "node_order": [Create, Create, Multiply, Multiply, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
+            "ownership_data": [
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}, {1}],
+                    "trust_with_sets": [{1}, {1}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}, {2}],
+                    "trust_with_sets": [{2}, {2}, {2}]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [set(), set(), set()],
+                    "trust_with_sets": [set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1},
+                "plaintext_sets": [{1}, {1}],
+                "trust_with_sets": [{1}, {1, 2}]
+            },
+            {
+                "col_names": ["c", "d"],
+                "stored_with": {2},
+                "plaintext_sets": [{2}, {2}],
+                "trust_with_sets": [{2}, {2}]
+            }
+        ],
+        {
+            "node_order": [Create, Create, Multiply, Multiply, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
+            "ownership_data": [
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1, 2}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}, {1}],
+                    "trust_with_sets": [{1}, {1, 2}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}, {2}],
+                    "trust_with_sets": [{2}, {2}, {2}]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [set(), set(), set()],
+                    "trust_with_sets": [set(), {2}, set()]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1},
+                "plaintext_sets": [{1}, {1}],
+                "trust_with_sets": [{1, 2}, {1}]
+            },
+            {
+                "col_names": ["c", "d"],
+                "stored_with": {2},
+                "plaintext_sets": [{2}, {2}],
+                "trust_with_sets": [{2}, {2}]
+            }
+        ],
+        {
+            "node_order": [Create, Create, Multiply, Multiply, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
+            "ownership_data": [
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1, 2}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}, {1}],
+                    "trust_with_sets": [{1, 2}, {1}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}, {2}],
+                    "trust_with_sets": [{2}, {2}, {2}]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [set(), set(), set()],
+                    "trust_with_sets": [{2}, set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1, 2},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            },
+            {
+                "col_names": ["c", "d"],
+                "stored_with": {1, 2},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            }
+        ],
+        {
+            "node_order": [Create, Create, Concat, Multiply, Collect],
+            "requires_mpc": [True, True, True, True, True],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2}],
+                    "plaintext_sets": [set(), set()],
+                    "trust_with_sets": [set(), set()]
+                },
+                {
+                    "stored_with": [{1, 2}],
+                    "plaintext_sets": [set(), set()],
+                    "trust_with_sets": [set(), set()]
+                },
+                {
+                    "stored_with": [{1, 2}],
+                    "plaintext_sets": [set(), set()],
+                    "trust_with_sets": [set(), set()]
+                },
+                {
+                    "stored_with": [{1, 2}],
+                    "plaintext_sets": [set(), set(), set()],
+                    "trust_with_sets": [set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
+                }
+            ]
+        }
+    )
+])
+def test_multiply_target_new(party_data, expected):
+
+    cols_in_one = _create_cols(party_data[0])
+    cols_in_two = _create_cols(party_data[1])
+
+    rel_one = create("in1", cols_in_one, party_data[0]["stored_with"])
+    rel_two = create("in2", cols_in_two, party_data[1]["stored_with"])
+
+    cc = concat([rel_one, rel_two], "concat", party_data[0]["col_names"])
+    p = multiply(cc, "mult", "m", [party_data[0]["col_names"][0], party_data[0]["col_names"][1]])
+    collect(p, {1, 2})
+
+    d = Dag({rel_one, rel_two})
+    pd = PushDown()
+    pd.rewrite(d)
+
+    zip_node_order = zip(d.top_sort(), expected["node_order"])
+    node_order_checks = [isinstance(z[0], z[1]) for z in zip_node_order]
+    assert all(node_order_checks)
+
+    zip_requires_mpc = zip(d.top_sort(), expected["requires_mpc"])
+    requires_mpc_checks = [z[0].requires_mpc() == z[1] for z in zip_requires_mpc]
+    assert all(requires_mpc_checks)
+
+    zip_stored_with = zip(d.top_sort(), [e["stored_with"] for e in expected["ownership_data"]])
+    ownership_checks = [z[0].out_rel.stored_with == z[1] for z in zip_stored_with]
+    assert all(ownership_checks)
+
+    zip_plaintext = zip(d.top_sort(), [e["plaintext_sets"] for e in expected["ownership_data"]])
+    plaintext_checks = [[c.plaintext for c in z[0].out_rel.columns] == z[1] for z in zip_plaintext]
+    assert all(plaintext_checks)
+
+    zip_trust_with = zip(d.top_sort(), [e["trust_with_sets"] for e in expected["ownership_data"]])
+    trust_with_checks = [[c.trust_with for c in z[0].out_rel.columns] == z[1] for z in zip_trust_with]
+    assert all(trust_with_checks)
