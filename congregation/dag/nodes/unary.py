@@ -272,9 +272,16 @@ class Distinct(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        temp_cols = self.get_in_rel().columns
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
         old_cols = copy.copy(self.selected_cols)
-        self.selected_cols = [temp_cols[col.idx] for col in old_cols]
+        self.selected_cols = [temp_cols[c.idx] for c in old_cols]
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        out_rel_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.out_rel.columns = out_rel_cols
+        self.out_rel.update_columns()
 
 
 class FilterAgainstCol(UnaryOpNode):
@@ -300,6 +307,18 @@ class FilterAgainstCol(UnaryOpNode):
         self.filter_col = temp_cols[self.filter_col.idx]
         self.against_col = temp_cols[self.against_col.idx]
 
+    def update_out_rel_cols(self):
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        min_trust_set = min_trust_with_from_columns([temp_cols[self.filter_col.idx], temp_cols[self.against_col.idx]])
+        min_pt_set = min_pt_set_from_cols([temp_cols[self.filter_col.idx], temp_cols[self.against_col.idx]])
+        temp_cols[self.filter_col.idx].trust_with = min_trust_set
+        temp_cols[self.filter_col.idx].plaintext = min_pt_set
+        temp_cols[self.against_col.idx].trust_with = min_trust_set
+        temp_cols[self.against_col.idx].plaintext = min_pt_set
+        self.out_rel.columns = temp_cols
+        self.out_rel.update_columns()
+
 
 class FilterAgainstScalar(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, filter_col: Column, operator: str, scalar: int):
@@ -321,6 +340,12 @@ class FilterAgainstScalar(UnaryOpNode):
 
         temp_cols = self.get_in_rel().columns
         self.filter_col = temp_cols[self.filter_col.idx]
+
+    def update_out_rel_cols(self):
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.out_rel.columns = temp_cols
+        self.out_rel.update_columns()
 
 
 class SortBy(UnaryOpNode):

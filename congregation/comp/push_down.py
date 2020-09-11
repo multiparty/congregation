@@ -6,6 +6,9 @@ from congregation.comp.utils import *
 
 
 class PushDown(DagRewriter):
+    """
+    TODO: Extend _rewrite_unary_default to joins, think about others
+    """
     def __init__(self):
         super(PushDown, self).__init__()
 
@@ -28,16 +31,20 @@ class PushDown(DagRewriter):
         else:
             pass
 
-    def _rewrite_aggregate_sum(self, node: AggregateSum):
+    @staticmethod
+    def _rewrite_split_default(node: [AggregateSum, Distinct]):
 
         parent = next(iter(node.parents))
         if parent.requires_mpc():
             if isinstance(parent, Concat) and parent.is_upper_boundary():
-                split_agg_sum(node)
+                split_default(node)
                 push_parent_op_node_down(parent, node)
                 parent.update_out_rel_cols()
         else:
             pass
+
+    def _rewrite_aggregate_sum(self, node: AggregateSum):
+        self._rewrite_split_default(node)
 
     def _rewrite_aggregate_count(self, node: AggregateCount):
 
@@ -80,8 +87,7 @@ class PushDown(DagRewriter):
         pass
 
     def _rewrite_distinct(self, node: Distinct):
-        # TODO SPLIT OP
-        pass
+        self._rewrite_split_default(node)
 
     def _rewrite_filter_against_col(self, node: FilterAgainstCol):
         self._rewrite_unary_default(node)

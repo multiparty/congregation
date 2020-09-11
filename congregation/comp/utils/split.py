@@ -1,12 +1,12 @@
 import copy
 from congregation.dag.nodes import OpNode
 from congregation.dag.nodes import Concat
-from congregation.dag.nodes import AggregateSum, AggregateCount, AggregateMean
+from congregation.dag.nodes import *
 from congregation.dag.nodes.internal import *
 from congregation.comp.utils.dag import *
 
 
-def split_agg_sum(node: [AggregateSum, AggregateCount]):
+def split_default(node: [AggregateSum, Distinct]):
     """
     clone an AggregateSum or AggregateCount node
     """
