@@ -34,19 +34,19 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: list, agg_col_n
     out_rel_cols = [copy.deepcopy(group_col) for group_col in group_cols] + [copy.deepcopy(agg_out_col)]
     min_pt = min_pt_set_from_cols(out_rel_cols)
     min_trust = min_trust_with_from_columns(out_rel_cols)
-    for col in out_rel_cols:
-        col.plaintext = min_pt
-        col.min_trust = min_trust
+    for c in out_rel_cols:
+        c.plaintext = min_pt
+        c.min_trust = min_trust
 
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
 
     if agg_type == "sum":
-        op = AggregateSum(out_rel, input_op_node, group_cols, agg_col)
+        op = AggregateSum(out_rel, input_op_node, group_cols, agg_out_col)
     elif agg_type == "mean":
-        op = AggregateMean(out_rel, input_op_node, group_cols, agg_col)
+        op = AggregateMean(out_rel, input_op_node, group_cols, agg_out_col)
     elif agg_type == "std_dev":
-        op = AggregateStdDev(out_rel, input_op_node, group_cols, agg_col)
+        op = AggregateStdDev(out_rel, input_op_node, group_cols, agg_out_col)
     else:
         raise Exception(
             f"Aggregate type {agg_type} not recognized. Must be of the following: [sum, mean, std_dev]."
@@ -56,7 +56,7 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: list, agg_col_n
     return op
 
 
-def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, count_col_name: [str, None] = "count"):
+def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, count_col_name: [str, None] = "__COUNT__"):
 
     in_rel = input_op_node.out_rel
     in_cols = in_rel.columns
@@ -67,15 +67,16 @@ def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, cou
     min_pt = min_pt_set_from_cols(group_cols)
     out_rel_cols = [copy.deepcopy(group_col) for group_col in group_cols] + [count_col]
 
-    for col in out_rel_cols:
-        col.plaintext = min_pt
-        col.trust_with = min_trust
+    for c in out_rel_cols:
+        c.plaintext = min_pt
+        c.trust_with = min_trust
 
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
 
     op = AggregateCount(out_rel, input_op_node, group_cols, count_col)
     input_op_node.children.add(op)
+
     return op
 
 
@@ -252,9 +253,10 @@ def num_rows(input_op_node: OpNode, name: str, count_col_name: str = "num_rows")
     in_rel = input_op_node.out_rel
     cols_in_rel = copy.deepcopy(in_rel.columns)
 
-    min_trust_set = min_trust_with_from_columns(cols_in_rel)
-    min_pt_set = min_pt_set_from_cols(cols_in_rel)
-    count_col = Column(name, count_col_name, len(in_rel.columns), "INTEGER", min_trust_set, min_pt_set)
+    # max bc if you can know the content of any given column, you can know how many rows it has
+    max_trust_set = max_trust_with_from_columns(cols_in_rel)
+    max_pt_set = max_pt_set_from_cols(cols_in_rel)
+    count_col = Column(name, count_col_name, len(in_rel.columns), "INTEGER", max_trust_set, max_pt_set)
     out_rel_col = [count_col]
 
     out_rel = Relation(name, out_rel_col, copy.copy(in_rel.stored_with))
@@ -275,7 +277,7 @@ def collect(input_op_node: OpNode, target_parties: set):
         col.trust_with = col.trust_with.union(target_parties)
         col.plaintext = col.plaintext.union(target_parties)
 
-    out_rel = Relation(f"{in_rel.name}->collect", out_rel_cols, [set([p]) for p in target_parties])
+    out_rel = Relation(f"{in_rel.name}->collect", out_rel_cols, [{p} for p in target_parties])
     out_rel.update_columns()
     op = Collect(out_rel, input_op_node)
     input_op_node.children.add(op)

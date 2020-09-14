@@ -317,108 +317,108 @@ def test_filter_by_col(party_data, expected):
         }
     ),
     (
-            [
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            },
+            {
+                "col_names": ["c", "d"],
+                "stored_with": {2},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            }
+        ],
+        {
+            "node_order": [Create, FilterAgainstScalar, Create, FilterAgainstScalar, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
+            "ownership_data": [
                 {
-                    "col_names": ["a", "b"],
-                    "stored_with": {1},
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1}]
+                },
+                {
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{1}, {2}],
                     "plaintext_sets": [set(), set()],
                     "trust_with_sets": [set(), set()]
                 },
                 {
-                    "col_names": ["c", "d"],
-                    "stored_with": {2},
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [{1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}]
                 }
-            ],
-            {
-                "node_order": [Create, FilterAgainstScalar, Create, FilterAgainstScalar, Concat, Collect],
-                "requires_mpc": [False, False, False, False, True, True],
-                "ownership_data": [
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1}, {1}]
-                    },
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1}, {1}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [set(), set()]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [{1, 2}, {1, 2}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
-                    }
-                ]
-            }
+            ]
+        }
     ),
     (
-            [
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1},
+                "plaintext_sets": [{1}, {1}],
+                "trust_with_sets": [{1, 2}, {1}]
+            },
+            {
+                "col_names": ["c", "d"],
+                "stored_with": {2},
+                "plaintext_sets": [{2}, {2}],
+                "trust_with_sets": [{2}, {2}]
+            }
+        ],
+        {
+            "node_order": [Create, FilterAgainstScalar, Create, FilterAgainstScalar, Concat, Collect],
+            "requires_mpc": [False, False, False, False, True, True],
+            "ownership_data": [
                 {
-                    "col_names": ["a", "b"],
-                    "stored_with": {1},
+                    "stored_with": [{1}],
                     "plaintext_sets": [{1}, {1}],
                     "trust_with_sets": [{1, 2}, {1}]
                 },
                 {
-                    "col_names": ["c", "d"],
-                    "stored_with": {2},
+                    "stored_with": [{1}],
+                    "plaintext_sets": [{1}, {1}],
+                    "trust_with_sets": [{1, 2}, {1}]
+                },
+                {
+                    "stored_with": [{2}],
                     "plaintext_sets": [{2}, {2}],
                     "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{2}],
+                    "plaintext_sets": [{2}, {2}],
+                    "trust_with_sets": [{2}, {2}]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [set(), set()],
+                    "trust_with_sets": [{2}, set()]
+                },
+                {
+                    "stored_with": [{1}, {2}],
+                    "plaintext_sets": [{1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}]
                 }
-            ],
-            {
-                "node_order": [Create, FilterAgainstScalar, Create, FilterAgainstScalar, Concat, Collect],
-                "requires_mpc": [False, False, False, False, True, True],
-                "ownership_data": [
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1, 2}, {1}]
-                    },
-                    {
-                        "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1, 2}, {1}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [{2}, set()]
-                    },
-                    {
-                        "stored_with": [{1}, {2}],
-                        "plaintext_sets": [{1, 2}, {1, 2}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
-                    }
-                ]
-            }
+            ]
+        }
     ),
     (
         [

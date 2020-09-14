@@ -27,6 +27,7 @@ class Column:
         return f"\n" \
                f"--\n" \
                f"COLUMN: {self.name}\n" \
+               f"IDX: {self.idx}\n" \
                f"IN RELATION: {self.rel_name}\n" \
                f"STORED IN PLAINTEXT BY: {plaintext_str}\n" \
                f"TRUSTED WITH: {trust_with_str}\n" \

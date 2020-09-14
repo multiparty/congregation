@@ -29,7 +29,6 @@ def remove_between(parent: OpNode, child: OpNode, to_remove: OpNode):
 
 
 def _update_child_on_insert(parent: OpNode, child: OpNode, to_insert: OpNode):
-
     child.replace_parent(parent, to_insert)
 
     if child in parent.children:
@@ -37,6 +36,27 @@ def _update_child_on_insert(parent: OpNode, child: OpNode, to_insert: OpNode):
 
     child.update_op_specific_cols()
     to_insert.children.add(child)
+
+
+def insert_between(parent: OpNode, child: OpNode, to_insert: OpNode):
+    if to_insert.children or to_insert.parents:
+        raise Exception(
+            f"Inserted node should be orphan."
+            f"\nNumber of children: {len(to_insert.children)} (should be 0)."
+            f"\nNumber of parents: {len(to_insert.parents)} (should be 0)."
+        )
+
+    if not isinstance(to_insert, UnaryOpNode):
+        raise Exception("Inserted node should be Unary.")
+
+    to_insert.parents.add(parent)
+    to_insert.parent = parent
+    parent.children.add(to_insert)
+    to_insert.update_op_specific_cols()
+    to_insert.update_out_rel_cols()
+
+    if child:
+        _update_child_on_insert(parent, child, to_insert)
 
 
 def insert_between_children(parent: OpNode, to_insert: OpNode):
@@ -64,7 +84,7 @@ def insert_between_children(parent: OpNode, to_insert: OpNode):
     parent.children.add(to_insert)
 
 
-def insert_between(parent: OpNode, child: OpNode, to_insert: OpNode):
+def insert_clone(parent: OpNode, child: OpNode, to_insert: OpNode):
 
     if to_insert.children or to_insert.parents:
         raise Exception(
@@ -79,8 +99,6 @@ def insert_between(parent: OpNode, child: OpNode, to_insert: OpNode):
     to_insert.parents.add(parent)
     to_insert.parent = parent
     parent.children.add(to_insert)
-    to_insert.update_op_specific_cols()
-    to_insert.update_out_rel_cols()
 
     if child:
         _update_child_on_insert(parent, child, to_insert)

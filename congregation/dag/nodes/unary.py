@@ -66,10 +66,14 @@ class AggregateCount(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
         self.count_col = self.update_count_col()
 
     def update_count_col(self):
+        """
+        Won't be part of input relation, need to generate fresh
+        """
 
         min_trust = min_trust_with_from_columns(self.group_cols)
         min_pt = min_pt_set_from_cols(self.group_cols)
@@ -81,7 +85,9 @@ class AggregateCount(UnaryOpNode):
     def update_out_rel_cols(self):
 
         self.update_op_specific_cols()
-        self.out_rel.columns = self.group_cols + [self.count_col]
+        temp_cols = self.group_cols + [self.count_col]
+        self.out_rel.columns = copy.deepcopy(temp_cols)
+        self.out_rel.update_columns()
 
 
 class AggregateSum(UnaryOpNode):
@@ -92,24 +98,40 @@ class AggregateSum(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
-        self.agg_col = self.get_in_rel().columns[self.agg_col.idx]
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
+
+        agg_col = find(self.get_in_rel().columns, self.agg_col.name)
+        if agg_col is None:
+            min_trust_set = min_trust_with_from_columns(self.group_cols)
+            min_pt_set = min_pt_set_from_cols(self.group_cols)
+        else:
+            min_trust_set = min_trust_with_from_columns(self.group_cols + [agg_col])
+            min_pt_set = min_pt_set_from_cols(self.group_cols + [agg_col])
+            self.agg_col = copy.deepcopy(agg_col)
+        self.agg_col.trust_with = min_trust_set
+        self.agg_col.plaintext = min_pt_set
 
     def update_out_rel_cols(self):
 
         self.update_op_specific_cols()
-        self.out_rel.columns = self.group_cols + [self.agg_col]
+        temp_cols = self.group_cols + [self.agg_col]
+        self.out_rel.columns = copy.deepcopy(temp_cols)
         self.out_rel.update_columns()
 
     @staticmethod
     def from_agg_count(node: AggregateCount):
 
-        out_rel = copy.deepcopy(node.out_rel)
-        parent = copy.deepcopy(node.parent)
-        group_cols = copy.deepcopy(node.group_cols)
-        agg_col = copy.deepcopy(node.count_col)
+        temp_node = copy.deepcopy(node)
+        node = AggregateSum(
+            temp_node.out_rel,
+            temp_node.parent,
+            temp_node.out_rel.columns[:-1],
+            temp_node.out_rel.columns[-1]
+        )
+        node.out_rel.update_columns()
 
-        return AggregateSum(out_rel, parent, group_cols, agg_col)
+        return node
 
 
 class AggregateMean(UnaryOpNode):
@@ -122,13 +144,15 @@ class AggregateMean(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
-        self.agg_col = self.get_in_rel().columns[self.agg_col.idx]
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
+        self.agg_col = temp_cols[self.agg_col.idx]
 
     def update_out_rel_cols(self):
 
         self.update_op_specific_cols()
-        self.out_rel.columns = self.group_cols + [self.agg_col]
+        temp_cols = self.group_cols + [self.agg_col]
+        self.out_rel.columns = copy.deepcopy(temp_cols)
         self.out_rel.update_columns()
 
 
@@ -142,13 +166,15 @@ class AggregateStdDev(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        self.group_cols = [self.get_in_rel().columns[group_col.idx] for group_col in self.group_cols]
-        self.agg_col = self.get_in_rel().columns[self.agg_col.idx]
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
+        self.agg_col = temp_cols[self.agg_col.idx]
 
     def update_out_rel_cols(self):
 
         self.update_op_specific_cols()
-        self.out_rel.columns = self.group_cols + [self.agg_col]
+        temp_cols = self.group_cols + [self.agg_col]
+        self.out_rel.columns = copy.deepcopy(temp_cols)
         self.out_rel.update_columns()
 
 
@@ -162,13 +188,13 @@ class Project(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        temp_cols = self.get_in_rel().columns
-        self.selected_cols = [temp_cols[col.idx] for col in self.selected_cols]
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.selected_cols = [temp_cols[c.idx] for c in self.selected_cols]
 
     def update_out_rel_cols(self):
 
         self.update_op_specific_cols()
-        self.out_rel.columns = self.selected_cols
+        self.out_rel.columns = copy.deepcopy(self.selected_cols)
         self.out_rel.update_columns()
 
 
@@ -206,11 +232,12 @@ class Multiply(UnaryOpNode):
 
         self.update_op_specific_cols()
         out_rel_cols = copy.deepcopy(self.get_in_rel().columns)
+        temp_target_col = copy.deepcopy(self.target_col)
 
         if self.target_col.idx == len(out_rel_cols):
-            out_rel_cols = out_rel_cols + [self.target_col]
+            out_rel_cols = out_rel_cols + [temp_target_col]
         else:
-            out_rel_cols[self.target_col.idx] = self.target_col
+            out_rel_cols[self.target_col.idx] = temp_target_col
 
         self.out_rel.columns = out_rel_cols
         self.out_rel.update_columns()
@@ -249,11 +276,12 @@ class Divide(UnaryOpNode):
 
         self.update_op_specific_cols()
         out_rel_cols = copy.deepcopy(self.get_in_rel().columns)
+        temp_target_col = copy.deepcopy(self.target_col)
 
         if self.target_col.idx == len(out_rel_cols):
-            out_rel_cols = out_rel_cols + [self.target_col]
+            out_rel_cols = out_rel_cols + [temp_target_col]
         else:
-            out_rel_cols[self.target_col.idx] = self.target_col
+            out_rel_cols[self.target_col.idx] = temp_target_col
 
         self.out_rel.columns = out_rel_cols
         self.out_rel.update_columns()
@@ -303,11 +331,11 @@ class FilterAgainstCol(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        temp_cols = self.get_in_rel().columns
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.filter_col = temp_cols[self.filter_col.idx]
         self.against_col = temp_cols[self.against_col.idx]
 
-    def update_out_rel_cols(self):
+    def _update_out_rel_cols(self):
 
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
         min_trust_set = min_trust_with_from_columns([temp_cols[self.filter_col.idx], temp_cols[self.against_col.idx]])
@@ -316,7 +344,13 @@ class FilterAgainstCol(UnaryOpNode):
         temp_cols[self.filter_col.idx].plaintext = min_pt_set
         temp_cols[self.against_col.idx].trust_with = min_trust_set
         temp_cols[self.against_col.idx].plaintext = min_pt_set
-        self.out_rel.columns = temp_cols
+
+        return temp_cols
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        self.out_rel.columns = self._update_out_rel_cols()
         self.out_rel.update_columns()
 
 
@@ -338,11 +372,12 @@ class FilterAgainstScalar(UnaryOpNode):
 
     def update_op_specific_cols(self):
 
-        temp_cols = self.get_in_rel().columns
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.filter_col = temp_cols[self.filter_col.idx]
 
     def update_out_rel_cols(self):
 
+        self.update_op_specific_cols()
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.out_rel.columns = temp_cols
         self.out_rel.update_columns()
@@ -355,13 +390,41 @@ class SortBy(UnaryOpNode):
         self.increasing = increasing
 
     def update_op_specific_cols(self):
-        self.sort_by_col = self.get_in_rel().columns[self.sort_by_col.idx]
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.sort_by_col = temp_cols[self.sort_by_col.idx]
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.out_rel.columns = temp_cols
+        self.out_rel.update_columns()
 
 
 class NumRows(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, col_name: str):
         super(NumRows, self).__init__("num_rows", out_rel, parent)
         self.col_name = col_name
+
+    def update_out_rel_cols(self):
+        """
+        Using max TW/PT sets here because if you either had
+        or were trusted with a single column, you could have
+        counted the number of rows it contained.
+        """
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        max_trust_set = max_trust_with_from_columns(temp_cols)
+        max_pt_set = max_pt_set_from_cols(temp_cols)
+
+        out_col = Column(
+            self.out_rel.name, self.col_name, 0,
+            "INTEGER", max_trust_set, max_pt_set
+        )
+
+        self.out_rel.columns = [out_col]
+        self.out_rel.update_columns()
 
 
 class Collect(UnaryOpNode):

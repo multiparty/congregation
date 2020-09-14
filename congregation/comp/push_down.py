@@ -99,8 +99,13 @@ class PushDown(DagRewriter):
         pass
 
     def _rewrite_num_rows(self, node: NumRows):
-        # TODO SPLIT OP
-        pass
+
+        parent = next(iter(node.parents))
+        if parent.requires_mpc():
+            if isinstance(parent, Concat) and parent.is_upper_boundary():
+                split_num_rows(node)
+                push_parent_op_node_down(parent, node)
+                parent.update_out_rel_cols()
 
     def _rewrite_join(self, node: Join):
         pass
