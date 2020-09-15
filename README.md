@@ -1,2 +1,2 @@
 # congregation
-Relational query compiler for MPC
+Relational query compiler for MPC based on the [conclave](https://github.com/multiparty/conclave) system.
