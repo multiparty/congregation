@@ -39,6 +39,7 @@ def _update_child_on_insert(parent: OpNode, child: OpNode, to_insert: OpNode):
 
 
 def insert_between(parent: OpNode, child: OpNode, to_insert: OpNode):
+
     if to_insert.children or to_insert.parents:
         raise Exception(
             f"Inserted node should be orphan."

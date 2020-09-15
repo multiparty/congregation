@@ -82,8 +82,6 @@ class PushDown(DagRewriter):
         self._rewrite_unary_default(node)
 
     def _rewrite_limit(self, node: Limit):
-        # TODO: could do a split op here but idk how
-        #  meaningful it would be for actual computations
         pass
 
     def _rewrite_distinct(self, node: Distinct):
