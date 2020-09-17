@@ -111,6 +111,16 @@ class Relation:
         for col in self.columns:
             col.rel_name = self.name
 
+    def assign_new_trust(self, ts):
+
+        for col in self.columns:
+            col.trust_with = ts
+
+    def assign_new_plaintext(self, pt):
+
+        for col in self.columns:
+            col.plaintext = pt
+
     @staticmethod
     def get_stored_with_lens(stored_with: list):
         """

@@ -273,9 +273,9 @@ def collect(input_op_node: OpNode, target_parties: set):
     in_rel = input_op_node.out_rel
     out_rel_cols = copy.deepcopy(in_rel.columns)
 
-    for col in out_rel_cols:
-        col.trust_with = col.trust_with.union(target_parties)
-        col.plaintext = col.plaintext.union(target_parties)
+    for c in out_rel_cols:
+        c.trust_with = c.trust_with.union(target_parties)
+        c.plaintext = c.plaintext.union(target_parties)
 
     out_rel = Relation(f"{in_rel.name}->collect", out_rel_cols, [{p} for p in target_parties])
     out_rel.update_columns()

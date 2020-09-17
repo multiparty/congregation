@@ -2,7 +2,7 @@ from congregation.lang import *
 from congregation.utils import create_column
 from congregation.dag import Dag
 from congregation.dag.nodes.internal import AggregateSumCountCol
-from congregation.comp.push_down import PushDown
+from congregation.comp import PushDown
 import pytest
 
 
@@ -40,7 +40,7 @@ def _create_cols(party_data):
         ],
         {
             "node_order": [Create, AggregateCount, Create, AggregateCount, Concat, AggregateSum, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -97,7 +97,7 @@ def _create_cols(party_data):
             ],
             {
                 "node_order": [Create, AggregateCount, Create, AggregateCount, Concat, AggregateSum, Collect],
-                "requires_mpc": [False, False, False, False, True, True, True],
+                "requires_mpc": [False, False, False, False, True, True, False],
                 "ownership_data": [
                     {
                         "stored_with": [{1}],
@@ -211,7 +211,7 @@ def _create_cols(party_data):
         ],
         {
             "node_order": [Create, Create, Concat, AggregateCount, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -297,7 +297,7 @@ def test_count(party_data, expected):
         ],
         {
             "node_order": [Create, AggregateCount, Create, AggregateCount, Concat, AggregateSum, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -361,7 +361,7 @@ def test_count(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Concat, AggregateCount, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -520,7 +520,7 @@ def test_count_alt_key_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, AggregateSum, AggregateSum, Concat, AggregateSum, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -577,7 +577,7 @@ def test_count_alt_key_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, AggregateSum, AggregateSum, Concat, AggregateSum, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
@@ -634,7 +634,7 @@ def test_count_alt_key_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, AggregateSum, AggregateSum, Concat, AggregateSum, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
@@ -691,7 +691,7 @@ def test_count_alt_key_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Concat, AggregateSum, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -777,7 +777,7 @@ def test_sum(party_data, expected):
         ],
         {
             "node_order": [Create, Create, AggregateSum, AggregateSum, Concat, AggregateSum, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -841,7 +841,7 @@ def test_sum(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Concat, AggregateSum, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -936,7 +936,7 @@ def test_sum_alt_key_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, AggregateSumCountCol, AggregateSumCountCol, Concat, AggregateMean, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -993,7 +993,7 @@ def test_sum_alt_key_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, AggregateSumCountCol, AggregateSumCountCol, Concat, AggregateMean, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
@@ -1050,7 +1050,7 @@ def test_sum_alt_key_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, AggregateSumCountCol, AggregateSumCountCol, Concat, AggregateMean, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
@@ -1107,7 +1107,7 @@ def test_sum_alt_key_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Concat, AggregateMean, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -1193,7 +1193,7 @@ def test_mean(party_data, expected):
         ],
         {
             "node_order": [Create, Create, AggregateSumCountCol, AggregateSumCountCol, Concat, AggregateMean, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -1309,7 +1309,7 @@ def test_mean(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Concat, AggregateMean, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],

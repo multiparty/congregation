@@ -326,9 +326,6 @@ class FilterAgainstCol(UnaryOpNode):
             raise Exception("Filter operation only supports {<, >, ==} operators.")
         return op
 
-    def is_reversible(self):
-        return False
-
     def update_op_specific_cols(self):
 
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
@@ -367,9 +364,6 @@ class FilterAgainstScalar(UnaryOpNode):
             raise Exception("Filter operation only supports {<, >, =} operators.")
         return op
 
-    def is_reversible(self):
-        return False
-
     def update_op_specific_cols(self):
 
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
@@ -388,6 +382,9 @@ class SortBy(UnaryOpNode):
         super(SortBy, self).__init__("sort_by", out_rel, parent)
         self.sort_by_col = sort_by_col
         self.increasing = increasing
+
+    def is_reversible(self):
+        return True
 
     def update_op_specific_cols(self):
 
@@ -433,3 +430,6 @@ class Collect(UnaryOpNode):
 
     def is_reversible(self):
         return True
+
+    def requires_mpc(self):
+        return False

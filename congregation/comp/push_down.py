@@ -13,9 +13,10 @@ class PushDown(DagRewriter):
         super(PushDown, self).__init__()
 
     @staticmethod
-    def _rewrite_unary_default(node: OpNode):
+    def _rewrite_unary_default(node: UnaryOpNode):
         """
-        PushDown rewrite for Project, Multiply, and Divide op nodes.
+        Default operation that pushes the MPC boundary past
+        this node, allowing it to be done locally.
         """
 
         if node.is_leaf():

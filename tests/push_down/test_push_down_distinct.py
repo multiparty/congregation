@@ -1,7 +1,7 @@
 from congregation.lang import *
 from congregation.utils import create_column
 from congregation.dag import Dag
-from congregation.comp.push_down import PushDown
+from congregation.comp import PushDown
 import pytest
 
 
@@ -39,7 +39,7 @@ def _create_cols(party_data):
         ],
         {
             "node_order": [Create, Distinct, Create, Distinct, Concat, Distinct, Collect],
-            "requires_mpc": [False, False, False, False, True, True, True],
+            "requires_mpc": [False, False, False, False, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -96,7 +96,7 @@ def _create_cols(party_data):
             ],
             {
                 "node_order": [Create, Distinct, Create, Distinct, Concat, Distinct, Collect],
-                "requires_mpc": [False, False, False, False, True, True, True],
+                "requires_mpc": [False, False, False, False, True, True, False],
                 "ownership_data": [
                     {
                         "stored_with": [{1}],
@@ -153,7 +153,7 @@ def _create_cols(party_data):
             ],
             {
                 "node_order": [Create, Distinct, Create, Distinct, Concat, Distinct, Collect],
-                "requires_mpc": [False, False, False, False, True, True, True],
+                "requires_mpc": [False, False, False, False, True, True, False],
                 "ownership_data": [
                     {
                         "stored_with": [{1}],
@@ -210,7 +210,7 @@ def _create_cols(party_data):
         ],
         {
             "node_order": [Create, Create, Concat, Distinct, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],

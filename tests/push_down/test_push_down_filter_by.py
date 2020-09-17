@@ -1,7 +1,7 @@
 from congregation.lang import *
 from congregation.utils import create_column
 from congregation.dag import Dag
-from congregation.comp.push_down import PushDown
+from congregation.comp import PushDown
 import pytest
 
 
@@ -39,7 +39,7 @@ def _create_cols(party_data):
         ],
         {
             "node_order": [Create, FilterAgainstCol, Create, FilterAgainstCol, Concat, Collect],
-            "requires_mpc": [False, False, False, False, True, True],
+            "requires_mpc": [False, False, False, False, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -91,7 +91,7 @@ def _create_cols(party_data):
             ],
             {
                 "node_order": [Create, FilterAgainstCol, Create, FilterAgainstCol, Concat, Collect],
-                "requires_mpc": [False, False, False, False, True, True],
+                "requires_mpc": [False, False, False, False, True, False],
                 "ownership_data": [
                     {
                         "stored_with": [{1}],
@@ -143,7 +143,7 @@ def _create_cols(party_data):
             ],
             {
                 "node_order": [Create, FilterAgainstCol, Create, FilterAgainstCol, Concat, Collect],
-                "requires_mpc": [False, False, False, False, True, True],
+                "requires_mpc": [False, False, False, False, True, False],
                 "ownership_data": [
                     {
                         "stored_with": [{1}],
@@ -195,7 +195,7 @@ def _create_cols(party_data):
         ],
         {
             "node_order": [Create, Create, Concat, FilterAgainstCol, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -281,7 +281,7 @@ def test_filter_by_col(party_data, expected):
         ],
         {
             "node_order": [Create, FilterAgainstScalar, Create, FilterAgainstScalar, Concat, Collect],
-            "requires_mpc": [False, False, False, False, True, True],
+            "requires_mpc": [False, False, False, False, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -333,7 +333,7 @@ def test_filter_by_col(party_data, expected):
         ],
         {
             "node_order": [Create, FilterAgainstScalar, Create, FilterAgainstScalar, Concat, Collect],
-            "requires_mpc": [False, False, False, False, True, True],
+            "requires_mpc": [False, False, False, False, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
@@ -385,7 +385,7 @@ def test_filter_by_col(party_data, expected):
         ],
         {
             "node_order": [Create, FilterAgainstScalar, Create, FilterAgainstScalar, Concat, Collect],
-            "requires_mpc": [False, False, False, False, True, True],
+            "requires_mpc": [False, False, False, False, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
@@ -437,7 +437,7 @@ def test_filter_by_col(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Concat, FilterAgainstScalar, Collect],
-            "requires_mpc": [True, True, True, True, True],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],

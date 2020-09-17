@@ -35,6 +35,9 @@ class Index(UnaryOpNode):
         super(Index, self).__init__("index", out_rel, parent)
         self.idx_col_name = idx_col_name
 
+    def is_reversible(self):
+        return True
+
 
 class Shuffle(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode):
