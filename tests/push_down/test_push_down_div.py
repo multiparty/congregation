@@ -5,6 +5,18 @@ from congregation.comp import PushDown
 import pytest
 
 
+"""
+Tests for correct propagation of the following relation-level
+and column-level attributes after the PushDown() phase of the
+compiler has been run:
+    - DAG node order
+    - node.requires_mpc() attribute
+    - relation-level stored_with sets
+    - column-level plaintext sets
+    - column-level trust_with sets
+"""
+
+
 def _create_cols(party_data):
 
     ret = []

@@ -31,7 +31,6 @@ class OpNode(Node):
     def __init__(self, name, out_rel: Relation):
         super(OpNode, self).__init__(name)
         self.out_rel = out_rel
-        self.is_local = self.out_rel.is_local()
 
     def __str__(self):
         return f"{'*MPC*' if self.requires_mpc() else ''}{super(OpNode, self).__str__()}"

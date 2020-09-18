@@ -29,6 +29,9 @@ class Send(UnaryOpNode):
     def is_reversible(self):
         return True
 
+    def requires_mpc(self):
+        return False
+
 
 class Index(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, idx_col_name: str):
@@ -51,18 +54,22 @@ class Open(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: [OpNode, None]):
         """ Initialize Open object. """
         super(Open, self).__init__("open", out_rel, parent)
-        self.is_boundary = True
 
     def is_reversible(self):
         return True
+
+    def requires_mpc(self):
+        return False
 
 
 class Close(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: [OpNode, None]):
         super(Close, self).__init__("close", out_rel, parent)
-        self.is_boundary = True
 
     def is_reversible(self):
+        return True
+
+    def requires_mpc(self):
         return True
 
 

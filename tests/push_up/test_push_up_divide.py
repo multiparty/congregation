@@ -5,6 +5,18 @@ from congregation.comp import PushUp
 import pytest
 
 
+"""
+Tests for correct propagation of the following relation-level
+and column-level attributes after the PushUp() phase of the
+compiler has been run:
+    - DAG node order
+    - node.requires_mpc() attribute
+    - relation-level stored_with sets
+    - column-level plaintext sets
+    - column-level trust_with sets
+"""
+
+
 def _create_cols(party_data):
 
     ret = []
@@ -126,12 +138,12 @@ def test_divide(party_data, expected):
     rel_two = create("in2", cols_in_two, party_data[1]["stored_with"])
 
     cc = concat([rel_one, rel_two], "concat", party_data[0]["col_names"])
-    p = divide(cc, "mult", party_data[0]["col_names"][0], [party_data[0]["col_names"][1], 10])
+    p = divide(cc, "div", party_data[0]["col_names"][0], [party_data[0]["col_names"][1], 10])
     collect(p, {1, 2})
 
     d = Dag({rel_one, rel_two})
-    pd = PushUp()
-    pd.rewrite(d)
+    pu = PushUp()
+    pu.rewrite(d)
 
     zip_node_order = zip(d.top_sort(), expected["node_order"])
     node_order_checks = [isinstance(z[0], z[1]) for z in zip_node_order]

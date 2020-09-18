@@ -1,20 +1,9 @@
 from congregation.lang import *
 from congregation.utils import create_column
 from congregation.dag import Dag
-from congregation.comp import PushUp
+from congregation.dag.nodes.internal import Open
+from congregation.comp import InsertOpenOps
 import pytest
-
-
-"""
-Tests for correct propagation of the following relation-level
-and column-level attributes after the PushUp() phase of the
-compiler has been run:
-    - DAG node order
-    - node.requires_mpc() attribute
-    - relation-level stored_with sets
-    - column-level plaintext sets
-    - column-level trust_with sets
-"""
 
 
 def _create_cols(party_data):
@@ -50,7 +39,7 @@ def _create_cols(party_data):
             }
         ],
         {
-            "node_order": [Create, Create, Concat, SortBy, Collect],
+            "node_order": [Create, Create, Join, Open, Collect],
             "requires_mpc": [False, False, True, False, False],
             "ownership_data":[
                 {
@@ -65,18 +54,18 @@ def _create_cols(party_data):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [set(), {1}, {2}],
+                    "trust_with_sets": [set(), {1}, {2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 }
             ]
         }
@@ -97,7 +86,7 @@ def _create_cols(party_data):
             }
         ],
         {
-            "node_order": [Create, Create, Concat, SortBy, Collect],
+            "node_order": [Create, Create, Join, Open, Collect],
             "requires_mpc": [True, True, True, False, False],
             "ownership_data": [
                 {
@@ -112,24 +101,24 @@ def _create_cols(party_data):
                 },
                 {
                     "stored_with": [{1, 2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [set(), set(), set()],
+                    "trust_with_sets": [set(), set(), set()]
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 }
             ]
         }
     )
 ])
-def test_sort_by(party_data, expected):
+def test_join(party_data, expected):
 
     cols_in_one = _create_cols(party_data[0])
     cols_in_two = _create_cols(party_data[1])
@@ -137,12 +126,11 @@ def test_sort_by(party_data, expected):
     rel_one = create("in1", cols_in_one, party_data[0]["stored_with"])
     rel_two = create("in2", cols_in_two, party_data[1]["stored_with"])
 
-    cc = concat([rel_one, rel_two], "concat", party_data[0]["col_names"])
-    p = sort_by(cc, "sort", party_data[0]["col_names"][0])
+    p = join(rel_one, rel_two, "join", [party_data[0]["col_names"][0]], [party_data[1]["col_names"][0]])
     collect(p, {1, 2})
 
     d = Dag({rel_one, rel_two})
-    pd = PushUp()
+    pd = InsertOpenOps()
     pd.rewrite(d)
 
     zip_node_order = zip(d.top_sort(), expected["node_order"])

@@ -7,7 +7,8 @@ from congregation.comp.utils import *
 
 class PushDown(DagRewriter):
     """
-    TODO: Extend _rewrite_unary_default to joins, think about others
+    TODO: Extend _rewrite_unary_default to instance where
+     parent is a Join, think about others
     """
     def __init__(self):
         super(PushDown, self).__init__()

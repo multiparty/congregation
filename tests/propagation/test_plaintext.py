@@ -3,6 +3,12 @@ from congregation.utils import create_column
 import pytest
 
 
+"""
+Tests for propagation of column-level plaintext 
+sets prior to any DAG compilation work being done.
+"""
+
+
 def _create_cols(col_names, plaintext_sets):
 
     ret = []

@@ -3,6 +3,12 @@ from congregation.utils import create_column
 import pytest
 
 
+"""
+Tests for propagation of relation-level stored with 
+sets prior to any DAG compilation work being done.
+"""
+
+
 def _create_cols(col_names):
 
     ret = []

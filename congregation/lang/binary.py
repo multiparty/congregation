@@ -11,9 +11,9 @@ def cols_from_rel(output_name, start_idx: int, rel: Relation, key_col_idxs: list
     TODO: Might need to rethink how I propagate trust_with sets here. Main concern
      is whether some out_rel (non-key) column c should inherit it's parent trust_with
      set. The output column will be made up of all the data in the original column, but
-     with removals & duplications in accordance with the output of the join. Will need
-     to think more on what this (on it's own) leaks before determining how to propagate
-     trust sets. For now, it will just pass normal inheritance.
+     with removals & duplications in accordance with the output of the join. I.e. - the
+     rows that remain will leak something about the key columns from the input relation.
+     For now, though, it will just pass normal inheritance.
     """
 
     ret_cols = []

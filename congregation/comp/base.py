@@ -48,6 +48,10 @@ class DagRewriter:
                 self._rewrite_join(node)
             elif isinstance(node, Concat):
                 self._rewrite_concat(node)
+            elif isinstance(node, Open):
+                pass
+            elif isinstance(node, Close):
+                pass
             elif isinstance(node, Store):
                 self._rewrite_store(node)
             elif isinstance(node, Persist):
@@ -58,6 +62,10 @@ class DagRewriter:
                 self._rewrite_index(node)
             elif isinstance(node, Shuffle):
                 self._rewrite_shuffle(node)
+            elif isinstance(node, AggregateSumCountCol):
+                self._rewrite_aggregate_sum_count_col(node)
+            elif isinstance(node, ColSum):
+                self._rewrite_col_sum(node)
             elif isinstance(node, MemberFilter):
                 self._rewrite_member_filter(node)
             elif isinstance(node, ColumnUnion):
@@ -129,6 +137,12 @@ class DagRewriter:
         pass
 
     def _rewrite_shuffle(self, node: Shuffle):
+        pass
+
+    def _rewrite_aggregate_sum_count_col(self, node: AggregateSumCountCol):
+        pass
+
+    def _rewrite_col_sum(self, node: ColSum):
         pass
 
     def _rewrite_member_filter(self, node: MemberFilter):

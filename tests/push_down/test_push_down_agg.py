@@ -6,6 +6,20 @@ from congregation.comp import PushDown
 import pytest
 
 
+"""
+Tests for correct propagation of the following relation-level
+and column-level attributes after the PushDown() phase of the
+compiler has been run:
+    - DAG node order
+    - node.requires_mpc() attribute
+    - relation-level stored_with sets
+    - column-level plaintext sets
+    - column-level trust_with sets
+    - column ordering in cases where columns 
+    are reordered as part of the Op.
+"""
+
+
 def _create_cols(party_data):
 
     ret = []
@@ -1360,8 +1374,6 @@ def test_mean_alt_key_col(party_data, expected):
     d = Dag({rel_one, rel_two})
     pd = PushDown()
     pd.rewrite(d)
-
-    f = d.top_sort()
 
     zip_node_order = zip(d.top_sort(), expected["node_order"])
     node_order_checks = [isinstance(z[0], z[1]) for z in zip_node_order]
