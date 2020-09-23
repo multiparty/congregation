@@ -101,16 +101,11 @@ class AggregateSum(UnaryOpNode):
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
 
-        agg_col = find(self.get_in_rel().columns, self.agg_col.name)
-        if agg_col is None:
-            min_trust_set = min_trust_with_from_columns(self.group_cols)
-            min_pt_set = min_pt_set_from_cols(self.group_cols)
-        else:
-            min_trust_set = min_trust_with_from_columns(self.group_cols + [agg_col])
-            min_pt_set = min_pt_set_from_cols(self.group_cols + [agg_col])
-            self.agg_col = copy.deepcopy(agg_col)
+        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
+        min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
+        self.agg_col = temp_cols[self.agg_col.idx]
         self.agg_col.trust_with = min_trust_set
-        self.agg_col.plaintext = min_pt_set
+        self.agg_col.plaintext = min_pt
 
     def update_out_rel_cols(self):
 
@@ -146,7 +141,12 @@ class AggregateMean(UnaryOpNode):
 
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
+
+        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
+        min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
         self.agg_col = temp_cols[self.agg_col.idx]
+        self.agg_col.trust_with = min_trust_set
+        self.agg_col.plaintext = min_pt
 
     def update_out_rel_cols(self):
 
@@ -168,7 +168,12 @@ class AggregateStdDev(UnaryOpNode):
 
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
+
+        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
+        min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
         self.agg_col = temp_cols[self.agg_col.idx]
+        self.agg_col.trust_with = min_trust_set
+        self.agg_col.plaintext = min_pt
 
     def update_out_rel_cols(self):
 

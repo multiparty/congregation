@@ -1,0 +1,6 @@
+[
+  "test_insert_close_concat.py::test_concat[party_data0-expected0]",
+  "test_insert_close_concat.py::test_concat[party_data1-expected1]",
+  "test_insert_close_join.py::test_join[party_data0-expected0]",
+  "test_insert_close_join.py::test_join[party_data1-expected1]"
+]

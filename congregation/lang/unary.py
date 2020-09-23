@@ -31,13 +31,21 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: list, agg_col_n
     if agg_out_col_name is not None:
         agg_out_col.name = agg_out_col_name
 
-    out_rel_cols = [copy.deepcopy(group_col) for group_col in group_cols] + [copy.deepcopy(agg_out_col)]
-    min_pt = min_pt_set_from_cols(out_rel_cols)
-    min_trust = min_trust_with_from_columns(out_rel_cols)
-    for c in out_rel_cols:
+    # calculate min pt and trust sets for group cols
+    out_group_cols = [copy.deepcopy(group_col) for group_col in group_cols]
+    min_pt = min_pt_set_from_cols(out_group_cols)
+    min_trust = min_trust_with_from_columns(out_group_cols)
+    for c in out_group_cols:
         c.plaintext = min_pt
-        c.min_trust = min_trust
+        c.trust_with = min_trust
 
+    # calculate min pit and trust set for agg col
+    min_pt_agg_col = min_pt_set_from_cols(out_group_cols + [agg_out_col])
+    min_trust_agg_col = min_trust_with_from_columns(out_group_cols + [agg_out_col])
+    agg_out_col.plaintext = min_pt_agg_col
+    agg_out_col.trust_with = min_trust_agg_col
+
+    out_rel_cols = out_group_cols + [copy.deepcopy(agg_out_col)]
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
 
@@ -215,11 +223,18 @@ def filter_by(input_op_node: OpNode, name: str, filter_col_name: str, operator: 
         if against_col is None:
             raise Exception(f"Column {filter_against} not found in relation {in_rel.name}.")
 
-        op = FilterAgainstCol(out_rel, input_op_node, filter_col, operator, against_col)
+        min_trust = min_trust_with_from_columns([filter_col, against_col])
+        min_pt = min_pt_set_from_cols([filter_col, against_col])
+        out_rel.columns[filter_col.idx].trust_with = min_trust
+        out_rel.columns[filter_col.idx].plaintext = min_pt
+        out_rel.columns[against_col.idx].trust_with = min_trust
+        out_rel.columns[against_col.idx].plaintext = min_pt
+
+        op = FilterAgainstCol(out_rel, input_op_node, copy.deepcopy(filter_col), operator, copy.deepcopy(against_col))
         input_op_node.children.add(op)
 
     elif isinstance(filter_against, int):
-        op = FilterAgainstScalar(out_rel, input_op_node, filter_col, operator, filter_against)
+        op = FilterAgainstScalar(out_rel, input_op_node, copy.deepcopy(filter_col), operator, filter_against)
         input_op_node.children.add(op)
 
     else:

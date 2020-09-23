@@ -18,11 +18,7 @@ class PushUp(DagRewriter):
         """
 
         par = next(iter(node.parents))
-        children_mpc = any([c.requires_mpc() for c in node.children])
-        if node.is_reversible() \
-                and node.is_lower_boundary() \
-                and not par.is_root() \
-                and not children_mpc:
+        if node.is_reversible() and node.is_lower_boundary() and not par.is_root():
             temp_sw = copy.copy(node.out_rel.stored_with)
             flat_sw = [{s} for c in temp_sw for s in c]
             sw_to_set = set().union(*flat_sw)

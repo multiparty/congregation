@@ -1,0 +1,8 @@
+[
+  "test_insert_open_binary.py::test_join[party_data0-expected0]",
+  "test_insert_open_binary.py::test_join[party_data1-expected1]",
+  "test_insert_open_nary.py::test_concat[party_data0-expected0]",
+  "test_insert_open_nary.py::test_concat[party_data1-expected1]",
+  "test_insert_open_unary.py::test_project[party_data0-expected0]",
+  "test_insert_open_unary.py::test_project[party_data1-expected1]"
+]

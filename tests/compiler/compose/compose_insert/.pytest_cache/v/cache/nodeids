@@ -1,0 +1,12 @@
+[
+  "test_compose_insert_concat.py::test_concat[party_data0-expected0]",
+  "test_compose_insert_concat.py::test_concat[party_data1-expected1]",
+  "test_compose_insert_concat.py::test_concat_composite[party_data0-expected0]",
+  "test_compose_insert_concat.py::test_concat_composite[party_data1-expected1]",
+  "test_compose_insert_join.py::test_join[party_data0-expected0]",
+  "test_compose_insert_join.py::test_join[party_data1-expected1]",
+  "test_compose_insert_join.py::test_join_composite[party_data0-expected0]",
+  "test_compose_insert_join.py::test_join_composite[party_data1-expected1]",
+  "test_compose_insert_unary.py::test_concat[party_data0-expected0]",
+  "test_compose_insert_unary.py::test_concat[party_data1-expected1]"
+]

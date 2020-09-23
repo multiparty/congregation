@@ -1,0 +1,19 @@
+[
+  "test_project.py::test_project_not_reversible[party_data0-expected0]",
+  "test_push_up_divide.py::test_divide[party_data0-expected0]",
+  "test_push_up_divide.py::test_divide[party_data1-expected1]",
+  "test_push_up_divide.py::test_divide_push_composition[party_data0-expected0]",
+  "test_push_up_divide.py::test_divide_push_composition[party_data1-expected1]",
+  "test_push_up_multiply.py::test_multiply_not_reversible[party_data0-expected0]",
+  "test_push_up_multiply.py::test_multiply_not_reversible[party_data1-expected1]",
+  "test_push_up_multiply.py::test_multiply_reversible[party_data0-expected0]",
+  "test_push_up_multiply.py::test_multiply_reversible[party_data1-expected1]",
+  "test_push_up_project.py::test_project_not_reversible[party_data0-expected0]",
+  "test_push_up_project.py::test_project_not_reversible[party_data1-expected1]",
+  "test_push_up_project.py::test_project_not_reversible[party_data2-expected2]",
+  "test_push_up_project.py::test_project_not_reversible[party_data3-expected3]",
+  "test_push_up_project.py::test_project_reversible[party_data0-expected0]",
+  "test_push_up_project.py::test_project_reversible[party_data1-expected1]",
+  "test_push_up_sort_by.py::test_sort_by[party_data0-expected0]",
+  "test_push_up_sort_by.py::test_sort_by[party_data1-expected1]"
+]
