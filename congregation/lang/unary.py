@@ -186,10 +186,13 @@ def limit(input_op_node: OpNode, name: str, limit_num: int):
     return op
 
 
-def distinct(input_op_node: OpNode, name: str, selected_col_names: list):
+def distinct(input_op_node: OpNode, name: str, selected_col_names: [list, None] = None):
 
     in_rel = input_op_node.out_rel
-    selected_cols = [find(in_rel.columns, col_name) for col_name in selected_col_names]
+    if selected_col_names is None:
+        selected_cols = in_rel.columns
+    else:
+        selected_cols = [find(in_rel.columns, col_name) for col_name in selected_col_names]
 
     if not all([col is not None for col in selected_cols]):
         raise Exception(
