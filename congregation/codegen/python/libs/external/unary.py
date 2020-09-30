@@ -1,40 +1,18 @@
 import math
 from typing import List
-
-
-def write_rel(output_dir: str, rel_name: str, rel: list, header: list):
-
-    print(f"Writing python job output to {output_dir}/{rel_name}")
-    with open(f"{output_dir}{rel_name}.csv", "w") as f:
-        f.write(f"{','.join(header)}\n")
-        rows_formatted = [",".join(str(v) for v in row) for row in rel]
-        f.write("\n".join(r for r in rows_formatted))
-
-
-def read_rel(path_to_rel: str):
-
-    rows = []
-    with open(path_to_rel, "r") as f:
-        itr = iter(f.readlines())
-        for row in itr:
-            try:
-                # TODO: not necessarily ints we're working with
-                rows.append([int(v) for v in row.split(",")])
-            except ValueError:
-                # skip header row
-                pass
-    return rows
+from copy import deepcopy
+from congregation.codegen.python.libs.utils import *
 
 
 def create(path_to_rel: str):
     return read_rel(path_to_rel)
 
 
-def aggregate_count(rel: list, group_cols_idx: list):
+def aggregate_count(rel: list, group_cols: list):
 
     acc = {}
     for row in rel:
-        k = tuple(row[idx] for idx in group_cols_idx)
+        k = tuple(row[idx] for idx in group_cols)
         if k in acc:
             acc[k] += 1
         else:
@@ -47,11 +25,11 @@ def aggregate_count(rel: list, group_cols_idx: list):
     return ret
 
 
-def aggregate_sum(rel: list, group_cols_idx: list, agg_col: int):
+def aggregate_sum(rel: list, group_cols: list, agg_col: int):
 
     acc = {}
     for row in rel:
-        k = tuple(row[idx] for idx in group_cols_idx)
+        k = tuple(row[idx] for idx in group_cols)
         if k in acc:
             acc[k] += row[agg_col]
         else:
@@ -64,11 +42,11 @@ def aggregate_sum(rel: list, group_cols_idx: list, agg_col: int):
     return ret
 
 
-def aggregate_mean(rel: list, group_cols_idx: list, agg_col: int):
+def aggregate_mean(rel: list, group_cols: list, agg_col: int):
 
     acc = {}
     for row in rel:
-        k = tuple(row[idx] for idx in group_cols_idx)
+        k = tuple(row[idx] for idx in group_cols)
         if k in acc:
             acc[k]["__SUM__"] += row[agg_col]
             acc[k]["__COUNT__"] += 1
@@ -193,38 +171,93 @@ def distinct(rel: list, selected_cols: list):
     return ret
 
 
-a = [[1,2,3], [4,5,6], [1,2,3], [4,5,6], [1,2,1]]
-# b = aggregate_count(a, [1,2])
-# b = aggregate_sum(a, [0, 1], 2)
-# b = aggregate_mean(a, [0,1], 2)
-# b = multiply(a, [1, 2], [1], 0)
-# b = limit(a, 3)
-b = distinct(a, [0, 1])
+def _filter_against_col_lt(rel: list, filter_col: int, against_col: int):
 
-# c = [[100, 20, 4], [200, 5, 2]]
-# o = [
-#     {
-#         "v": 1,
-#         "__TYPE__": "col"
-#     },
-#     {
-#         "v": 10,
-#         "__TYPE__": "val"
-#     },
-#     {
-#         "v": 2,
-#         "__TYPE__": "col"
-#     }
-# ]
-# b = divide(c, o, 3)
+    ret = []
+    for row in rel:
+        if row[filter_col] < row[against_col]:
+            ret.append(row)
+    return ret
 
-print(b)
 
-"""
-EXTERNAL UNARY:
-AggregateStdDev
-FilterAgainstCol
-FilterAgainstScalar
-SortBy
-NumRows
-"""
+def _filter_against_col_gt(rel: list, filter_col: int, against_col: int):
+
+    ret = []
+    for row in rel:
+        if row[filter_col] > row[against_col]:
+            ret.append(row)
+    return ret
+
+
+def _filter_against_col_eq(rel: list, filter_col: int, against_col: int):
+
+    ret = []
+    for row in rel:
+        if row[filter_col] == row[against_col]:
+            ret.append(row)
+    return ret
+
+
+def filter_against_col(rel: list, filter_col: int, against_col: int, operator: str):
+
+    if operator == "<":
+        return _filter_against_col_lt(rel, filter_col, against_col)
+    elif operator == ">":
+        return _filter_against_col_gt(rel, filter_col, against_col)
+    elif operator == "==":
+        return _filter_against_col_eq(rel, filter_col, against_col)
+    else:
+        raise Exception(f"Unknown operator: {operator}")
+
+
+def _filter_against_scalar_lt(rel: list, filter_col: int, scalar: [int, float]):
+
+    ret = []
+    for row in rel:
+        if row[filter_col] < scalar:
+            ret.append(row)
+    return ret
+
+
+def _filter_against_scalar_gt(rel: list, filter_col: int, scalar: [int, float]):
+
+    ret = []
+    for row in rel:
+        if row[filter_col] > scalar:
+            ret.append(row)
+    return ret
+
+
+def _filter_against_scalar_eq(rel: list, filter_col: int, scalar: [int, float]):
+
+    ret = []
+    for row in rel:
+        if row[filter_col] == scalar:
+            ret.append(row)
+    return ret
+
+
+def filter_against_scalar(rel: list, filter_col: int, scalar: [int, float], operator: str):
+
+    if operator == "<":
+        return _filter_against_scalar_lt(rel, filter_col, scalar)
+    elif operator == ">":
+        return _filter_against_scalar_gt(rel, filter_col, scalar)
+    elif operator == "==":
+        return _filter_against_scalar_eq(rel, filter_col, scalar)
+    else:
+        raise Exception(f"Unknown operator: {operator}")
+
+
+def sort_by(rel: list, sort_by_col: int, increasing: bool = True):
+
+    ret = deepcopy(rel)
+    if increasing:
+        ret.sort(key=lambda r: r[sort_by_col])
+    else:
+        ret.sort(key=lambda r: r[sort_by_col], reverse=True)
+    return ret
+
+
+def num_rows(rel: list):
+    return [[len(rel)]]
