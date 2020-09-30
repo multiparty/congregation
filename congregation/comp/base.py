@@ -49,9 +49,9 @@ class DagRewriter:
             elif isinstance(node, Concat):
                 self._rewrite_concat(node)
             elif isinstance(node, Open):
-                pass
+                self._rewrite_open(node)
             elif isinstance(node, Close):
-                pass
+                self._rewrite_close(node)
             elif isinstance(node, Store):
                 self._rewrite_store(node)
             elif isinstance(node, Persist):
@@ -122,6 +122,12 @@ class DagRewriter:
         pass
 
     def _rewrite_concat(self, node: Concat):
+        pass
+
+    def _rewrite_open(self, node: Open):
+        pass
+
+    def _rewrite_close(self, node: Close):
         pass
 
     def _rewrite_store(self, node: Store):

@@ -7,7 +7,7 @@ from congregation.utils import *
 
 
 class Store(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode):
+    def __init__(self, out_rel: Relation, parent: [OpNode, None]):
         super(Store, self).__init__("store", out_rel, parent)
 
     def is_reversible(self):
