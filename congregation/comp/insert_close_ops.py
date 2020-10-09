@@ -1,7 +1,7 @@
 import copy
 from congregation.dag.nodes import *
 from congregation.dag.nodes.internal import *
-from congregation.comp.base import DagRewriter
+from congregation.comp.rewriter import DagRewriter
 from congregation.comp.utils import *
 
 

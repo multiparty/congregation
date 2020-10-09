@@ -1,5 +1,5 @@
 import copy
-from congregation.dag.nodes.base import OpNode
+from congregation.dag.nodes.node import OpNode
 from congregation.datasets.relation import Relation
 from congregation.utils import *
 

@@ -1,4 +1,4 @@
-from congregation.job.base import Job
+from congregation.job.job import Job
 
 
 class JiffJob(Job):

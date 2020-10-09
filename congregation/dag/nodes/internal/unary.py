@@ -1,5 +1,5 @@
 from congregation.dag.nodes import UnaryOpNode
-from congregation.dag.nodes.base import OpNode
+from congregation.dag.nodes.node import OpNode
 from congregation.dag.nodes import *
 from congregation.datasets import Relation
 from congregation.datasets import Column

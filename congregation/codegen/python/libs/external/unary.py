@@ -4,8 +4,8 @@ from copy import deepcopy
 from congregation.codegen.python.libs.utils import *
 
 
-def create(path_to_rel: str):
-    return read_rel(path_to_rel)
+def create(path_to_rel: str, use_floats: [bool, None] = False):
+    return read_rel(path_to_rel, use_floats=use_floats)
 
 
 def aggregate_count(rel: list, group_cols: list):
@@ -107,15 +107,15 @@ def multiply(rel: list, col_operands: list, scalar_operands: list, target_col_id
         return _multiply(rel, col_operands, scalar_operands, target_col_idx)
 
 
-def _divide_list(l: list):
+def _divide_list(li: list):
 
-    if len(l) == 0:
+    if len(li) == 0:
         return 1
-    elif len(l) == 1:
-        return l[0]
+    elif len(li) == 1:
+        return li[0]
     else:
-        ret = l[0]
-        for i in l[1:]:
+        ret = li[0]
+        for i in li[1:]:
             ret = ret / i
         return ret
 
@@ -261,3 +261,7 @@ def sort_by(rel: list, sort_by_col: int, increasing: bool = True):
 
 def num_rows(rel: list):
     return [[len(rel)]]
+
+
+def collect(rel: list, header: list, output_path: str):
+    write_rel(output_path, rel, header)

@@ -1,24 +1,35 @@
 
 
-def write_rel(output_dir: str, rel_name: str, rel: list, header: list):
+def write_rel(output_path: str, rel: list, header: list, use_floats: [bool, None] = False):
 
-    print(f"Writing python job output to {output_dir}/{rel_name}")
-    with open(f"{output_dir}{rel_name}.csv", "w") as f:
+    print(f"Writing python job output to {output_path}")
+    with open(f"{output_path}.csv", "w") as f:
+
         f.write(f"{','.join(header)}\n")
-        rows_formatted = [",".join(str(v) for v in row) for row in rel]
+        if not use_floats:
+            rows_formatted = [",".join(str(int(v)) for v in row) for row in rel]
+        else:
+            rows_formatted = [",".join(str(float(v)) for v in row) for row in rel]
         f.write("\n".join(r for r in rows_formatted))
 
 
-def read_rel(path_to_rel: str):
+def read_rel(input_path: str, use_floats: [bool, None] = False):
 
     rows = []
-    with open(path_to_rel, "r") as f:
+    print(f"Python reading input from {input_path}")
+    with open(input_path, "r") as f:
         itr = iter(f.readlines())
+        header = next(itr)
+        print(f"Skipping header: {header}")
         for row in itr:
             try:
-                # TODO: not necessarily ints we're working with
-                rows.append([int(v) for v in row.split(",")])
+                if not use_floats:
+                    rows.append([int(float(v)) for v in row.split(",")])
+                else:
+                    rows.append([float(v) for v in row.split(",")])
             except ValueError:
                 # skip header row
+                typ_str = "float" if use_floats else "int"
+                print(f"Encountered an invalid value for {typ_str} conversion in the following row: {row}")
                 pass
     return rows

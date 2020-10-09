@@ -1,5 +1,5 @@
 import copy
-from congregation.comp.base import DagRewriter
+from congregation.comp.rewriter import DagRewriter
 from congregation.comp.utils import *
 
 

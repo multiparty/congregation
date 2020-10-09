@@ -1,4 +1,4 @@
-from congregation.codegen.base import CodeGen
+from congregation.codegen.codegen import CodeGen
 from congregation.dag import Dag
 import os
 import pystache
@@ -12,5 +12,3 @@ class JiffCodeGen(CodeGen):
     def generate(self, job_name: str):
         """ TODO """
 
-    def write_code(self, jobe_name: str, code: str):
-        """ TODO """

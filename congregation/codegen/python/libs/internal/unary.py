@@ -4,12 +4,12 @@ from copy import deepcopy
 from congregation.codegen.python.libs.utils import *
 
 
-def store(rel: list, header: list, rel_name: str, output_path: str):
-    write_rel(output_path, rel_name, rel, header)
+def store(rel: list, header: list, output_path: str):
+    write_rel(output_path, rel, header)
 
 
-def persist(rel: list, header: list, rel_name: str, output_path: str):
-    write_rel(output_path, rel_name, rel, header)
+def persist(rel: list, header: list, output_path: str):
+    write_rel(output_path, rel, header)
 
 
 def send(rel: list, sock: socket):

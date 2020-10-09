@@ -111,8 +111,7 @@ def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: l
 
     target_col = find(out_rel_cols, target_col_name)
     if target_col is None:
-
-        cols_only = [col for col in operands if isinstance(col, Column)]
+        cols_only = [c for c in operands if isinstance(c, Column)]
         min_trust_set = min_trust_with_from_columns(cols_only)
         min_pt_set = min_pt_set_from_cols(cols_only)
         col_type = infer_output_type(cols_only)
@@ -121,7 +120,7 @@ def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: l
     else:
         # need to re-compute target column's trust set to reflect min trust set across
         # all target column + all operand columns. same for pt
-        all_cols = [col for col in operands if isinstance(col, Column)] + [target_col]
+        all_cols = [c for c in operands if isinstance(c, Column)] + [target_col]
         min_trust_set = min_trust_with_from_columns(all_cols)
         min_pt_set = min_pt_set_from_cols(all_cols)
         target_col.trust_with = min_trust_set
@@ -295,7 +294,7 @@ def collect(input_op_node: OpNode, target_parties: set):
         c.trust_with = c.trust_with.union(target_parties)
         c.plaintext = c.plaintext.union(target_parties)
 
-    out_rel = Relation(f"{in_rel.name}->collect", out_rel_cols, [{p} for p in target_parties])
+    out_rel = Relation(f"{in_rel.name}_collect", out_rel_cols, [{p} for p in target_parties])
     out_rel.update_columns()
     op = Collect(out_rel, input_op_node)
     input_op_node.children.add(op)

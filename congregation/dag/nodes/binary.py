@@ -1,4 +1,4 @@
-from congregation.dag.nodes.base import OpNode
+from congregation.dag.nodes.node import OpNode
 from congregation.datasets import Relation
 from congregation.datasets import Column
 
