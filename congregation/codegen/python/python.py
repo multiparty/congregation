@@ -3,13 +3,14 @@ from congregation.dag import Dag
 from congregation.dag.nodes import *
 from congregation.dag.nodes.internal import *
 from congregation.job.python import PythonJob
+from congregation.config import CodeGenConfig
 import os
 import pystache
 space = "    "
 
 
 class PythonCodeGen(CodeGen):
-    def __init__(self, config, dag: Dag):
+    def __init__(self, config: CodeGenConfig, dag: Dag):
         super(PythonCodeGen, self).__init__(config, dag)
         self.templates_dir = f"{os.path.dirname(os.path.realpath(__file__))}/templates/"
 
@@ -28,7 +29,7 @@ class PythonCodeGen(CodeGen):
         return pystache.render(template, data)
 
     def _generate_job(self, job_name: str):
-        return PythonJob(job_name, self.config.code_dir)
+        return PythonJob(job_name, self.config.code_path)
 
     def _generate_create(self, node: Create):
         return f"\n{space}{node.out_rel.name} = " \
@@ -155,10 +156,10 @@ class PythonCodeGen(CodeGen):
                f"shuffle({node.get_in_rel().name})"
 
     def _generate_open(self, node: Open):
-        return ""
+        raise Exception("Open node encountered during Python code generation.")
 
     def _generate_close(self, node: Close):
-        return ""
+        raise Exception("Close node encountered during Python code generation.")
 
     def _generate_aggregate_sum_count_col(self, node: AggregateSumCountCol):
 

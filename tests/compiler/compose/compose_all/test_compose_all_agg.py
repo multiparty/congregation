@@ -79,6 +79,4 @@ def test_agg(party_data, expected):
     io = InsertOpenOps()
     io.rewrite(d)
 
-    f = d.top_sort()
-
     compare_to_expected(d, expected)

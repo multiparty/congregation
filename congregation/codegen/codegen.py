@@ -1,11 +1,12 @@
 from congregation.dag import Dag
 from congregation.dag.nodes import *
 from congregation.dag.nodes.internal import *
+from congregation.config import CodeGenConfig
 import os
 
 
 class CodeGen:
-    def __init__(self, config, dag: Dag):
+    def __init__(self, config: CodeGenConfig, dag: Dag):
         self.config = config
         self.dag = dag
 
@@ -15,8 +16,8 @@ class CodeGen:
 
     def write_code(self, job_name: str, code: str, filename: str):
 
-        os.makedirs(f"{self.config.code_dir}/{job_name}", exist_ok=True)
-        code_file = open(f"{self.config.code_dir}/{job_name}/{filename}", "w")
+        os.makedirs(f"{self.config.code_path}/{job_name}", exist_ok=True)
+        code_file = open(f"{self.config.code_path}/{job_name}/{filename}", "w")
         code_file.write(code)
         code_file.close()
 
