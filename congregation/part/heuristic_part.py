@@ -1,5 +1,6 @@
 from congregation.dag import Dag
 from congregation.dag.nodes import *
+from congregation.dag.nodes.internal import *
 from congregation.comp.utils.dag import disconnect_from_children
 import copy
 
@@ -15,9 +16,8 @@ class HeuristicPart:
         - that compute parties between different partitions flip
           in a "requires mpc" / "does not require mpc" pattern,
           i.e. - there are no sequential partitions that require
-          mpc between some set of compute parties, and then those
-          shares are passed to be computed over by some different
-          (possibly overlapping) set of compute parties.
+          mpc between different (possibly overlapping) sets of
+          compute parties
     """
     def __init__(
             self,
@@ -35,15 +35,13 @@ class HeuristicPart:
         next_dag = copy.deepcopy(self.dag)
 
         iterations = 0
+        candidate_roots = set()
         while next_dag.roots:
 
             if iterations >= iteration_limit:
                 raise Exception("Maximum iterations reached while partitioning.")
 
-            # TODO: this needs to return the next partition
-            # TODO: this also needs to assign new roots to the DAG
-            #  (if there are none left) before returning the partition
-            next_partition = self.get_next_partition(next_dag)
+            next_partition, candidate_roots = self.get_next_partition(next_dag, candidate_roots)
             if next_partition is None:
                 break
             ret.append(next_partition)
@@ -51,24 +49,12 @@ class HeuristicPart:
             iterations += 1
         print(f"Successfully partitioned DAG into {len(ret)} after {iterations} iterations.")
 
-        return ret
+        return [(d, self.resolve_framework(d)) for d in ret]
 
-    def get_next_partition(self, dag: Dag):
-        """
-        TODO: This needs to add roots to roots_in_partition
-            - once a root is added to roots_in_partition, we disconnect it
-            from the parent DAG. While disconnecting it, add it's children
-            to candidate_roots set
-            - then, iterate over remaining roots of the parent DAG to see
-            if they belong to this partition
-            - if no roots are left in the parent DAG before returning the
-            partition, assign candidate_roots to parent DAG's roots set
-        """
+    def get_next_partition(self, dag: Dag, candidate_roots: set):
 
         # roots of returned partition
         roots_in_partition = set()
-        # roots to assign if this partition exhausts all remaining roots
-        candidate_roots = set()
 
         # there will always be a next root, bc of while loop in parent method
         next_root = dag.roots.pop()
@@ -78,8 +64,10 @@ class HeuristicPart:
             # can assume these amount to a single DAG because we assume a single collect() node
             candidate_roots.add(r)
 
-        for r in dag.roots:
+        remaining_available_roots = list(dag.roots)
+        for r in remaining_available_roots:
             if r.out_rel.stored_with == next_root.out_rel.stored_with:
+                dag.roots.remove(r)
                 possible_roots = self._get_next_partition(r, next_root.requires_mpc())
                 roots_in_partition.add(r)
                 for rr in possible_roots:
@@ -87,10 +75,17 @@ class HeuristicPart:
 
         if not dag.roots and candidate_roots:
             dag.roots = candidate_roots
+            return Dag(roots_in_partition), set()
 
-        return Dag(roots_in_partition)
+        return Dag(roots_in_partition), candidate_roots
 
     def _get_next_partition(self, node: OpNode, requires_mpc: bool):
+        """
+        This method can only handle cases where, if a node has multiple
+        children and is an upper / lower boundary, it is a boundary
+        with respect to all of it's child nodes and not just a subset of
+        them.
+        """
 
         if len(node.children) > 1:
             raise Exception("Can't partition DAG with nodes that have more than one child.")
@@ -98,28 +93,12 @@ class HeuristicPart:
         if node.children:
             c = next(iter(node.children))
             if not (c.requires_mpc() == requires_mpc):
-                if requires_mpc:
-                    return self._handle_disconnect_from_mpc(node)
-                else:
-                    return self._handle_disconnect_to_mpc(node)
+                disconnected_children = disconnect_from_children(node)
+                return disconnected_children
             else:
                 return self._get_next_partition(c, requires_mpc)
         else:
             return []
-
-    @staticmethod
-    def _handle_disconnect_to_mpc(node: OpNode):
-        # TODO: do insert store/read shit too
-
-        disconnected_children = disconnect_from_children(node)
-        return disconnected_children
-
-    @staticmethod
-    def _handle_disconnect_from_mpc(node: OpNode):
-        # TODO: do insert store/read shit too
-
-        disconnected_children = disconnect_from_children(node)
-        return disconnected_children
 
     def resolve_framework(self, dag: Dag):
 
@@ -132,6 +111,3 @@ class HeuristicPart:
             return self.mpc_framework
         else:
             return self.local_framework
-
-
-

@@ -9,15 +9,13 @@ from congregation.dag import Dag
 
 def compile_dag(d: Dag):
 
-    pd = PushDown()
-    pu = PushUp()
-    ic = InsertCloseOps()
-    io = InsertOpenOps()
-    ir = InsertReadOps()
-    iso = InsertStoreOps()
-    pd.rewrite(d)
-    pu.rewrite(d)
-    ic.rewrite(d)
-    io.rewrite(d)
-    ir.rewrite(d)
-    iso.rewrite(d)
+    steps = [
+        PushDown(),
+        PushUp(),
+        InsertCloseOps(),
+        InsertOpenOps(),
+        InsertReadOps(),
+        InsertStoreOps()
+    ]
+    for s in steps:
+        s.rewrite(d)
