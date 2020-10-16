@@ -6,6 +6,18 @@ from congregation.dag.nodes import UnaryOpNode
 from congregation.dag.nodes.internal import *
 
 
+def disconnect_from_children(node: OpNode):
+
+    ret_children = []
+    children = list(node.children)
+    for c in children:
+        node.children.remove(c)
+        c.parents.remove(node)
+        ret_children.append(c)
+
+    return ret_children
+
+
 def remove_between(parent: OpNode, child: OpNode, to_remove: OpNode):
     """
     TODO: extend to general case (currently limited to UnaryOpNode)

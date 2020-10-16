@@ -30,7 +30,7 @@ and InsertOpenOps phases of the compiler have been run:
         ],
         {
             "node_order": [Create, AggregateMean, Open, Divide, Collect],
-            "requires_mpc": [True, True, False, False, False],
+            "requires_mpc": [True, True, True, False, False],
             "ownership_data":[
                 {
                     "stored_with": [{1, 2}],

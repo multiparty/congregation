@@ -36,7 +36,7 @@ and InsertOpenOps phases of the compiler have been run:
         ],
         {
             "node_order": [Create, Close, Create, Close, Join, Open, Collect],
-            "requires_mpc": [False, True, False, True, True, False, False],
+            "requires_mpc": [False, True, False, True, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -93,7 +93,7 @@ and InsertOpenOps phases of the compiler have been run:
         ],
         {
             "node_order": [Create, Create, Join, Open, Collect],
-            "requires_mpc": [True, True, True, False, False],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -140,7 +140,7 @@ and InsertOpenOps phases of the compiler have been run:
         ],
         {
             "node_order": [Create, Close, Create, Close, Join, Open, Collect],
-            "requires_mpc": [False, True, False, True, True, False, False],
+            "requires_mpc": [False, True, False, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1}],
@@ -223,7 +223,7 @@ def test_join(party_data, expected):
         ],
         {
             "node_order": [Create, Close, Create, Close, Join, Open, Divide, Collect],
-            "requires_mpc": [False, True, False, True, True, False, False, False],
+            "requires_mpc": [False, True, False, True, True, True, False, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -285,7 +285,7 @@ def test_join(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Join, Open, Divide, Collect],
-            "requires_mpc": [True, True, True, False, False, False],
+            "requires_mpc": [True, True, True, True, False, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -364,7 +364,7 @@ def test_join_composite(party_data, expected):
         ],
         {
             "node_order": [Create, Close, Create, Close, Join, AggregateMean, Open, Multiply, Collect],
-            "requires_mpc": [False, True, False, True, True, True, False, False, False],
+            "requires_mpc": [False, True, False, True, True, True, True, False, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -431,7 +431,7 @@ def test_join_composite(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Join, AggregateMean, Open, Multiply, Collect],
-            "requires_mpc": [True, True, True, True, False, False, False],
+            "requires_mpc": [True, True, True, True, True, False, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],

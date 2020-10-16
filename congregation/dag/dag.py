@@ -5,8 +5,8 @@ from congregation.dag.nodes.unary import Collect
 class Dag:
     def __init__(self, roots: set):
         self.roots = roots
-        if not self.is_valid_workflow():
-            raise Exception(f"Not a dag: workflow must terminate with a single Collect node.")
+        # if not self.is_valid_workflow():
+        #     raise Exception(f"Not a dag: workflow must terminate with a single Collect node.")
 
     def __str__(self):
         return "\n".join(str(node) for node in self.top_sort())

@@ -14,6 +14,17 @@ class Store(UnaryOpNode):
         return True
 
 
+class Read(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: [OpNode, None]):
+        super(Read, self).__init__("read", out_rel, parent)
+
+    def is_reversible(self):
+        return True
+
+    def requires_mpc(self):
+        return False
+
+
 class Persist(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode):
         super(Persist, self).__init__("persist", out_rel, parent)
@@ -59,7 +70,7 @@ class Open(UnaryOpNode):
         return True
 
     def requires_mpc(self):
-        return False
+        return True
 
 
 class Close(UnaryOpNode):

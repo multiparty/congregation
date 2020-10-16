@@ -36,7 +36,7 @@ and the InsertOpenOps() phases of the compiler have been run:
         ],
         {
             "node_order": [Create, Close, Create, Close, Concat, Open, Collect],
-            "requires_mpc": [False, True, False, True, True, False, False],
+            "requires_mpc": [False, True, False, True, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -93,7 +93,7 @@ and the InsertOpenOps() phases of the compiler have been run:
         ],
         {
             "node_order": [Create, Create, Concat, Open, Collect],
-            "requires_mpc": [True, True, True, False, False],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -163,7 +163,7 @@ def test_concat(party_data, expected):
         {
             "node_order":
                 [Create, Create, Divide, Close, Multiply, Close, Concat, AggregateSum, Project, Open, Collect],
-            "requires_mpc": [False, False, False, True, False, True, True, True, True, False, False],
+            "requires_mpc": [False, False, False, True, False, True, True, True, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -240,7 +240,7 @@ def test_concat(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Divide, Multiply, Concat, AggregateSum, Project, Open, Collect],
-            "requires_mpc": [True, True, True, True, True, True, True, False, False],
+            "requires_mpc": [True, True, True, True, True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],

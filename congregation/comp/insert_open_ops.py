@@ -13,7 +13,6 @@ class InsertOpenOps(DagRewriter):
     def _rewrite_default(node: [UnaryOpNode, NaryOpNode]):
 
         if node.is_lower_boundary():
-
             out_rel = copy.deepcopy(node.out_rel)
             out_stored_with = out_rel.stored_with
             flat_sw = [{s} for c in out_stored_with for s in c]

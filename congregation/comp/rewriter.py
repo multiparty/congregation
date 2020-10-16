@@ -54,6 +54,8 @@ class DagRewriter:
                 self._rewrite_close(node)
             elif isinstance(node, Store):
                 self._rewrite_store(node)
+            elif isinstance(node, Read):
+                self._rewrite_read(node)
             elif isinstance(node, Persist):
                 self._rewrite_persist(node)
             elif isinstance(node, Send):
@@ -131,6 +133,9 @@ class DagRewriter:
         pass
 
     def _rewrite_store(self, node: Store):
+        pass
+
+    def _rewrite_read(self, node: Read):
         pass
 
     def _rewrite_persist(self, node: Persist):

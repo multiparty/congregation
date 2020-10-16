@@ -36,7 +36,7 @@ of the compiler has been run:
         ],
         {
             "node_order": [Create, Create, Concat, Project, Open, Collect],
-            "requires_mpc": [False, False, True, True, False, False],
+            "requires_mpc": [False, False, True, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -88,7 +88,7 @@ of the compiler has been run:
         ],
         {
             "node_order": [Create, Create, Concat, Project, Open, Collect],
-            "requires_mpc": [True, True, True, True, False, False],
+            "requires_mpc": [True, True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],

@@ -36,7 +36,7 @@ and InsertOpenOps phases of the compiler have been run:
         ],
         {
             "node_order": [Create, Close, Create, Close, Concat, Open, Collect],
-            "requires_mpc": [False, True, False, True, True, False, False],
+            "requires_mpc": [False, True, False, True, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -93,7 +93,7 @@ and InsertOpenOps phases of the compiler have been run:
         ],
         {
             "node_order": [Create, Create, Concat, Open, Collect],
-            "requires_mpc": [True, True, True, False, False],
+            "requires_mpc": [True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -180,7 +180,7 @@ def test_concat(party_data, expected):
                 Open,
                 Collect
             ],
-            "requires_mpc": [False, False, False, False, True, False, False, True, True, True, True, False, False],
+            "requires_mpc": [False, False, False, False, True, False, False, True, True, True, True, True, False],
             "ownership_data":[
                 {
                     "stored_with": [{1}],
@@ -267,7 +267,7 @@ def test_concat(party_data, expected):
         ],
         {
             "node_order": [Create, Create, Concat, Multiply, AggregateSum, Project, Open, Collect],
-            "requires_mpc": [True, True, True, True, True, True, False, False],
+            "requires_mpc": [True, True, True, True, True, True, True, False],
             "ownership_data": [
                 {
                     "stored_with": [{1, 2}],
@@ -377,7 +377,7 @@ def test_concat_composite(party_data, expected):
                 False, False, True,
                 False, False, True,
                 True, True, True,
-                False, False
+                True, False
             ],
             "ownership_data":[
                 {
@@ -498,7 +498,7 @@ def test_concat_composite(party_data, expected):
             "requires_mpc": [
                 True, True, True,
                 True, True, True,
-                True, False, False
+                True, True, False
             ],
             "ownership_data":[
                 {
@@ -701,7 +701,7 @@ def test_concat_composite_three_party_agg_sum(party_data, expected):
                 False, False, True,
                 False, False, True,
                 False, False, True,
-                True, True, False, False
+                True, True, True, False
             ],
             "ownership_data": [
                 {
