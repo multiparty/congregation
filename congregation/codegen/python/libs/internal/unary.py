@@ -29,6 +29,7 @@ def index(rel: list):
 def shuffle(rel: list):
 
     ret = deepcopy(rel)
+    # TODO: temporarily using python random lib, fix later
     random.shuffle(ret)
     return ret
 

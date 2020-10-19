@@ -262,3 +262,348 @@ def test_multiply_new_col(path_to_rel: str, use_floats: bool, expected: list):
 
     assert mult == expected
 
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [[0.16666666666666666, 2, 3], [0.3333333333333333, 5, 6], [0.3888888888888889, 8, 9]]
+    ),
+    (
+        f"{inputs_path}/rel_one.csv",
+        True,
+        [[0.16666666666666666, 2.0, 3.0], [0.3333333333333333, 5.0, 6.0], [0.3888888888888889, 8.0, 9.0]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        False,
+        [[0.08333333333333333, 3, 6], [0.4375, 1, 8]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        True,
+        [[0.1044776119402985, 3.2, 6.7], [0.3932584269662921, 1.6, 8.9]]
+    ),
+    (
+        f"{inputs_path}/rel_invalid.csv",
+        False,
+        [[0.25, 3, 4]]
+
+    ),
+    (
+        f"{inputs_path}/rel_invalid.csv",
+        True,
+        [[0.25, 3.0, 4.0]]
+    )
+])
+def test_divide(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    ops = [
+        {"__TYPE__": "col", "v": 2},
+        {"__TYPE__": "scal", "v": 2}
+    ]
+    div = divide(r, ops, 0)
+
+    assert div == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [[1, 2, 3, 0.16666666666666666], [4, 5, 6, 0.3333333333333333], [7, 8, 9, 0.3888888888888889]]
+    ),
+    (
+        f"{inputs_path}/rel_one.csv",
+        True,
+        [[1.0, 2.0, 3.0, 0.16666666666666666], [4.0, 5.0, 6.0, 0.3333333333333333], [7.0, 8.0, 9.0, 0.3888888888888889]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        False,
+        [[1, 3, 6, 0.08333333333333333], [7, 1, 8, 0.4375]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        True,
+        [[1.4, 3.2, 6.7, 0.1044776119402985], [7.0, 1.6, 8.9, 0.3932584269662921]]
+    ),
+    (
+        f"{inputs_path}/rel_invalid.csv",
+        False,
+        [[2, 3, 4, 0.25]]
+
+    ),
+    (
+        f"{inputs_path}/rel_invalid.csv",
+        True,
+        [[2.0, 3.0, 4.0, 0.25]]
+    )
+])
+def test_divide_new_col(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    ops = [
+        {"__TYPE__": "col", "v": 0},
+        {"__TYPE__": "col", "v": 2},
+        {"__TYPE__": "scal", "v": 2}
+    ]
+    div = divide(r, ops, 3)
+
+    assert div == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        True,
+        [[1.4, 3.2, 6.7], [7.0, 1.6, 8.9]]
+    ),
+    (
+        f"{inputs_path}/rel_three.csv",
+        False,
+        [[1, 2, 3], [4, 5, 6], [1, 2, 3], [1, 6, 7]]
+    ),
+    (
+        f"{inputs_path}/rel_four.csv",
+        True,
+        [[1.1, 2.3, 3.6], [4.5, 5.4, 6.0], [1.1, 2.6, 3.7], [4.5, 5.4, 7.8]]
+    ),
+    (
+        f"{inputs_path}/rel_invalid.csv",
+        False,
+        [[2, 3, 4]]
+
+    )
+])
+def test_limit(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    lim = limit(r, 4)
+
+    assert lim == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [[1], [4], [7]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        True,
+        [[1.4], [7.0]]
+    ),
+    (
+        f"{inputs_path}/rel_three.csv",
+        False,
+        [[1], [4], [2]]
+    ),
+    (
+        f"{inputs_path}/rel_four.csv",
+        True,
+        [[1.1], [4.5], [2.1]]
+    ),
+    (
+        f"{inputs_path}/rel_invalid.csv",
+        False,
+        [[2]]
+
+    )
+])
+def test_distinct(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    dis = distinct(r, [0])
+
+    assert dis == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected, operator", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [],
+        "=="
+    ),
+    (
+        f"{inputs_path}/rel_one.csv",
+        True,
+        [],
+        "<"
+    ),
+    (
+        f"{inputs_path}/rel_one.csv",
+        True,
+        [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
+        ">"
+    )
+])
+def test_filter_against_col(path_to_rel: str, use_floats: bool, expected: list, operator: str):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    fil = filter_against_col(r, 2, 0, operator)
+
+    assert fil == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected, operator", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [],
+        "=="
+    ),
+    (
+        f"{inputs_path}/rel_one.csv",
+        True,
+        [[1.0, 2.0, 3.0]],
+        "<"
+    ),
+    (
+        f"{inputs_path}/rel_one.csv",
+        True,
+        [[4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
+        ">"
+    )
+])
+def test_filter_against_scalar(path_to_rel: str, use_floats: bool, expected: list, operator: str):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    fil = filter_against_scalar(r, 2, 5, operator=operator)
+
+    assert fil == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected, increasing", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        True
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        False,
+        [[7, 1, 8], [1, 3, 6]],
+        True
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        True,
+        [[1.4, 3.2, 6.7], [7.0, 1.6, 8.9]],
+        False
+    )
+])
+def test_sort_by(path_to_rel: str, use_floats: bool, expected: list, increasing: bool):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    sb = sort_by(r, 1, increasing=increasing)
+
+    assert sb == expected
+
+
+@pytest.mark.parametrize("path_to_rel, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        [[3]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        [[2]]
+    ),
+    (
+        f"{inputs_path}/rel_three.csv",
+        [[7]]
+    ),
+    (
+        f"{inputs_path}/rel_invalid.csv",
+        [[1]]
+    )
+])
+def test_num_rows(path_to_rel: str, expected: list):
+
+    r = create(path_to_rel)
+    nr = num_rows(r)
+
+    assert nr == expected
+
+
+@pytest.mark.parametrize("path_to_rel, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        [[1, 2, 3, 0], [4, 5, 6, 1], [7, 8, 9, 2]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        [[1, 3, 6, 0], [7, 1, 8, 1]]
+    ),
+    (
+        f"{inputs_path}/rel_invalid.csv",
+        [[2, 3, 4, 0]]
+
+    )
+])
+def test_index(path_to_rel: str, expected: list):
+
+    r = create(path_to_rel)
+    idx = index(r)
+
+    assert idx == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [[1, 3, 1], [4, 6, 1], [7, 9, 1]]
+    ),
+    (
+        f"{inputs_path}/rel_three.csv",
+        False,
+        [[1, 13, 3], [4, 10, 2], [2, 17, 2]]
+    ),
+    (
+        f"{inputs_path}/rel_four.csv",
+        True,
+        [[1.1, 11.3, 3], [4.5, 13.8, 2], [2.1, 17.7, 2]]
+    )
+])
+def test_aggregate_sum_count_col(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    agg = aggregate_sum_count_col(r, [0], 2)
+
+    assert agg == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [[12, 15, 18]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        False,
+        [[8, 4, 14]]
+    ),
+    (
+        f"{inputs_path}/rel_two.csv",
+        True,
+        [[8.4, 4.800000000000001, 15.600000000000001]]
+    )
+])
+def test_col_sum(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    cs = col_sum(r)
+
+    assert cs == expected
