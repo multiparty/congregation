@@ -3,6 +3,9 @@ import copy
 
 def min_set(all_sets: list):
 
+    if not all_sets:
+        return set()
+
     if len(all_sets) > 1:
         return all_sets[0].intersection(*all_sets[1:])
     else:
@@ -10,6 +13,9 @@ def min_set(all_sets: list):
 
 
 def max_set(all_sets: list):
+
+    if not all_sets:
+        return set()
 
     if len(all_sets) > 1:
         return set().union(*all_sets)

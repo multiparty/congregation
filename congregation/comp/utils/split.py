@@ -75,6 +75,7 @@ def split_agg_mean(node: AggregateMean, parent: Concat):
         print("WARN: Can't split aggregate for children > 1.")
         return
 
+    node.with_count_col = True
     clone = AggregateSumCountCol.from_agg_mean(node)
     clone.parents = set()
     clone.children = set()

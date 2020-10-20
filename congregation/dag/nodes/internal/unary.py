@@ -85,9 +85,9 @@ class Close(UnaryOpNode):
 
 
 class AggregateSumCountCol(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: [list, None], agg_col: Column):
         super(AggregateSumCountCol, self).__init__("aggregate_sum_count_col", out_rel, parent)
-        self.group_cols = group_cols
+        self.group_cols = group_cols if group_cols else []
         self.agg_col = agg_col
         self.count_col = self.gen_count_col()
 
@@ -96,8 +96,14 @@ class AggregateSumCountCol(UnaryOpNode):
 
     def update_count_col(self):
 
-        min_trust = min_trust_with_from_columns(self.group_cols)
-        min_pt = min_pt_set_from_cols(self.group_cols)
+        if self.group_cols:
+            min_trust = min_trust_with_from_columns(self.group_cols)
+            min_pt = min_pt_set_from_cols(self.group_cols)
+        else:
+            # count col will just be the number of rows, which
+            # all parties storing this data already know
+            min_trust = max_set(self.out_rel.stored_with)
+            min_pt = max_set(self.out_rel.stored_with)
 
         return Column(
             self.get_in_rel().name, "__COUNT__", len(self.group_cols) + 1,

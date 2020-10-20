@@ -19,14 +19,14 @@ def create(name: str, columns: list, stored_with: [set, list]):
     return op
 
 
-def aggregate(input_op_node: OpNode, name: str, group_col_names: list, agg_col_name: str,
-              agg_type: str, agg_out_col_name: [str, None] = None):
+def _build_out_cols_agg(in_cols: list, group_col_names: list, agg_col_name: str, agg_out_col_name: [str, None]):
 
-    in_rel = input_op_node.out_rel
-    in_cols = in_rel.columns
-    group_cols = sorted([find(in_cols, group_col_name) for group_col_name in group_col_names], key=lambda c: c.idx)
+    group_cols = sorted(
+        [find(in_cols, group_col_name) for group_col_name in group_col_names],
+        key=lambda c: c.idx
+    )
+
     agg_col = find(in_cols, agg_col_name)
-
     agg_out_col = copy.deepcopy(agg_col)
     if agg_out_col_name is not None:
         agg_out_col.name = agg_out_col_name
@@ -44,8 +44,20 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: list, agg_col_n
     min_trust_agg_col = min_trust_with_from_columns(out_group_cols + [agg_out_col])
     agg_out_col.plaintext = min_pt_agg_col
     agg_out_col.trust_with = min_trust_agg_col
-
     out_rel_cols = out_group_cols + [copy.deepcopy(agg_out_col)]
+
+    return out_rel_cols, group_cols, agg_out_col
+
+
+def aggregate(input_op_node: OpNode, name: str, group_col_names: [list, None], agg_col_name: str,
+              agg_type: str, agg_out_col_name: [str, None] = None):
+
+    in_rel = input_op_node.out_rel
+    in_cols = in_rel.columns
+
+    out_rel_cols, group_cols, agg_out_col = \
+        _build_out_cols_agg(in_cols, group_col_names, agg_col_name, agg_out_col_name)
+
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
 

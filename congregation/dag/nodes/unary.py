@@ -92,9 +92,9 @@ class AggregateCount(UnaryOpNode):
 
 
 class AggregateSum(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: [list, None], agg_col: Column):
         super(AggregateSum, self).__init__("aggregate_sum", out_rel, parent)
-        self.group_cols = group_cols
+        self.group_cols = group_cols if group_cols else []
         self.agg_col = agg_col
 
     def update_op_specific_cols(self):
@@ -131,10 +131,16 @@ class AggregateSum(UnaryOpNode):
 
 
 class AggregateMean(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column,
-                 with_count_col: [bool, None] = False):
+    def __init__(
+            self,
+            out_rel: Relation,
+            parent: OpNode,
+            group_cols: [list, None],
+            agg_col: Column,
+            with_count_col: [bool, None] = False
+    ):
         super(AggregateMean, self).__init__("aggregate_mean", out_rel, parent)
-        self.group_cols = group_cols
+        self.group_cols = group_cols if group_cols else []
         self.agg_col = agg_col
         self.with_count_col = with_count_col
 
@@ -158,10 +164,16 @@ class AggregateMean(UnaryOpNode):
 
 
 class AggregateStdDev(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: list, agg_col: Column,
-                 with_count_col: [bool, None] = False):
+    def __init__(
+            self,
+            out_rel: Relation,
+            parent: OpNode,
+            group_cols: [list, None],
+            agg_col: Column,
+            with_count_col: [bool, None] = False
+    ):
         super(AggregateStdDev, self).__init__("aggregate_std_dev", out_rel, parent)
-        self.group_cols = group_cols
+        self.group_cols = group_cols if group_cols else []
         self.agg_col = agg_col
         self.with_count_col = with_count_col
 
