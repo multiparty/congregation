@@ -38,3 +38,19 @@ def compare_to_expected(d, expected):
     zip_trust_with = zip(d.top_sort(), [e["trust_with_sets"] for e in expected["ownership_data"]])
     trust_with_checks = [[c.trust_with for c in z[0].out_rel.columns] == z[1] for z in zip_trust_with]
     assert all(trust_with_checks)
+
+
+def compare_partition_to_expected(p, expected):
+
+    zip_all = zip(p, expected)
+    for pp in zip_all:
+
+        out = pp[0]
+        exp = pp[1]
+
+        assert out[1] == exp["backend"]
+
+        nodes = out[0].top_sort()
+        zip_nodes = zip(nodes, exp["node_order"])
+        node_order_checks = [isinstance(z[0], z[1]) for z in zip_nodes]
+        assert all(node_order_checks)
