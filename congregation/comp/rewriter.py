@@ -66,6 +66,10 @@ class DagRewriter:
                 self._rewrite_shuffle(node)
             elif isinstance(node, AggregateSumCountCol):
                 self._rewrite_aggregate_sum_count_col(node)
+            elif isinstance(node, AggregateSumSquaresAndCount):
+                self._rewrite_aggregate_sum_squares_and_count(node)
+            elif isinstance(node, AggregateStdDevLocalSqrt):
+                self._rewrite_aggregate_std_dev_local_sqrt(node)
             elif isinstance(node, ColSum):
                 self._rewrite_col_sum(node)
             elif isinstance(node, MemberFilter):
@@ -151,6 +155,12 @@ class DagRewriter:
         pass
 
     def _rewrite_aggregate_sum_count_col(self, node: AggregateSumCountCol):
+        pass
+
+    def _rewrite_aggregate_sum_squares_and_count(self, node: AggregateSumSquaresAndCount):
+        pass
+
+    def _rewrite_aggregate_std_dev_local_sqrt(self, node: AggregateStdDevLocalSqrt):
         pass
 
     def _rewrite_col_sum(self, node: ColSum):

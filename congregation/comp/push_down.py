@@ -28,10 +28,6 @@ class PushDown(DagRewriter):
             if isinstance(parent, Concat) and parent.is_upper_boundary():
                 push_parent_op_node_down(parent, node)
                 parent.update_out_rel_cols()
-            else:
-                pass
-        else:
-            pass
 
     @staticmethod
     def _rewrite_split_default(node: [AggregateSum, Distinct]):
@@ -42,8 +38,6 @@ class PushDown(DagRewriter):
                 split_default(node)
                 push_parent_op_node_down(parent, node)
                 parent.update_out_rel_cols()
-        else:
-            pass
 
     def _rewrite_aggregate_sum(self, node: AggregateSum):
         self._rewrite_split_default(node)
@@ -56,8 +50,6 @@ class PushDown(DagRewriter):
                 split_agg_count(node)
                 push_parent_op_node_down(parent, node)
                 parent.update_out_rel_cols()
-        else:
-            pass
 
     def _rewrite_aggregate_mean(self, node: AggregateMean):
 
@@ -65,14 +57,19 @@ class PushDown(DagRewriter):
         if parent.requires_mpc():
             if isinstance(parent, Concat) and parent.is_upper_boundary():
                 split_agg_mean(node, parent)
+                # node.parent is now AggregateSumCountCol
                 push_parent_op_node_down(parent, node.parent)
                 parent.update_out_rel_cols()
-        else:
-            pass
 
     def _rewrite_aggregate_std_dev(self, node: AggregateStdDev):
-        # TODO THINK ABOUT HOW TO DO SPLIT OP
-        pass
+
+        parent = next(iter(node.parents))
+        if parent.requires_mpc():
+            if isinstance(parent, Concat) and parent.is_upper_boundary():
+                split_agg_std_dev(node, parent)
+                # node.parent is now AggregateSumSquaresAndCount
+                push_parent_op_node_down(parent, node.parent)
+                parent.update_out_rel_cols()
 
     def _rewrite_project(self, node: Project):
         self._rewrite_unary_default(node)

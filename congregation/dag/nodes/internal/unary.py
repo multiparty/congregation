@@ -111,18 +111,15 @@ class AggregateSumCountCol(UnaryOpNode):
         )
 
     @staticmethod
-    def from_agg_mean(node: AggregateMean):
+    def from_existing_agg(node: AggregateMean):
 
         out_rel = copy.deepcopy(node.out_rel)
         parent = copy.deepcopy(node.parent)
-        # group_cols = copy.deepcopy(node.out_rel.columns[:-1])
-        # agg_col = copy.deepcopy(node.out_rel.columns[-1])
         group_cols = copy.deepcopy(node.group_cols)
         agg_col = copy.deepcopy(node.agg_col)
 
         out_node = AggregateSumCountCol(out_rel, parent, group_cols, agg_col)
         out_node.update_out_rel_cols()
-
         return out_node
 
     def update_op_specific_cols(self):
@@ -141,6 +138,118 @@ class AggregateSumCountCol(UnaryOpNode):
         self.out_rel.update_columns()
 
 
+class AggregateSumSquaresAndCount(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: [list, None], agg_col: Column):
+        super(AggregateSumSquaresAndCount, self).__init__("aggregate_sum_squares_and_count", out_rel, parent)
+        self.group_cols = group_cols if group_cols else []
+        self.agg_col = agg_col
+        self.squares_col = self.gen_squares_col()
+        self.count_col = self.gen_count_col()
+
+    def gen_squares_col(self):
+        return self.update_squares_col()
+
+    def update_squares_col(self):
+
+        trust_set = copy.deepcopy(self.agg_col.trust_with)
+        pt_set = copy.deepcopy(self.agg_col.plaintext)
+        typ = copy.copy(self.agg_col.type_str)
+
+        return Column(
+            self.get_in_rel().name,
+            "__SQUARES__",
+            len(self.group_cols) + 1,
+            typ,
+            trust_set,
+            pt_set
+        )
+
+    def gen_count_col(self):
+        return self.update_count_col()
+
+    def update_count_col(self):
+
+        if self.group_cols:
+            min_trust = min_trust_with_from_columns(self.group_cols)
+            min_pt = min_pt_set_from_cols(self.group_cols)
+        else:
+            # count col will just be the number of rows, which
+            # all parties storing this data already know
+            min_trust = max_set(self.out_rel.stored_with)
+            min_pt = max_set(self.out_rel.stored_with)
+
+        return Column(
+            self.get_in_rel().name,
+            "__COUNT__",
+            len(self.group_cols) + 2,
+            "INTEGER",
+            min_trust,
+            min_pt
+        )
+
+    @staticmethod
+    def from_existing_agg(node: AggregateStdDev):
+
+        out_rel = copy.deepcopy(node.out_rel)
+        out_rel.rename(f"{copy.copy(node.out_rel.name)}_local_squares_and_count")
+        parent = copy.deepcopy(node.parent)
+        group_cols = copy.deepcopy(node.group_cols)
+        agg_col = copy.deepcopy(node.agg_col)
+
+        out_node = AggregateSumSquaresAndCount(out_rel, parent, group_cols, agg_col)
+        out_node.update_out_rel_cols()
+        return out_node
+
+    def update_op_specific_cols(self):
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
+        self.agg_col = temp_cols[self.agg_col.idx]
+        self.squares_col = self.update_squares_col()
+        self.count_col = self.update_count_col()
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        self.out_rel.columns = \
+            copy.deepcopy(self.group_cols) + \
+            [
+                copy.deepcopy(self.agg_col),
+                copy.deepcopy(self.squares_col),
+                copy.deepcopy(self.count_col)
+            ]
+        self.out_rel.update_columns()
+
+
+class AggregateStdDevLocalSqrt(UnaryOpNode):
+    def __init__(self, out_rel: Relation, parent: OpNode):
+        super(AggregateStdDevLocalSqrt, self).__init__("aggregate_std_dev_local_sqrt", out_rel, parent)
+
+    def requires_mpc(self):
+        return False
+
+    @staticmethod
+    def from_existing_agg(node: AggregateStdDev):
+
+        out_rel = copy.deepcopy(node.out_rel)
+        out_rel.rename(f"{copy.copy(node.out_rel.name)}_local_sqrt")
+        parent = copy.deepcopy(node.parent)
+
+        out_node = AggregateStdDevLocalSqrt(out_rel, parent)
+        out_node.update_out_rel_cols()
+        return out_node
+
+    def update_out_rel_cols(self):
+        """
+        No need to update agg_col for this type, as
+        its always the last column of the out_rel
+        """
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.out_rel.columns = temp_cols
+        self.out_rel.update_columns()
+
+
 class ColSum(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode):
         super(ColSum, self).__init__("col_sum", out_rel, parent)
@@ -155,7 +264,6 @@ class ColSum(UnaryOpNode):
     def from_num_rows(node: NumRows):
 
         out_rel = copy.deepcopy(node.out_rel)
+        out_rel.rename(f"{copy.copy(node.out_rel.name)}_local_sum")
         parent = copy.deepcopy(node.parent)
         return ColSum(out_rel, parent)
-
-

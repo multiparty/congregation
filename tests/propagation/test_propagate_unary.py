@@ -395,7 +395,7 @@ def test_agg_simple(party_data, expected):
         }
     )
 ])
-def test_agg_no_group_cols(party_data, expected):
+def test_agg_sum_no_group_cols(party_data, expected):
 
     input_cols = create_cols(party_data[0])
     c = create("in1", input_cols, party_data[0]["stored_with"])

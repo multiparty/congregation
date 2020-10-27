@@ -48,8 +48,14 @@ class BinaryOpNode(OpNode):
 
 
 class Join(BinaryOpNode):
-    def __init__(self, out_rel: Relation, left_parent: OpNode, right_parent: OpNode,
-                 left_join_cols: list, right_join_cols: list):
+    def __init__(
+            self,
+            out_rel: Relation,
+            left_parent: OpNode,
+            right_parent: OpNode,
+            left_join_cols: list,
+            right_join_cols: list
+    ):
         super(Join, self).__init__("join", out_rel, left_parent, right_parent)
         self.left_join_cols = left_join_cols
         self.right_join_cols = right_join_cols

@@ -81,8 +81,12 @@ class OpNode(Node):
             return []
 
     def make_orphan(self):
-        """ Remove link between this node and it's parent nodes. """
+        """ Remove links between this node and it's parent nodes. """
         self.parents = set()
+
+    def remove_all_children(self):
+        """ Remove links between this node and it's child nodes. """
+        self.children = set()
 
     def remove_parent(self, parent: Node):
         """ Remove link between this node and a specific parent node. """

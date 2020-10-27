@@ -16,7 +16,6 @@ def split_default(node: [AggregateSum, Distinct]):
     clone.out_rel.rename(f"{node.out_rel.name}_obl")
     clone.parents = set()
     clone.children = set()
-
     child = next(iter(node.children), None)
     insert_clone(node, child, clone)
 
@@ -34,7 +33,6 @@ def split_distinct(node: Distinct):
     clone.out_rel.rename(f"{node.out_rel.name}_obl")
     clone.parents = set()
     clone.children = set()
-
     child = next(iter(node.children), None)
     insert_clone(node, child, clone)
 
@@ -49,7 +47,6 @@ def split_agg_sum(node: AggregateSum):
     clone.out_rel.rename(f"{node.out_rel.name}_obl")
     clone.parents = set()
     clone.children = set()
-
     child = next(iter(node.children), None)
     insert_clone(node, child, clone)
 
@@ -64,7 +61,6 @@ def split_agg_count(node: AggregateCount):
     clone.out_rel.rename(f"{node.out_rel.name}_obl")
     clone.parents = set()
     clone.children = set()
-
     child = next(iter(node.children), None)
     insert_between(node, child, clone)
 
@@ -76,10 +72,22 @@ def split_agg_mean(node: AggregateMean, parent: Concat):
         return
 
     node.with_count_col = True
-    clone = AggregateSumCountCol.from_agg_mean(node)
+    clone = AggregateSumCountCol.from_existing_agg(node)
     clone.parents = set()
     clone.children = set()
+    insert_between(parent, node, clone)
 
+
+def split_agg_std_dev(node: AggregateStdDev, parent: Concat):
+
+    if not len(node.children) <= 1:
+        print("WARN: Can't split aggregate for children > 1.")
+        return
+
+    node.optimized = True
+    clone = AggregateSumSquaresAndCount.from_existing_agg(node)
+    clone.parents = set()
+    clone.children = set()
     insert_between(parent, node, clone)
 
 
@@ -93,6 +101,5 @@ def split_num_rows(node: NumRows):
     clone.out_rel.rename(f"{node.out_rel.name}_obl")
     clone.parents = set()
     clone.children = set()
-
     child = next(iter(node.children), None)
     insert_between(node, child, clone)

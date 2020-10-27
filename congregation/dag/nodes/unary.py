@@ -162,6 +162,18 @@ class AggregateMean(UnaryOpNode):
         self.out_rel.columns = copy.deepcopy(temp_cols)
         self.out_rel.update_columns()
 
+    @staticmethod
+    def from_existing_agg(node):
+
+        out_rel = copy.deepcopy(node.out_rel)
+        parent = copy.deepcopy(node.parent)
+        group_cols = copy.deepcopy(node.group_cols)
+        agg_col = copy.deepcopy(node.agg_col)
+
+        out_node = AggregateMean(out_rel, parent, group_cols, agg_col)
+        out_node.update_out_rel_cols()
+        return out_node
+
 
 class AggregateStdDev(UnaryOpNode):
     def __init__(
@@ -170,12 +182,14 @@ class AggregateStdDev(UnaryOpNode):
             parent: OpNode,
             group_cols: [list, None],
             agg_col: Column,
-            with_count_col: [bool, None] = False
+            optimized: [bool, None] = False
     ):
         super(AggregateStdDev, self).__init__("aggregate_std_dev", out_rel, parent)
         self.group_cols = group_cols if group_cols else []
         self.agg_col = agg_col
-        self.with_count_col = with_count_col
+        # optimized means that the last two columns are
+        # sum of squared values and count, respectively
+        self.optimized = optimized
 
     def update_op_specific_cols(self):
 
@@ -331,7 +345,14 @@ class Distinct(UnaryOpNode):
 
 
 class FilterAgainstCol(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, filter_col: Column, operator: str, against_col: Column):
+    def __init__(
+            self,
+            out_rel: Relation,
+            parent: OpNode,
+            filter_col: Column,
+            operator: str,
+            against_col: Column
+    ):
         super(FilterAgainstCol, self).__init__("filter_against_col", out_rel, parent)
         self.filter_col = filter_col
         self.against_col = against_col

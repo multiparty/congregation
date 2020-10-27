@@ -6,6 +6,16 @@ from congregation.dag.nodes import UnaryOpNode
 from congregation.dag.nodes.internal import *
 
 
+def clone_and_make_island(node: OpNode, suffix: [str, None] = None):
+
+    clone = copy.deepcopy(node)
+    clone.make_orphan()
+    clone.remove_all_children()
+    if suffix:
+        clone.out_rel.rename(f"{clone.out_rel.name}_{suffix}")
+    return clone
+
+
 def disconnect_from_children(node: OpNode):
 
     ret_children = []
@@ -16,6 +26,17 @@ def disconnect_from_children(node: OpNode):
         ret_children.append(c)
 
     return ret_children
+
+
+def disconnect_from_child(node: OpNode, child: OpNode):
+
+    if child not in node.children:
+        raise Exception(f"Node {child} is not in children set for node {node}.")
+
+    node.children.remove(child)
+    child.parents.remove(node)
+    if isinstance(child, UnaryOpNode):
+        child.parent = None
 
 
 def remove_between(parent: OpNode, child: OpNode, to_remove: OpNode):
