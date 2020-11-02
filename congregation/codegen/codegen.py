@@ -1,14 +1,17 @@
 from congregation.dag import Dag
 from congregation.dag.nodes import *
 from congregation.dag.nodes.internal import *
-from congregation.config import CodeGenConfig
+from congregation.config import Config
 import os
 
 
 class CodeGen:
-    def __init__(self, config: CodeGenConfig, dag: Dag):
+    def __init__(self, config: Config, dag: Dag):
         self.config = config
+        self.codegen_config = config.system_configs["CODEGEN"]
+        self.network_config = config.system_configs["NETWORK"]
         self.dag = dag
+        self.pid = self.codegen_config.pid
 
     def generate(self, job_name: str):
         """ Overridden in subclasses """
@@ -16,8 +19,8 @@ class CodeGen:
 
     def write_code(self, job_name: str, code: str, filename: str):
 
-        os.makedirs(f"{self.config.code_path}/{job_name}", exist_ok=True)
-        code_file = open(f"{self.config.code_path}/{job_name}/{filename}", "w")
+        os.makedirs(f"{self.codegen_config.code_path}/{job_name}", exist_ok=True)
+        code_file = open(f"{self.codegen_config.code_path}/{job_name}/{filename}", "w")
         code_file.write(code)
         code_file.close()
 
@@ -56,6 +59,7 @@ class CodeGen:
             Join: self._generate_join,
             Concat: self._generate_concat,
             Store: self._generate_store,
+            Read: self._generate_read,
             Persist: self._generate_persist,
             Send: self._generate_send,
             Index: self._generate_index,
@@ -63,6 +67,8 @@ class CodeGen:
             Open: self._generate_open,
             Close: self._generate_close,
             AggregateSumCountCol: self._generate_aggregate_sum_count_col,
+            AggregateSumSquaresAndCount: self._generate_aggregate_sum_squares_and_count,
+            AggregateStdDevLocalSqrt: self._generate_aggregate_std_dev_local_sqrt,
             ColSum: self._generate_col_sum,
             MemberFilter: self._generate_member_filter,
             ColumnUnion: self._generate_column_union
@@ -124,6 +130,9 @@ class CodeGen:
     def _generate_store(self, node: Store):
         return ""
 
+    def _generate_read(self, node: Read):
+        return ""
+
     def _generate_persist(self, node: Persist):
         return ""
 
@@ -143,6 +152,12 @@ class CodeGen:
         return ""
 
     def _generate_aggregate_sum_count_col(self, node: AggregateSumCountCol):
+        return ""
+
+    def _generate_aggregate_sum_squares_and_count(self, node: AggregateSumSquaresAndCount):
+        return ""
+
+    def _generate_aggregate_std_dev_local_sqrt(self, node: AggregateStdDevLocalSqrt):
         return ""
 
     def _generate_col_sum(self, node: ColSum):

@@ -35,6 +35,11 @@ class UnaryOpNode(OpNode):
         super(UnaryOpNode, self).remove_parent(parent)
         self.parent = None
 
+    def update_out_rel_cols(self):
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.out_rel.columns = temp_cols
+        self.out_rel.update_columns()
+
 
 class Create(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: [OpNode, None] = None, name: [str, None] = None):
@@ -57,6 +62,9 @@ class Create(UnaryOpNode):
 
         min_sw = min_set(self.out_rel.stored_with)
         return not len(min_sw) == 1
+
+    def update_out_rel_cols(self):
+        pass
 
 
 class AggregateCount(UnaryOpNode):
@@ -323,6 +331,12 @@ class Limit(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, num: int):
         super(Limit, self).__init__("limit", out_rel, parent)
         self.num = num
+
+    def update_out_rel_cols(self):
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.out_rel.columns = temp_cols
+        self.out_rel.update_columns()
 
 
 class Distinct(UnaryOpNode):

@@ -6,28 +6,6 @@ from congregation.utils.col import *
 from congregation.utils.rel import *
 
 
-def cols_from_rel(output_name, start_idx: int, rel: Relation, key_col_idxs: list):
-    """
-    TODO: Might need to rethink how I propagate trust_with sets here. Main concern
-     is whether some out_rel (non-key) column c should inherit it's parent trust_with
-     set. The output column will be made up of all the data in the original column, but
-     with removals & duplications in accordance with the output of the join. I.e. - the
-     rows that remain will leak something about the key columns from the input relation.
-     For now, though, it will just pass normal inheritance.
-    """
-
-    ret_cols = []
-    for i, col in enumerate(rel.columns):
-        if col.idx not in set(key_col_idxs):
-
-            indx = i + start_idx - len(key_col_idxs)
-            new_col = \
-                Column(output_name, col.name, indx, col.type_str, copy.copy(col.trust_with), copy.copy(col.plaintext))
-            ret_cols.append(new_col)
-
-    return ret_cols
-
-
 def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
          left_col_names: list, right_col_names: list):
 
@@ -67,8 +45,12 @@ def join(left_input_node: OpNode, right_input_node: OpNode, name: str,
 
     start_idx = len(out_key_cols)
     continue_idx = len(left_in_rel.columns)
-    left_non_key_cols = cols_from_rel(name, start_idx, left_in_rel, [lcol.idx for lcol in left_join_cols])
-    right_non_key_cols = cols_from_rel(name, continue_idx, right_in_rel, [rcol.idx for rcol in right_join_cols])
+    left_non_key_data = \
+        non_key_cols_from_rel(name, start_idx, left_in_rel.columns, [lcol.idx for lcol in left_join_cols])
+    left_non_key_cols = [Column(*d) for d in left_non_key_data]
+    right_non_key_data = \
+        non_key_cols_from_rel(name, continue_idx, right_in_rel.columns, [rcol.idx for rcol in right_join_cols])
+    right_non_key_cols = [Column(*d) for d in right_non_key_data]
 
     out_rel_cols = out_key_cols + left_non_key_cols + right_non_key_cols
     out_stored_with = stored_with_from_rels([left_in_rel, right_in_rel])

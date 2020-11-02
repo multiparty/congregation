@@ -13,6 +13,11 @@ class Store(UnaryOpNode):
     def is_reversible(self):
         return True
 
+    def update_out_rel_cols(self):
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.out_rel.columns = temp_cols
+        self.out_rel.update_columns()
+
 
 class Read(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: [OpNode, None]):

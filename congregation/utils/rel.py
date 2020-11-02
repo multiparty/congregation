@@ -68,3 +68,25 @@ def stored_with_from_rels(in_rels):
             if sw not in ret:
                 ret.append(copy.copy(sw))
     return ret
+
+
+def non_key_cols_from_rel(output_name, start_idx: int, columns: list, key_col_idxs: list):
+    """
+    TODO: Might need to rethink how I propagate trust_with sets here. Main concern
+     is whether some out_rel (non-key) column c should inherit it's parent trust_with
+     set. The output column will be made up of all the data in the original column, but
+     with removals & duplications in accordance with the output of the join. I.e. - the
+     rows that remain will leak something about the key columns from the input relation.
+     For now, though, it will just pass normal inheritance.
+    """
+
+    ret_cols = []
+    for i, col in enumerate(columns):
+        if col.idx not in set(key_col_idxs):
+
+            indx = i + start_idx - len(key_col_idxs)
+            new_col = \
+                (output_name, col.name, indx, col.type_str, copy.copy(col.trust_with), copy.copy(col.plaintext))
+            ret_cols.append(new_col)
+
+    return ret_cols

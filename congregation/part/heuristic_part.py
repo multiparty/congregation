@@ -1,6 +1,5 @@
 from congregation.dag import Dag
 from congregation.dag.nodes import *
-from congregation.dag.nodes.internal import *
 from congregation.comp.utils.dag import disconnect_from_child
 import copy
 

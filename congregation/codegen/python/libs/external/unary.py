@@ -63,9 +63,33 @@ def aggregate_mean(rel: list, group_cols: list, agg_col: int):
     return ret
 
 
-def aggregate_std_dev(rel: list, group_cols_idx: list, agg_col: int):
-    # TODO
-    return []
+def aggregate_std_dev(rel: list, group_cols: list, agg_col: int):
+
+    acc = {}
+    for row in rel:
+        k = tuple(row[idx] for idx in group_cols)
+        if k in acc:
+            acc[k]["__VALUES__"].append(row[agg_col])
+            acc[k]["__SUM__"] += row[agg_col]
+            acc[k]["__COUNT__"] += 1
+        else:
+            acc[k] = {}
+            acc[k]["__VALUES__"] = [row[agg_col]]
+            acc[k]["__SUM__"] = row[agg_col]
+            acc[k]["__COUNT__"] = 1
+
+    ret = []
+    for k in acc.keys():
+
+        count = acc[k]["__COUNT__"]
+        m = acc[k]["__SUM__"] / acc[k]["__COUNT__"]
+        squared_mean = math.pow(m, 2)
+        sum_squares = sum([math.pow(v, 2) for v in acc[k]["__VALUES__"]])
+        sum_squares_mean = sum_squares / count
+        std_dev = math.sqrt(sum_squares_mean - squared_mean)
+        ret.append(list(k) + [std_dev])
+
+    return ret
 
 
 def project(rel: list, selected_cols: list):
