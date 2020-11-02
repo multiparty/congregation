@@ -142,6 +142,42 @@ def test_aggregate_mean(path_to_rel: str, use_floats: bool, expected: list):
 
 @pytest.mark.parametrize("path_to_rel, use_floats, expected", [
     (
+        f"{inputs_path}/rel_three.csv",
+        False,
+        [[1, 2, 0], [4, 5, 1], [1, 6, 0], [2, 4, 0], [2, 8, 0]]
+    ),
+    (
+        f"{inputs_path}/rel_three.csv",
+        True,
+        [[1.0, 2.0, 0], [4.0, 5.0, 1], [1.0, 6.0, 0], [2.0, 4.0, 0], [2.0, 8.0, 0]]
+    ),
+    (
+        f"{inputs_path}/rel_four.csv",
+        False,
+        [[1, 2, 0.47140452079103085], [4, 5, 0.5], [2, 4, 0.0], [2, 8, 0.0]]
+    ),
+    (
+        f"{inputs_path}/rel_four.csv",
+        True,
+        [
+            [1.1, 2.3, 0.20000000000000231],
+            [4.5, 5.4, 0.8999999999999974],
+            [1.1, 2.6, 0.0],
+            [2.1, 4.3, 0.0],
+            [2.1, 8.8, 0.0]
+        ]
+    )
+])
+def test_aggregate_std_dev(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    std_dev = aggregate_std_dev(r, [0, 1], 2)
+
+    assert std_dev == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
         f"{inputs_path}/rel_one.csv",
         False,
         [[3, 2], [6, 5], [9, 8]]
@@ -580,6 +616,46 @@ def test_aggregate_sum_count_col(path_to_rel: str, use_floats: bool, expected: l
 
     r = create(path_to_rel, use_floats=use_floats)
     agg = aggregate_sum_count_col(r, [0], 2)
+
+    assert agg == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+        f"{inputs_path}/rel_one.csv",
+        False,
+        [[1, 3, 9, 1], [4, 6, 36, 1], [7, 9, 81, 1]]
+    ),
+    (
+        f"{inputs_path}/rel_three.csv",
+        False,
+        [[1, 13, 67, 3], [4, 10, 52, 2], [2, 17, 145, 2]]
+    ),
+    (
+        f"{inputs_path}/rel_four.csv",
+        True,
+        [[1.1, 11.3, 42.650000000000006, 3], [4.5, 13.8, 96.84, 2], [2.1, 17.7, 157.76999999999998, 2]]
+    )
+])
+def test_aggregate_sum_squares_and_count(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    agg = aggregate_sum_squares_and_count(r, [0], 2)
+
+    assert agg == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+        f"{inputs_path}/rel_five.csv",
+        False,
+        [[1, 2, 2], [4, 5, 4], [7, 8, 6]]
+    )
+])
+def test_aggregate_std_dev_local_sqrt(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    agg = aggregate_std_dev_local_sqrt(r)
 
     assert agg == expected
 
