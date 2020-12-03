@@ -1,0 +1,30 @@
+(function (exports) {
+
+  exports.open = function (inRel, jiffInstance) {
+
+    let results = jiffInstance.open_ND_array(inRel);
+    return Promise.all([results]).then(function (arr) {
+      let openedRes = arr[0];
+      let ret = [];
+
+      for (let i = 0; i < openedRes.length; i++) {
+        ret.push(openedRes[i]);
+      }
+
+      return ret;
+    });
+  };
+
+  exports.concat = function (inRels) {
+
+    let ret = [];
+    for (let i = 0; i < inRels.length; i++) {
+      for (let j = 0; j < inRels[i].length; j++) {
+        ret.push(inRels[i][j]);
+      }
+    }
+
+    return ret;
+  }
+
+}(typeof exports === 'undefined' ? this.methods = {} : exports));

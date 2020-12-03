@@ -1,0 +1,38 @@
+(function (exports, node) {
+
+  var functions = require('./functions');
+  let helpers = require('./helpers');
+  var jiffInstance;
+  exports.connect = function (hostname, computationId, options) {
+
+    var opt = Object.assign({}, options);
+    opt.crypto_provider = true;
+    opt.warn = false;
+
+    var jiffClient = require('{{{JIFF_PATH}}}/lib/jiff-client.js');
+    opt.autoConnect = false;
+    jiffInstance = new jiffClient(hostname, computationId, opt);
+
+{{{BIG_NUMBER}}}
+{{{FIXED_POINT}}}
+{{{NEGATIVE_NUMBER}}}
+
+    jiffInstance.connect();
+    return jiffInstance;
+  };
+
+  exports.compute = function (inputs) {
+
+    let all_inputs = [];
+    {{{INPUTS_STR}}}
+
+    var computation = Promise.all([inputs]).then( function (d) {
+      {{{OP_CODE}}}
+    })
+
+    return computation.then(function (opened) {
+      return opened;
+    })
+
+  };
+}((typeof exports === 'undefined' ? this.mpc = {} : exports), typeof exports !== 'undefined'));

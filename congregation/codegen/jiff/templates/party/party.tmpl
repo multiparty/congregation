@@ -1,0 +1,33 @@
+let mpc = require('./mpc');
+let helpers = require("./helpers");
+let fs = require('fs');
+
+let config = require(process.argv[2]);
+let inputs = process.argv[3].split(",")
+
+// JIFF options
+var options = {
+  party_count: {{{NUM_PARTIES}}},
+  party_id: {{{PARTY_ID}}},
+  Zp: {{{ZP}}}
+};
+{{{FIXED_POINT}}}
+
+options.onConnect = function (jiffInstance) {
+  let promise = mpc.compute(inputs);
+  promise.then(function (v) {
+
+    if ({{{WRITE}}}) {
+      let output = {{{OUTPUT_PATH}}};
+      fs.writeFile(output, helpers.formatTwoD(v), function(err) {
+        if (err) {
+          console.log(err);
+        }
+      });
+    }
+    jiffInstance.disconnect(false, true);
+  });
+};
+
+// Connect
+mpc.connect('http://localhost:8080', {{{COMPUTATION_ID}}}, options);

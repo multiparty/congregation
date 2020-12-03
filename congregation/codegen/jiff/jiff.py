@@ -15,14 +15,30 @@ class JiffCodeGen(CodeGen):
     def generate(self, job_name: str):
         """ TODO """
 
+        op_code = self._generate_code()
         # self.write_code() for each key in dict returned by self._generate_code()
         # return single JiffJob
 
     def _generate_code(self):
         """ TODO """
 
+        ret = dict()
+        ret["mpc.js"] = super()._generate_code()
+        if self.codegen_config.server_pid == self.codegen_config.pid:
+            ret["server.js"] = self._generate_server()
         # return a dict whose keys are filenames (party.js, mpc.js, etc.)
         # and whose values are all code as str
+        return ret
+
+    def _generate_server(self):
+        """ TODO """
+
+        server_template = open(f"{self.templates_dir}/server/server.tmpl").read()
+        data = {
+            "JIFF_PATH": self.codegen_config.jiff_lib_path
+        }
+        # JIFF_PATH, BIG_NUMBER
+        return ""
 
     def _generate_job(self, job_name: str):
         """ TODO """

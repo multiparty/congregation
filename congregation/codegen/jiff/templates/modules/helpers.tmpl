@@ -1,0 +1,68 @@
+(function (exports) {
+
+  let fs = require('fs');
+  exports.formatTwoD = function (mat) {
+
+    let output = '';
+    for (let i = 0; i < mat.length; i++){
+      for (let j = 0; j < mat[i].length; j++) {
+        output += mat[i][j].toString() + ',';
+      }
+      output = output.slice(0, -1) + '\n';
+    }
+
+    return output.slice(0, -1);
+  }
+
+  exports.reconstructFromShares = function(filePath, jiffInstance, useBigNumber, computeParties) {
+
+    let ret = [];
+    let inputData = fs.readFileSync(filePath.trim(), 'UTF-8').trim();
+    let rows = inputData.split('\n');
+
+    for (let i = 0; i < rows.length; i++) {
+      let arr;
+      if (useBigNumber) {
+        arr = rows[i].split(',').map(jiffInstance.helpers.BigNumber);
+      } else {
+        arr = rows[i].split(',').map(Number);
+      }
+
+      let shares = [];
+      for (let j = 0; j < arr.length; j++) {
+        shares.push(
+          new jiffInstance.SecretShare(
+            arr[j],
+            computeParties,
+            jiffInstance.party_count,
+            jiffInstance.Zp
+          )
+        )
+      }
+      ret.push(shares);
+    }
+
+    return ret;
+  }
+
+  exports.sharePlaintext = function(filePath, jiffInstance, useBigNumber) {
+
+    let ret = [];
+    let inputData = fs.readFileSync(filePath.trim(), 'UTF-8').trim();
+    let rows = inputData.split('\n');
+
+    for (let i = 0; i < rows.length; i++) {
+      let arr;
+      if (useBigNumber) {
+        arr = rows[i].split(',').map(jiffInstance.helpers.BigNumber);
+      } else {
+        arr = rows[i].split(',').map(Number);
+      }
+      ret.push(arr);
+    }
+
+    return jiffInstance.share_ND_array(ret);
+  }
+
+
+}(typeof exports === 'undefined' ? this.helpers = {} : exports));
