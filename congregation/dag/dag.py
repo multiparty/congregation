@@ -1,21 +1,12 @@
 from congregation.dag.nodes import OpNode
-from congregation.dag.nodes.unary import Collect
 
 
 class Dag:
     def __init__(self, roots: set):
         self.roots = roots
-        # if not self.is_valid_workflow():
-        #     raise Exception(f"Not a dag: workflow must terminate with a single Collect node.")
 
     def __str__(self):
         return "\n".join(str(node) for node in self.top_sort())
-
-    def is_valid_workflow(self):
-
-        all_nodes = self.top_sort()
-        terminal_nodes = [node for node in all_nodes if len(node.children) == 0]
-        return all([isinstance(node, Collect) for node in terminal_nodes]) and len(terminal_nodes) == 1
 
     def dfs_visit(self, visitor):
 

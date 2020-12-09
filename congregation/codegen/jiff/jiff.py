@@ -25,6 +25,8 @@ class JiffCodeGen(CodeGen):
     def _generate_code(self):
 
         ret = dict()
+        ret["helpers.js"] = open(f"{self.templates_dir}/modules/helpers.tmpl").read()
+        ret["methods.js"] = open(f"{self.templates_dir}/modules/methods.tmpl").read()
         ret["mpc.js"] = self._generate_mpc()
         ret["party.js"] = self._generate_party()
         ret["server.js"] = self._generate_server()
@@ -61,7 +63,7 @@ class JiffCodeGen(CodeGen):
                 self._generate_big_number("party")
                 if self.codegen_config.extensions["big_number"]["use"]
                 else "",
-            "NUM_PARTIES": self._get_num_parties(),
+            "NUM_PARTIES": len(self.codegen_config.all_pids),
             "PARTY_ID": self.codegen_config.pid,
             "ZP": self.codegen_config.zp,
             "FIXED_POINT":
@@ -70,6 +72,7 @@ class JiffCodeGen(CodeGen):
                 else "",
             "WRITE": 1,
             "OUTPUT_PATH": self._get_output_path(),
+            "SERVER_IP_PORT": f"http://{self.codegen_config.server_ip}:{self.codegen_config.server_port}",
             "COMPUTATION_ID": self.codegen_config.workflow_name
         }
 
@@ -93,15 +96,13 @@ class JiffCodeGen(CodeGen):
     def _generate_bash(self):
         return ""
 
-    def _get_num_parties(self):
-        """ Look at all root nodes, find length of min stored_with set """
-        return None
-
     def _get_output_path(self):
-        """
-        Get leaf open() node, return out_rel.name
-        """
-        return None
+
+        ordered = self.dag.top_sort()
+        if not isinstance(ordered[-1], Open):
+            raise Exception(f"Terminal node of MPC job not Open(). Is type {type(ordered[-1])}")
+
+        return f"{self.codegen_config.output_path}/{ordered[-1].out_rel.name}.csv"
 
     def _generate_big_number(self, file_type):
 

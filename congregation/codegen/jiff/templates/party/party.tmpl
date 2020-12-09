@@ -16,7 +16,7 @@ options.onConnect = function (jiffInstance) {
   promise.then(function (v) {
 
     if ({{{WRITE}}}) {
-      let output = {{{OUTPUT_PATH}}};
+      let output = '{{{OUTPUT_PATH}}}';
       fs.writeFile(output, helpers.formatTwoD(v), function(err) {
         if (err) {
           console.log(err);
@@ -28,4 +28,4 @@ options.onConnect = function (jiffInstance) {
 };
 
 // Connect
-mpc.connect('http://localhost:8080', {{{COMPUTATION_ID}}}, options);
+mpc.connect('{{{SERVER_IP_PORT}}}', {{{COMPUTATION_ID}}}, options);
