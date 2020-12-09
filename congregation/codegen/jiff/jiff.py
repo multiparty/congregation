@@ -2,6 +2,7 @@ from congregation.codegen.codegen import CodeGen
 from congregation.dag import Dag
 from congregation.dag.nodes import *
 from congregation.dag.nodes.internal import *
+from congregation.job import JiffJob
 import os
 import pystache
 
@@ -13,38 +14,151 @@ class JiffCodeGen(CodeGen):
         self.codegen_config = config.system_configs["JIFF_CODEGEN"]
 
     def generate(self, job_name: str):
-        """ TODO """
 
         op_code = self._generate_code()
-        # self.write_code() for each key in dict returned by self._generate_code()
-        # return single JiffJob
+        for k in op_code.keys():
+            if op_code[k]:
+                self.write_code(job_name, op_code[k], k)
+        job = self._generate_job(job_name)
+        return job
 
     def _generate_code(self):
-        """ TODO """
 
         ret = dict()
-        ret["mpc.js"] = super()._generate_code()
-        if self.codegen_config.server_pid == self.codegen_config.pid:
-            ret["server.js"] = self._generate_server()
-        # return a dict whose keys are filenames (party.js, mpc.js, etc.)
-        # and whose values are all code as str
+        ret["mpc.js"] = self._generate_mpc()
+        ret["party.js"] = self._generate_party()
+        ret["server.js"] = self._generate_server()
+        ret["run.sh"] = self._generate_bash()
+
         return ret
 
-    def _generate_server(self):
-        """ TODO """
+    def _generate_mpc(self):
 
-        server_template = open(f"{self.templates_dir}/server/server.tmpl").read()
+        template = open(f"{self.templates_dir}/mpc/mpc.tmpl").read()
         data = {
-            "JIFF_PATH": self.codegen_config.jiff_lib_path
+            "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path,
+            "BIG_NUMBER":
+                self._generate_big_number("mpc")
+                if self.codegen_config.extensions["big_number"]["use"]
+                else "",
+            "FIXED_POINT":
+                self._generate_fixed_point("mpc")
+                if self.codegen_config.extensions["fixed_point"]["use"]
+                else "",
+            "NEGATIVE_NUMBER": self._generate_negative_number(),
+            "SHARE_STR": self._generate_share(),
+            "INPUTS_STR": self._generate_inputs(),
+            "OP_CODE": super()._generate_code()
         }
-        # JIFF_PATH, BIG_NUMBER
+
+        return pystache.render(template, data)
+
+    def _generate_party(self):
+
+        template = open(f"{self.templates_dir}/party/party.tmpl").read()
+        data = {
+            "BIG_NUMBER":
+                self._generate_big_number("party")
+                if self.codegen_config.extensions["big_number"]["use"]
+                else "",
+            "NUM_PARTIES": self._get_num_parties(),
+            "PARTY_ID": self.codegen_config.pid,
+            "ZP": self.codegen_config.zp,
+            "FIXED_POINT":
+                self._generate_fixed_point("party")
+                if self.codegen_config.extensions["fixed_point"]["use"]
+                else "",
+            "WRITE": 1,
+            "OUTPUT_PATH": self._get_output_path(),
+            "COMPUTATION_ID": self.codegen_config.workflow_name
+        }
+
+        return pystache.render(template, data)
+
+    def _generate_server(self):
+
+        if self.codegen_config.server_pid == self.codegen_config.pid:
+            template = open(f"{self.templates_dir}/server/server.tmpl").read()
+            data = {
+                "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path,
+                "BIG_NUMBER":
+                    self._generate_big_number("server")
+                    if self.codegen_config.extensions["big_number"]["use"]
+                    else ""
+            }
+            return pystache.render(template, data)
+        else:
+            return ""
+
+    def _generate_bash(self):
+        return ""
+
+    def _get_num_parties(self):
+        """ Look at all root nodes, find length of min stored_with set """
+        return None
+
+    def _get_output_path(self):
+        """
+        Get leaf open() node, return out_rel.name
+        """
+        return None
+
+    def _generate_big_number(self, file_type):
+
+        try:
+            template = open(f"{self.templates_dir}/{file_type}/big_number.tmpl").read()
+            data = {
+                "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path
+            }
+            return pystache.render(template, data)
+        except FileNotFoundError:
+            print(f"ERROR: Unrecognized file_type: {file_type}.")
+            return ""
+
+    def _generate_fixed_point(self, file_type):
+
+        try:
+            template = open(f"{self.templates_dir}/{file_type}/fixed_point.tmpl").read()
+        except FileNotFoundError:
+            print(f"ERROR: Unrecognized file_type: {file_type}.")
+            return ""
+
+        if file_type == "mpc":
+            data = {
+                "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path
+            }
+        elif file_type == "party":
+            data = {
+                "DECIMAL_DIGITS": int(self.codegen_config.extensions["fixed_point"]["decimal_digits"]),
+                "INTEGER_DIGITS": int(self.codegen_config.extensions["fixed_point"]["integer_digits"])
+            }
+        else:
+            raise Exception(
+                f"ERROR: Unrecognized file_type: {file_type}."
+            )
+
+        return pystache.render(template, data)
+
+    def _generate_negative_number(self):
+
+        template = open(f"{self.templates_dir}/mpc/negative_number.tmpl").read()
+        data = {
+            "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path
+        }
+
+        return pystache.render(template, data)
+
+    def _generate_share(self):
+        return ""
+
+    def _generate_inputs(self):
         return ""
 
     def _generate_job(self, job_name: str):
-        """ TODO """
+        return JiffJob(job_name, f"{self.codegen_config.code_path}/{job_name}")
 
     def _generate_create(self, node: Create):
-        raise Exception("Create node encountered during Jiff code generation.")
+        return ""
 
     def _generate_aggregate_count(self, node: AggregateCount):
         return ""

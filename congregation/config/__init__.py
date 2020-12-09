@@ -1,2 +1,3 @@
 from congregation.config.config import Config
-from congregation.config.network.network import NetworkConfig
+from congregation.config.network import *
+from congregation.config.codegen import *

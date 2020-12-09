@@ -1,3 +1,3 @@
-  let jiffBigNumberServer = require('{{{JIFF_PATH}}}/lib/ext/jiff-server-bignumber');
+  let jiffBigNumberServer = require('{{{JIFF_LIB_PATH}}}/lib/ext/jiff-server-bignumber');
   jiffServerInstance.apply_extension(jiffBigNumberServer);
-  app.use('/bignumber.js', express.static('{{{JIFF_PATH}}}/node_modules/bignumber.js'));
+  app.use('/bignumber.js', express.static('{{{JIFF_LIB_PATH}}}/node_modules/bignumber.js'));

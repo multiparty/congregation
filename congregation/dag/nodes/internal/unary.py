@@ -79,8 +79,10 @@ class Open(UnaryOpNode):
 
 
 class Close(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: [OpNode, None]):
+    def __init__(self, out_rel: Relation, parent: [OpNode, None], holding_parties: list):
         super(Close, self).__init__("close", out_rel, parent)
+        # parties who hold this data in plaintext
+        self.holding_party = holding_parties
 
     def is_reversible(self):
         return True

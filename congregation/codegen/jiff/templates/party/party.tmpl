@@ -1,12 +1,10 @@
 let mpc = require('./mpc');
-let helpers = require("./helpers");
+let helpers = require('./helpers');
 let fs = require('fs');
-
-let config = require(process.argv[2]);
-let inputs = process.argv[3].split(",")
+{{{BIG_NUMBER}}}
 
 // JIFF options
-var options = {
+let options = {
   party_count: {{{NUM_PARTIES}}},
   party_id: {{{PARTY_ID}}},
   Zp: {{{ZP}}}
@@ -14,7 +12,7 @@ var options = {
 {{{FIXED_POINT}}}
 
 options.onConnect = function (jiffInstance) {
-  let promise = mpc.compute(inputs);
+  let promise = mpc.compute();
   promise.then(function (v) {
 
     if ({{{WRITE}}}) {

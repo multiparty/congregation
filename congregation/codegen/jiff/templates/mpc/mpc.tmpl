@@ -1,15 +1,15 @@
 (function (exports, node) {
 
-  var functions = require('./functions');
+  let functions = require('./functions');
   let helpers = require('./helpers');
-  var jiffInstance;
+  let jiffInstance;
   exports.connect = function (hostname, computationId, options) {
 
-    var opt = Object.assign({}, options);
+    let opt = Object.assign({}, options);
     opt.crypto_provider = true;
     opt.warn = false;
 
-    var jiffClient = require('{{{JIFF_PATH}}}/lib/jiff-client.js');
+    let jiffClient = require('{{{JIFF_PATH}}}/lib/jiff-client.js');
     opt.autoConnect = false;
     jiffInstance = new jiffClient(hostname, computationId, opt);
 
@@ -21,12 +21,12 @@
     return jiffInstance;
   };
 
-  exports.compute = function (inputs) {
+  exports.compute = function () {
 
     let all_inputs = [];
-    {{{INPUTS_STR}}}
-
-    var computation = Promise.all([inputs]).then( function (d) {
+    {{{SHARE_STR}}}
+    let computation = Promise.all([inputs]).then( function (d) {
+      {{{INPUTS_STR}}}
       {{{OP_CODE}}}
     })
 

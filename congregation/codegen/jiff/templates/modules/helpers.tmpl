@@ -45,23 +45,27 @@
     return ret;
   }
 
-  exports.sharePlaintext = function(filePath, jiffInstance, useBigNumber) {
+  exports.sharePlaintext = function(filePath, jiffInstance, useBigNumber, inputParty) {
 
-    let ret = [];
-    let inputData = fs.readFileSync(filePath.trim(), 'UTF-8').trim();
-    let rows = inputData.split('\n');
+    if (filePath) {
+      let ret = [];
+      let inputData = fs.readFileSync(filePath.trim(), 'UTF-8').trim();
+      let rows = inputData.split('\n');
 
-    for (let i = 0; i < rows.length; i++) {
-      let arr;
-      if (useBigNumber) {
-        arr = rows[i].split(',').map(jiffInstance.helpers.BigNumber);
-      } else {
-        arr = rows[i].split(',').map(Number);
+      for (let i = 0; i < rows.length; i++) {
+        let arr;
+        if (config.bigNumber.use) {
+          arr = rows[i].split(',').map(jiffInstance.helpers.BigNumber);
+        } else {
+          arr = rows[i].split(',').map(Number);
+        }
+        ret.push(arr);
       }
-      ret.push(arr);
-    }
 
-    return jiffInstance.share_ND_array(ret);
+      return jiffInstance.share_ND_array(ret, null, null, config.protocol.computeParties, [jiffInstance.id]);
+    } else {
+      return jiffInstance.share_ND_array(null, null, null, config.protocol.computeParties, [inputParty]);
+    }
   }
 
 
