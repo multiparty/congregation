@@ -17,7 +17,7 @@ class InsertCloseOps(DagRewriter):
             out_stored_with = node.out_rel.stored_with
             parents = node.get_sorted_parents()
             for parent in parents:
-                par_stored_with = copy.copy(parent.out_rel.stored_with)
+                par_stored_with = copy.deepcopy(parent.out_rel.stored_with)
                 if out_stored_with != par_stored_with:
 
                     out_rel = copy.deepcopy(parent.out_rel)

@@ -45,7 +45,7 @@
     return ret;
   }
 
-  exports.sharePlaintext = function(filePath, jiffInstance, useBigNumber, inputParty) {
+  exports.sharePlaintext = function(filePath, jiffInstance, useBigNumber, inputParty, allParties) {
 
     if (filePath) {
       let ret = [];
@@ -61,10 +61,9 @@
         }
         ret.push(arr);
       }
-
-      return jiffInstance.share_ND_array(ret, null, null, config.protocol.computeParties, [jiffInstance.id]);
+      return jiffInstance.share_ND_array(ret, null, null, allParties, [inputParty]);
     } else {
-      return jiffInstance.share_ND_array(null, null, null, config.protocol.computeParties, [inputParty]);
+      return jiffInstance.share_ND_array(null, null, null, allParties, [inputParty]);
     }
   }
 

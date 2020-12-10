@@ -13,10 +13,7 @@
     opt.autoConnect = false;
     jiffInstance = new jiffClient(hostname, computationId, opt);
 
-{{{BIG_NUMBER}}}
-{{{FIXED_POINT}}}
-{{{NEGATIVE_NUMBER}}}
-
+{{{BIG_NUMBER}}}{{{FIXED_POINT}}}{{{NEGATIVE_NUMBER}}}
     jiffInstance.connect();
     return jiffInstance;
   };
@@ -24,7 +21,7 @@
   exports.compute = function () {
 
     let all_inputs = [];
-    {{{SHARE_STR}}}
+{{{SHARE_STR}}}
     let computation = Promise.all([inputs]).then( function (d) {
       {{{INPUTS_STR}}}
       {{{OP_CODE}}}

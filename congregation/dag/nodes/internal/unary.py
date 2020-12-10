@@ -79,10 +79,16 @@ class Open(UnaryOpNode):
 
 
 class Close(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: [OpNode, None], holding_parties: list):
+    def __init__(self, out_rel: Relation, parent: [OpNode, None], holding_party: list):
         super(Close, self).__init__("close", out_rel, parent)
         # parties who hold this data in plaintext
-        self.holding_party = holding_parties
+        self.holding_party = self._resolve_holding_party(holding_party)
+
+    @staticmethod
+    def _resolve_holding_party(holding_party):
+        if len(holding_party) > 1 or len(holding_party[0]) > 1:
+            raise Exception(f"Holding party for Close() node should be singular: {holding_party}")
+        return holding_party[0].pop()
 
     def is_reversible(self):
         return True

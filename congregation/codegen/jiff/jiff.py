@@ -47,7 +47,10 @@ class JiffCodeGen(CodeGen):
                 self._generate_fixed_point("mpc")
                 if self.codegen_config.extensions["fixed_point"]["use"]
                 else "",
-            "NEGATIVE_NUMBER": self._generate_negative_number(),
+            "NEGATIVE_NUMBER":
+                self._generate_negative_number()
+                if self.codegen_config.extensions["negative_number"]["use"]
+                else "",
             "SHARE_STR": self._generate_share(),
             "INPUTS_STR": self._generate_inputs(),
             "OP_CODE": super()._generate_code()
@@ -107,7 +110,7 @@ class JiffCodeGen(CodeGen):
     def _generate_big_number(self, file_type):
 
         try:
-            template = open(f"{self.templates_dir}/{file_type}/big_number.tmpl").read()
+            template = open(f"{self.templates_dir}/{file_type}/extensions/big_number.tmpl").read()
             data = {
                 "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path
             }
@@ -119,7 +122,7 @@ class JiffCodeGen(CodeGen):
     def _generate_fixed_point(self, file_type):
 
         try:
-            template = open(f"{self.templates_dir}/{file_type}/fixed_point.tmpl").read()
+            template = open(f"{self.templates_dir}/{file_type}/extensions/fixed_point.tmpl").read()
         except FileNotFoundError:
             print(f"ERROR: Unrecognized file_type: {file_type}.")
             return ""
@@ -142,15 +145,63 @@ class JiffCodeGen(CodeGen):
 
     def _generate_negative_number(self):
 
-        template = open(f"{self.templates_dir}/mpc/negative_number.tmpl").read()
+        template = open(f"{self.templates_dir}/mpc/extensions/negative_number.tmpl").read()
         data = {
             "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path
         }
 
         return pystache.render(template, data)
 
+    def _add_share_plaintext(self, close_node: Close):
+
+        data = {
+            "VAR_NAME": close_node.out_rel.name,
+            "USE_BIG_NUMBER": int(self.codegen_config.extensions["big_number"]["use"]),
+            "INPUT_PARTY": close_node.holding_party,
+            "ALL_PARTIES": self.codegen_config.all_pids
+        }
+
+        # if this party owns the data for this node, generate a
+        # share string with the appropriate file path. if not,
+        # generate a share string with the file path set to null
+        if close_node.holding_party == self.codegen_config.pid:
+            template = open(f"{self.templates_dir}/mpc/share/share_plaintext.tmpl").read()
+            data["FILE_PATH"] = f"{self.codegen_config.input_path}/{close_node.out_rel.name}.csv"
+        else:
+            template = open(f"{self.templates_dir}/mpc/share/share_plaintext_null.tmpl").read()
+
+        return f"{pystache.render(template, data)}\n"
+
+    def _add_share_secret(self, create_node: Create):
+
+        template = open(f"{self.templates_dir}/mpc/share/share_secret.tmpl").read()
+        data = {
+            "VAR_NAME": create_node.out_rel.name,
+            "FILE_PATH": f"{self.codegen_config.input_path}/{create_node.out_rel.name}.csv",
+            "USE_BIG_NUMBER": int(self.codegen_config.extensions["big_number"]["use"]),
+            "COMPUTE_PARTIES": self.codegen_config.all_pids
+        }
+
+        return f"{pystache.render(template, data)}\n"
+
     def _generate_share(self):
-        return ""
+
+        ret = ""
+        roots_copy = copy.deepcopy(self.dag.roots)
+
+        for r in roots_copy:
+            if isinstance(r, Close):
+                # stored data is plaintext, needs to be shared
+                ret += self._add_share_plaintext(r)
+            elif isinstance(r, Create):
+                # stored data is shares, needs to be passed to Share constructor
+                ret += self._add_share_secret(r)
+            else:
+                raise Exception(
+                    f"Roots of DAG passed to Jiff codegen should be of type Create or Close, not {type(r)}."
+                )
+
+        return ret
 
     def _generate_inputs(self):
         return ""
