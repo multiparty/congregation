@@ -155,7 +155,6 @@ class JiffCodeGen(CodeGen):
     def _add_share_plaintext(self, close_node: Close):
 
         data = {
-            "VAR_NAME": close_node.out_rel.name,
             "USE_BIG_NUMBER": int(self.codegen_config.extensions["big_number"]["use"]),
             "INPUT_PARTY": close_node.holding_party,
             "ALL_PARTIES": self.codegen_config.all_pids
@@ -176,7 +175,6 @@ class JiffCodeGen(CodeGen):
 
         template = open(f"{self.templates_dir}/mpc/share/share_secret.tmpl").read()
         data = {
-            "VAR_NAME": create_node.out_rel.name,
             "FILE_PATH": f"{self.codegen_config.input_path}/{create_node.out_rel.name}.csv",
             "USE_BIG_NUMBER": int(self.codegen_config.extensions["big_number"]["use"]),
             "COMPUTE_PARTIES": self.codegen_config.all_pids
@@ -187,9 +185,7 @@ class JiffCodeGen(CodeGen):
     def _generate_share(self):
 
         ret = ""
-        roots_copy = copy.deepcopy(self.dag.roots)
-
-        for r in roots_copy:
+        for r in self.sorted_roots:
             if isinstance(r, Close):
                 # stored data is plaintext, needs to be shared
                 ret += self._add_share_plaintext(r)
@@ -204,7 +200,17 @@ class JiffCodeGen(CodeGen):
         return ret
 
     def _generate_inputs(self):
-        return ""
+
+        ret = ""
+        template = open(f"{self.templates_dir}/mpc/share/assign_input.tmpl").read()
+        for idx, r in enumerate(self.sorted_roots):
+            data = {
+                "VAR_NAME": r.out_rel.name,
+                "INDEX": idx
+            }
+            ret += f"{pystache.render(template, data)}\n"
+
+        return ret
 
     def _generate_job(self, job_name: str):
         return JiffJob(job_name, f"{self.codegen_config.code_path}/{job_name}")

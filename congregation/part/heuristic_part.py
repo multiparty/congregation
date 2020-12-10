@@ -16,6 +16,9 @@ class HeuristicPart:
           i.e. - there are no sequential partitions that require
           mpc between different (possibly overlapping) sets of
           compute parties
+        - that there does not exist a mix of pre-shared / plaintext
+          input datasets. TODO: incorporate this option into partitioning,
+          because code generation can already handle it.
     """
     def __init__(
             self,

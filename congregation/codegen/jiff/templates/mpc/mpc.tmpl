@@ -23,13 +23,14 @@
     let all_inputs = [];
 {{{SHARE_STR}}}
     let computation = Promise.all([inputs]).then( function (d) {
-      {{{INPUTS_STR}}}
-      {{{OP_CODE}}}
-    })
+
+{{{INPUTS_STR}}}
+{{{OP_CODE}}}
+    });
 
     return computation.then(function (opened) {
       return opened;
-    })
+    });
 
   };
 }((typeof exports === 'undefined' ? this.mpc = {} : exports), typeof exports !== 'undefined'));

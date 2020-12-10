@@ -11,6 +11,7 @@ class CodeGen:
         self.codegen_config = config.system_configs["CODEGEN"]
         self.network_config = config.system_configs["NETWORK"]
         self.dag = dag
+        self.sorted_roots = sorted(list(dag.roots), key=lambda r: r.out_rel.name)
         self.pid = self.codegen_config.pid
 
     def generate(self, job_name: str):
