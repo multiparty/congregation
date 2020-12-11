@@ -1,17 +1,17 @@
 let express = require('express');
 let app = express();
 let http = require('http').Server(app);
-let jiffServer = require('{{{JIFF_PATH}}}/lib/jiff-server');
+let jiffServer = require('{{{JIFF_LIB_PATH}}}/lib/jiff-server');
 let jiffServerInstance = new jiffServer(http, { logs: true });
 
 {{{BIG_NUMBER}}}
 
 // Serve static files.
 // Configure App
-app.use('/demos', express.static('{{{JIFF_PATH}}}/demos'));
-app.use('/dist', express.static('{{{JIFF_PATH}}}/dist'));
-app.use('/lib/ext', express.static('{{{JIFF_PATH}}}/lib/ext'));
+app.use('/demos', express.static('{{{JIFF_LIB_PATH}}}/demos'));
+app.use('/dist', express.static('{{{JIFF_LIB_PATH}}}/dist'));
+app.use('/lib/ext', express.static('{{{JIFF_LIB_PATH}}}/lib/ext'));
 
-http.listen(8080, function () {
+http.listen({{{SERVER_PORT}}}, function () {
   console.log('listening on *:8080');
 });

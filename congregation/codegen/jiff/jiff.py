@@ -90,7 +90,8 @@ class JiffCodeGen(CodeGen):
                 "BIG_NUMBER":
                     self._generate_big_number("server")
                     if self.codegen_config.extensions["big_number"]["use"]
-                    else ""
+                    else "",
+                "SERVER_PORT": self.codegen_config.server_port
             }
             return pystache.render(template, data)
         else:
@@ -202,12 +203,21 @@ class JiffCodeGen(CodeGen):
     def _generate_inputs(self):
 
         ret = ""
-        template = open(f"{self.templates_dir}/mpc/share/assign_input.tmpl").read()
+
         for idx, r in enumerate(self.sorted_roots):
             data = {
                 "VAR_NAME": r.out_rel.name,
                 "INDEX": idx
             }
+            if isinstance(r, Close):
+                template = open(f"{self.templates_dir}/mpc/share/assign_from_plaintext.tmpl").read()
+                data["PARTY_ID"] = r.holding_party
+            elif isinstance(r, Create):
+                template = open(f"{self.templates_dir}/mpc/share/assign_from_share.tmpl").read()
+            else:
+                raise Exception(
+                    f"Roots of DAG passed to Jiff codegen should be of type Create or Close, not {type(r)}."
+                )
             ret += f"{pystache.render(template, data)}\n"
 
         return ret
