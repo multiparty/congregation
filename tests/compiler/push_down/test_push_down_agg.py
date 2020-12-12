@@ -739,19 +739,19 @@ def test_sum(party_data, expected):
                     "stored_with": [{1}],
                     "plaintext_sets": [{1}, {1}],
                     "trust_with_sets": [{1}, {1}],
-                    "col_names": ["b", "a"]
+                    "col_names": ["b", "sum"]
                 },
                 {
                     "stored_with": [{2}],
                     "plaintext_sets": [{2}, {2}],
                     "trust_with_sets": [{2}, {2}],
-                    "col_names": ["d", "c"]
+                    "col_names": ["d", "sum"]
                 },
                 {
                     "stored_with": [{1}, {2}],
                     "plaintext_sets": [set(), set()],
                     "trust_with_sets": [set(), set()],
-                    "col_names": ["b", "a"]
+                    "col_names": ["b", "sum"]
                 },
                 {
                     "stored_with": [{1}, {2}],

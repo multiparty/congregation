@@ -30,14 +30,31 @@ class PushDown(DagRewriter):
                 parent.update_out_rel_cols()
 
     @staticmethod
-    def _rewrite_split_default(node: [AggregateSum, Distinct]):
+    def _update_bottom_node(parent_node: Concat):
+
+        if len(parent_node.children) != 1:
+            raise Exception("TODO: Handle split ops with more than one child.")
+
+        out_rel_cols_copy = copy.deepcopy(parent_node.out_rel.columns)
+        child = next(iter(parent_node.children))
+        if isinstance(child, (AggregateSum, AggregateMean, AggregateStdDev)):
+            num_group_cols = len(child.group_cols)
+            child.group_cols = out_rel_cols_copy[:num_group_cols]
+            child.agg_col = out_rel_cols_copy[num_group_cols]
+        elif isinstance(child, Distinct):
+            child.selected_cols = out_rel_cols_copy
+        else:
+            raise Exception(f"Unexpected node type encountered in default split op: {type(child)}")
+        child.update_out_rel_cols()
+
+    def _rewrite_split_default(self, node: [AggregateSum, Distinct]):
 
         parent = next(iter(node.parents))
         if parent.requires_mpc():
             if isinstance(parent, Concat) and parent.is_upper_boundary():
                 split_default(node)
                 push_parent_op_node_down(parent, node)
-                parent.update_out_rel_cols()
+                self._update_bottom_node(parent)
 
     def _rewrite_aggregate_sum(self, node: AggregateSum):
         self._rewrite_split_default(node)
@@ -49,7 +66,6 @@ class PushDown(DagRewriter):
             if isinstance(parent, Concat) and parent.is_upper_boundary():
                 split_agg_count(node)
                 push_parent_op_node_down(parent, node)
-                parent.update_out_rel_cols()
 
     def _rewrite_aggregate_mean(self, node: AggregateMean):
 
@@ -59,7 +75,7 @@ class PushDown(DagRewriter):
                 split_agg_mean(node, parent)
                 # node.parent is now AggregateSumCountCol
                 push_parent_op_node_down(parent, node.parent)
-                parent.update_out_rel_cols()
+                self._update_bottom_node(parent)
 
     def _rewrite_aggregate_std_dev(self, node: AggregateStdDev):
 
@@ -69,7 +85,7 @@ class PushDown(DagRewriter):
                 split_agg_std_dev(node, parent)
                 # node.parent is now AggregateSumSquaresAndCount
                 push_parent_op_node_down(parent, node.parent)
-                parent.update_out_rel_cols()
+                self._update_bottom_node(parent)
 
     def _rewrite_project(self, node: Project):
         self._rewrite_unary_default(node)

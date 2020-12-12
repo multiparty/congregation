@@ -232,7 +232,16 @@ class JiffCodeGen(CodeGen):
         return ""
 
     def _generate_aggregate_sum(self, node: AggregateSum):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/agg_sum.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COLS": [n.idx for n in node.group_cols],
+            "AGG_COL": node.agg_col.idx
+        }
+
+        return pystache.render(template, data)
 
     def _generate_aggregate_mean(self, node: AggregateMean):
         return ""
@@ -274,7 +283,14 @@ class JiffCodeGen(CodeGen):
         return ""
 
     def _generate_concat(self, node: Concat):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/concat.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_RELS": ",".join(r.name for r in node.get_in_rels())
+        }
+
+        return pystache.render(template, data)
 
     def _generate_store(self, node: Store):
         return ""
@@ -295,7 +311,13 @@ class JiffCodeGen(CodeGen):
         return ""
 
     def _generate_open(self, node: Open):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/open.tmpl").read()
+        data = {
+            "IN_REL": node.get_in_rel().name
+        }
+
+        return pystache.render(template, data)
 
     def _generate_close(self, node: Close):
         return ""

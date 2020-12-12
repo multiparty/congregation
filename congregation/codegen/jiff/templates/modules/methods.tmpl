@@ -27,4 +27,19 @@
     return ret;
   }
 
+  exports.aggregateSum = function (inRel, keyCols, aggCol) {
+
+    if (keyCols.length > 0) {
+      return [[]]
+    } else {
+      let ret = inRel[0][aggCol];
+
+      for (let i = 1; i < inRel.length; i++) {
+        ret = ret.sadd(inRel[i][aggCol]);
+      }
+
+      return [[ret]];
+    }
+  }
+
 }(typeof exports === 'undefined' ? this.methods = {} : exports));

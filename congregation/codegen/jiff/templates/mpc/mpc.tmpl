@@ -1,6 +1,6 @@
 (function (exports, node) {
 
-  let functions = require('./methods');
+  let methods = require('./methods');
   let helpers = require('./helpers');
   let jiffInstance;
   exports.connect = function (hostname, computationId, options) {
@@ -31,6 +31,5 @@
     return computation.then(function (opened) {
       return opened;
     });
-
   };
 }((typeof exports === 'undefined' ? this.mpc = {} : exports), typeof exports !== 'undefined'));

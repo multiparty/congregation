@@ -110,9 +110,11 @@ class AggregateSum(UnaryOpNode):
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
 
+        agg_col_name = copy.copy(self.agg_col.name)
         min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
         min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
         self.agg_col = temp_cols[self.agg_col.idx]
+        self.agg_col.name = agg_col_name
         self.agg_col.trust_with = min_trust_set
         self.agg_col.plaintext = min_pt
 
@@ -157,8 +159,10 @@ class AggregateMean(UnaryOpNode):
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
 
+        agg_col_name = copy.copy(self.agg_col.name)
         min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
         min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
+        self.agg_col.name = agg_col_name
         self.agg_col = temp_cols[self.agg_col.idx]
         self.agg_col.trust_with = min_trust_set
         self.agg_col.plaintext = min_pt
@@ -204,8 +208,10 @@ class AggregateStdDev(UnaryOpNode):
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
         self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
 
+        agg_col_name = copy.copy(self.agg_col.name)
         min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
         min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
+        self.agg_col.name = agg_col_name
         self.agg_col = temp_cols[self.agg_col.idx]
         self.agg_col.trust_with = min_trust_set
         self.agg_col.plaintext = min_pt

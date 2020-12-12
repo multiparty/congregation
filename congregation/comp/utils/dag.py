@@ -86,7 +86,6 @@ def insert_between(parent: OpNode, child: OpNode, to_insert: OpNode):
     to_insert.parents.add(parent)
     to_insert.parent = parent
     parent.children.add(to_insert)
-    to_insert.update_op_specific_cols()
     to_insert.update_out_rel_cols()
 
     if child:
@@ -140,7 +139,7 @@ def insert_clone(parent: OpNode, child: OpNode, to_insert: OpNode):
 
 def push_parent_op_node_down(top_node: OpNode, bottom_node: OpNode):
 
-    if not len(bottom_node.children) <= 1:
+    if not len(bottom_node.children) >= 1:
         print("TODO: Push OpNode down for children > 1.")
         return
 
@@ -156,6 +155,7 @@ def push_parent_op_node_down(top_node: OpNode, bottom_node: OpNode):
         insert_between(top_node_parent, top_node, node_to_insert)
         node_to_insert.update_stored_with()
         node_to_insert.update_out_rel_cols()
+    top_node.update_out_rel_cols()
 
 
 def fork_node(node: Concat):
