@@ -1,1 +1,3 @@
-      let {{{OUT_REL}}} = methods.aggregateSum({{{IN_REL}}}, {{{KEY_COLS}}}, {{{AGG_COL}}});
+      let {{{OUT_REL}}}_result = methods.aggregateSum({{{IN_REL}}}, {{{KEY_COLS}}}, {{{AGG_COL}}});
+      let {{{OUT_REL}}} = {{{OUT_REL}}}_result[0];
+      let {{{OUT_REL}}}_keep_rows = {{{OUT_REL}}}_result[1];

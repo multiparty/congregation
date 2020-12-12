@@ -48,7 +48,8 @@
   exports.sharePlaintext = function(filePath, jiffInstance, useBigNumber, inputParty, allParties) {
 
     if (filePath) {
-      let ret = [];
+      let parsedData = [];
+      let keepRows = [];
       let inputData = fs.readFileSync(filePath.trim(), 'UTF-8').trim();
       let rows = inputData.split('\n');
 
@@ -56,15 +57,20 @@
         let arr;
         if (useBigNumber) {
           arr = rows[i].split(',').map(jiffInstance.helpers.BigNumber);
+          keepRows.push(jiffInstance.helpers.BigNumber(1));
         } else {
           arr = rows[i].split(',').map(Number);
+          keepRows.push(1);
         }
-        ret.push(arr);
+        parsedData.push(arr);
       }
-      return jiffInstance.share_ND_array(ret, null, null, allParties, [inputParty]);
+      dataShares = jiffInstance.share_ND_array(parsedData, null, null, allParties, [inputParty]);
+      keepRowShares = jiffInstance.share_array(keepRows, null, null, allParties, [inputParty]);
     } else {
-      return jiffInstance.share_ND_array(null, null, null, allParties, [inputParty]);
+      dataShares = jiffInstance.share_ND_array(null, null, null, allParties, [inputParty]);
+      keepRowShares = jiffInstance.share_array(null, null, null, allParties, [inputParty]);
     }
+    return [dataShares, keepRowShares];
   }
 
 

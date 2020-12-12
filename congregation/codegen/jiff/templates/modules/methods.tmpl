@@ -1,30 +1,79 @@
 (function (exports) {
 
-  exports.open = function (inRel, jiffInstance) {
+  exports._bubbleSort = async function(inRel, keyCol, jiffInstance, numCols, minVal, maxVal) {
+    let loop = jiffInstance.start_barrier();
+    for (let i = minVal; i < maxVal; i++) {
+      let a = inRel[i][keyCol];
+      let b = inRel[i+1][keyCol];
+      let cmp = a.slt(b);
+
+      for (let j = 0; j < numCols; j++) {
+        let tempOne = cmp.if_else(inRel[i][j], inRel[i+1][j]);
+        let tempTwo = cmp.if_else(inRel[i+1][j], inRel[i][j]);
+
+        inRel[i][j] = tempOne;
+        inRel[i+1][j] = tempTwo;
+      }
+    }
+    await jiffInstance.end_barrier(loop);
+  }
+
+  exports.bubbleSort = async function(inRel, keyCol, jiffInstance) {
+
+    let numCols = inRel[0].length;
+    for (let i = 0; i < inRel.length; i++) {
+      let minVal;
+      let maxVal;
+
+      let totalRows = inRel.length - i - 1;
+      let chunks = Math.floor(totalRows/20);
+      if (chunks > 0) {
+        for (let j = 0; j < chunks; j++) {
+          minVal = 20 * j;
+          maxVal = minVal + 20;
+          await exports._bubbleSort(inRel, keyCol, jiffInstance, numCols, minVal, maxVal);
+        }
+        // finish last bit
+        await exports._bubbleSort(inRel, keyCol, jiffInstance, numCols, maxVal, totalRows);
+      } else {
+        await exports._bubbleSort(inRel, keyCol, jiffInstance, numCols, 0, totalRows);
+      }
+    }
+    return inRel;
+  }
+
+  exports.open = function (inRel, keepRows, jiffInstance) {
 
     let results = jiffInstance.open_ND_array(inRel);
-    return Promise.all([results]).then(function (arr) {
+    let keepRowsResult = jiffInstance.open_array(keepRows);
+
+    return Promise.all([results, keepRowsResult]).then(function (arr) {
       let openedRes = arr[0];
+      let openedKeep = arr[1];
       let ret = [];
 
       for (let i = 0; i < openedRes.length; i++) {
-        ret.push(openedRes[i]);
+        if (Number(openedKeep[i])) {
+          ret.push(openedRes[i]);
+        }
       }
 
       return ret;
     });
   };
 
-  exports.concat = function (inRels) {
+  exports.concat = function (inRels, keepRows) {
 
     let ret = [];
+    let keepRowsResult = [];
     for (let i = 0; i < inRels.length; i++) {
       for (let j = 0; j < inRels[i].length; j++) {
         ret.push(inRels[i][j]);
+        keepRowsResult.push(keepRows[i][j]);
       }
     }
 
-    return ret;
+    return [ret, keepRowsResult];
   }
 
   exports.aggregateSum = function (inRel, keyCols, aggCol) {

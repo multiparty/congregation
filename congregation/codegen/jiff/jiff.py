@@ -156,6 +156,7 @@ class JiffCodeGen(CodeGen):
     def _add_share_plaintext(self, close_node: Close):
 
         data = {
+            "VAR_NAME": close_node.out_rel.name,
             "USE_BIG_NUMBER": int(self.codegen_config.extensions["big_number"]["use"]),
             "INPUT_PARTY": close_node.holding_party,
             "ALL_PARTIES": self.codegen_config.all_pids
@@ -207,7 +208,8 @@ class JiffCodeGen(CodeGen):
         for idx, r in enumerate(self.sorted_roots):
             data = {
                 "VAR_NAME": r.out_rel.name,
-                "INDEX": idx
+                "INDEX_SHARE": idx * 2,
+                "INDEX_KEEP": (idx * 2) + 1
             }
             if isinstance(r, Close):
                 template = open(f"{self.templates_dir}/mpc/share/assign_from_plaintext.tmpl").read()
@@ -287,7 +289,8 @@ class JiffCodeGen(CodeGen):
         template = open(f"{self.templates_dir}/mpc/methods/concat.tmpl").read()
         data = {
             "OUT_REL": node.out_rel.name,
-            "IN_RELS": ",".join(r.name for r in node.get_in_rels())
+            "IN_RELS": ",".join(r.name for r in node.get_in_rels()),
+            "IN_RELS_KEEP": ",".join(f"{r.name}_keep_rows" for r in node.get_in_rels())
         }
 
         return pystache.render(template, data)

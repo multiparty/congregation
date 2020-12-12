@@ -1,4 +1,4 @@
-    inputs.push(
+    let {{{VAR_NAME}}} =
       helpers.sharePlaintext(
         null,
         jiffInstance,
@@ -6,4 +6,4 @@
         {{{INPUT_PARTY}}},
         {{{ALL_PARTIES}}}
       )
-    );
+    inputs.push({{{VAR_NAME}}}[0], {{{VAR_NAME}}}[1]);
