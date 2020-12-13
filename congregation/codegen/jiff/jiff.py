@@ -228,6 +228,12 @@ class JiffCodeGen(CodeGen):
         return JiffJob(job_name, f"{self.codegen_config.code_path}/{job_name}")
 
     def _generate_create(self, node: Create):
+
+        if node not in self.dag.roots:
+            raise Exception(
+                f"Create node with out_rel {node.out_rel.name} not in DAG "
+                f"roots for Jiff job {self.codegen_config.workflow_name}.")
+
         return ""
 
     def _generate_aggregate_count(self, node: AggregateCount):
@@ -235,11 +241,14 @@ class JiffCodeGen(CodeGen):
 
     def _generate_aggregate_sum(self, node: AggregateSum):
 
+        if len(node.group_cols) > 1:
+            raise Exception("Multiple key columns for aggregation in JIFF not yet implemented.")
+
         template = open(f"{self.templates_dir}/mpc/methods/agg_sum.tmpl").read()
         data = {
             "OUT_REL": node.out_rel.name,
             "IN_REL": node.get_in_rel().name,
-            "KEY_COLS": [n.idx for n in node.group_cols],
+            "KEY_COL": "null" if len(node.group_cols) == 0 else [n.idx for n in node.group_cols][0],
             "AGG_COL": node.agg_col.idx
         }
 
@@ -273,13 +282,28 @@ class JiffCodeGen(CodeGen):
         return ""
 
     def _generate_sort_by(self, node: SortBy):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/bubble_sort.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": node.sort_by_col.idx
+        }
+
+        return pystache.render(template, data)
 
     def _generate_num_rows(self, node: NumRows):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/num_rows.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name
+        }
+
+        return pystache.render(template, data)
 
     def _generate_collect(self, node: Collect):
-        return ""
+        raise Exception("Open node encountered during Jiff code generation.")
 
     def _generate_join(self, node: Join):
         return ""
@@ -296,13 +320,13 @@ class JiffCodeGen(CodeGen):
         return pystache.render(template, data)
 
     def _generate_store(self, node: Store):
-        return ""
+        raise Exception("Store node encountered during Jiff code generation.")
 
     def _generate_read(self, node: Read):
         raise Exception("Read node encountered during Jiff code generation.")
 
     def _generate_persist(self, node: Persist):
-        return ""
+        raise Exception("Persist node encountered during Jiff code generation.")
 
     def _generate_send(self, node: Send):
         raise Exception("Send node encountered during Jiff code generation.")
@@ -323,6 +347,12 @@ class JiffCodeGen(CodeGen):
         return pystache.render(template, data)
 
     def _generate_close(self, node: Close):
+
+        if node not in self.dag.roots:
+            raise Exception(
+                f"Close node with out_rel {node.out_rel.name} not in DAG "
+                f"roots for Jiff job {self.codegen_config.workflow_name}.")
+
         return ""
 
     def _generate_aggregate_sum_count_col(self, node: AggregateSumCountCol):
@@ -335,4 +365,16 @@ class JiffCodeGen(CodeGen):
         raise Exception("AggregateStdDevLocalSqrt node encountered during Jiff code generation.")
 
     def _generate_col_sum(self, node: ColSum):
-        return ""
+
+        if len(node.get_in_rel().columns) > 0:
+            raise Exception(f"ColSum node encountered with more than 1 column in input relation.")
+
+        template = open(f"{self.templates_dir}/mpc/methods/agg_sum.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": "null",
+            "AGG_COL": 0
+        }
+
+        return pystache.render(template, data)

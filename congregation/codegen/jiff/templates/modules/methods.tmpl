@@ -1,6 +1,6 @@
 (function (exports) {
 
-  exports._bubbleSort = async function(inRel, keyCol, jiffInstance, numCols, minVal, maxVal) {
+  exports._bubbleSort = async function(inRel, keepRows, keyCol, jiffInstance, numCols, minVal, maxVal) {
     let loop = jiffInstance.start_barrier();
     for (let i = minVal; i < maxVal; i++) {
       let a = inRel[i][keyCol];
@@ -14,11 +14,17 @@
         inRel[i][j] = tempOne;
         inRel[i+1][j] = tempTwo;
       }
+
+      let keepOne = cmp.if_else(keepRows[i], keepRows[i+1]);
+      let keepTwo = cmp.if_else(keepRows[i+1], keepRows[i]);
+
+      keepRows[i] = keepOne;
+      keepRows[i+1] = keepTwo;
     }
     await jiffInstance.end_barrier(loop);
   }
 
-  exports.bubbleSort = async function(inRel, keyCol, jiffInstance) {
+  exports.bubbleSort = async function(inRel, keepRows, keyCol, jiffInstance) {
 
     let numCols = inRel[0].length;
     for (let i = 0; i < inRel.length; i++) {
@@ -31,15 +37,15 @@
         for (let j = 0; j < chunks; j++) {
           minVal = 20 * j;
           maxVal = minVal + 20;
-          await exports._bubbleSort(inRel, keyCol, jiffInstance, numCols, minVal, maxVal);
+          await exports._bubbleSort(inRel, keepRows, keyCol, jiffInstance, numCols, minVal, maxVal);
         }
         // finish last bit
-        await exports._bubbleSort(inRel, keyCol, jiffInstance, numCols, maxVal, totalRows);
+        await exports._bubbleSort(inRel, keepRows, keyCol, jiffInstance, numCols, maxVal, totalRows);
       } else {
-        await exports._bubbleSort(inRel, keyCol, jiffInstance, numCols, 0, totalRows);
+        await exports._bubbleSort(inRel, keepRows, keyCol, jiffInstance, numCols, 0, totalRows);
       }
     }
-    return inRel;
+    return [inRel, keepRows];
   }
 
   exports.open = function (inRel, keepRows, jiffInstance) {
@@ -76,19 +82,64 @@
     return [ret, keepRowsResult];
   }
 
-  exports.aggregateSum = function (inRel, keyCols, aggCol) {
+  let _aggregateSum = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
 
-    if (keyCols.length > 0) {
-      return [[]]
+    let newRel = [];
+    for (let i = 0; i < inRel.length; i++) {
+      newRel.push([inRel[i][keyCol], inRel[i][aggCol]]);
+    }
+
+    let sorted = await exports.bubbleSort(newRel, keepRows, keyCol, jiffInstance);
+    let sortedData = sorted[0];
+    let sortedKeepRows = sorted[1];
+
+    for (let i = 0; i < sortedData.length - 1; i++) {
+      let step = jiffInstance.start_barrier();
+
+      let a = sortedData[i][keyCol];
+      let b = sortedData[i+1][keyCol];
+      let dataCmp = a.eq(b);
+
+      let temp = dataCmp.if_else(sortedData[i][aggCol].sadd(sortedData[i+1][aggCol]), sortedData[i+1][aggCol]);
+      let bothKeep = sortedKeepRows[i].smult(sortedKeepRows[i+1]);
+      let dataKeep = dataCmp.smult(bothKeep);
+      let tempResult = bothKeep.if_else(temp, sortedData[i+1][aggCol]);
+      let tempKeep = dataKeep.if_else(keyCol, keepRows[i]);
+
+      sortedData[i+1][aggCol] = tempResult;
+      sortedKeepRows[i] = tempKeep;
+
+      await jiffInstance.end_barrier(step);
+    }
+
+    return [sortedData, sortedKeepRows];
+  }
+
+  exports.aggregateSum = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+
+    if (keyCol !== null) {
+      return await _aggregateSum(inRel, keepRows, keyCol, aggCol, jiffInstance);
     } else {
       let ret = inRel[0][aggCol];
-
       for (let i = 1; i < inRel.length; i++) {
         ret = ret.sadd(inRel[i][aggCol]);
       }
 
-      return [[ret]];
+      return [[[ret]], [keepRows[0]]];
     }
+  }
+
+  exports.numRows = function (keepRows) {
+
+    let ret = keepRows[0];
+    for (let i = 1; i < keepRows.length; i++) {
+      ret = ret.sadd(keepRows[i]);
+    }
+
+    // if return value is greater than 0, at least 1 row was valid.
+    let keepRowsResult = ret.gteq(1);
+
+    return [[[ret]], [keepRowsResult]];
   }
 
 }(typeof exports === 'undefined' ? this.methods = {} : exports));
