@@ -156,7 +156,7 @@ def divide(input_op_node: OpNode, name: str, target_col_name: str, operands: lis
     target_col = find(out_rel_cols, target_col_name)
     if target_col is None:
 
-        cols_only = [col for col in operands if isinstance(col, Column)]
+        cols_only = [c for c in operands if isinstance(c, Column)]
         target_col_trust_set = min_trust_with_from_columns(cols_only)
         pt = min_pt_set_from_cols(cols_only)
         col_type = infer_output_type(cols_only)
@@ -168,7 +168,7 @@ def divide(input_op_node: OpNode, name: str, target_col_name: str, operands: lis
 
         # need to re-compute target column's trust set to reflect min trust set across
         # all target column + all operand columns. same for pt
-        all_cols = [col for col in operands if isinstance(col, Column)] + [target_col]
+        all_cols = [c for c in operands if isinstance(c, Column)] + [target_col]
         target_col_trust_set = min_trust_with_from_columns(all_cols)
         pt = min_pt_set_from_cols(all_cols)
         target_col.trust_with = target_col_trust_set

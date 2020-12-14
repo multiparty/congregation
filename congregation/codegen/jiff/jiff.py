@@ -285,16 +285,10 @@ class JiffCodeGen(CodeGen):
     def _generate_multiply(self, node: Multiply):
 
         in_rel_cols_len = len(node.get_in_rel().columns)
-        out_rel_cols_len = len(node.out_rel.columns)
-
-        # if out_rel has one more column than in_rel,
-        # then target_col is a new column.
-        if out_rel_cols_len - in_rel_cols_len == 1:
+        if node.target_col.idx == in_rel_cols_len:
             new_col = 1
-        elif out_rel_cols_len - in_rel_cols_len == 0:
-            new_col = 0
         else:
-            raise Exception(f"Unexpected out_rel behavior encountered at: {node.out_rel.name}")
+            new_col = 0
 
         template = open(f"{self.templates_dir}/mpc/methods/multiply.tmpl").read()
         data = {
@@ -305,11 +299,35 @@ class JiffCodeGen(CodeGen):
             "TARGET_COL": node.target_col.idx,
             "NEW_COL": new_col
         }
-        
+
         return pystache.render(template, data)
 
     def _generate_divide(self, node: Divide):
-        return ""
+
+        in_rel_cols_len = len(node.get_in_rel().columns)
+        if node.target_col.idx == in_rel_cols_len:
+            new_col = 1
+        else:
+            new_col = 0
+
+        if new_col and not isinstance(node.operands[0], Column):
+            # can't have operands list starting with a scalar because we can't do
+            # arithmetic operations in jiff like <scalar>.<operation>(<share>)
+            raise Exception(
+                f"Encountered operands list for Divide node whose first element is not of "
+                f"Column type in code generation for Jiff job {self.codegen_config.workflow_name}."
+            )
+
+        template = open(f"{self.templates_dir}/mpc/methods/divide.tmpl").read()
+        data = {
+            "OPERANDS": None,
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "TARGET_COL": node.target_col.idx,
+            "NEW_COL": new_col
+        }
+
+        return pystache.render(template, data)
 
     def _generate_limit(self, node: Limit):
         return ""

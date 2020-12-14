@@ -1,0 +1,7 @@
+      let {{{IN_REL}}}_operands =
+        {{{OPERANDS}}}
+      let {{{OUT_REL}}}_result =
+        methods.divide({{{IN_REL}}}, {{{IN_REL}}}_keep_rows, {{{IN_REL}}}_operands, {{{TARGET_COL}}}, {{{NEW_COL}}});
+      let {{{OUT_REL}}} = {{{OUT_REL}}}_result[0];
+      let {{{OUT_REL}}}_keep_rows = {{{OUT_REL}}}_result[1];
+

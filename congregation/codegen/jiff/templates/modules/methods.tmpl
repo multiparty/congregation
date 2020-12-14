@@ -96,13 +96,64 @@
 
     for (let i = 0; i < inRel.length; i++) {
       keepRowsResult.push([keepRows[i]]);
-      let targetVal = inRel[i][targetCol];
+
+      let targetVal;
+      let k;
+      if (newCol) {
+        // if newCol is true, there will be at least one colOperand
+        targetVal = inRel[i][colOperands[0]];
+        k = 1;
+      } else {
+        targetVal = inRel[i][targetCol];
+        k = 0;
+      }
 
       for (let j = 0; j < scalarOperands.length; j++) {
         targetVal = targetVal.cmult(scalarOperands[j]);
       }
-      for (let k = 0; k < colOperands.length; k++) {
+      for (k; k < colOperands.length; k++) {
         targetVal = targetVal.smult(inRel[i][colOperands[k]]);
+      }
+
+      if (newCol) {
+        let newRow = inRel[i].concat([targetVal]);
+        ret.push(newRow);
+      } else {
+        inRel[i][targetCol] = targetVal;
+        ret.push(inRel[i]);
+      }
+    }
+
+    return [ret, keepRowsResult];
+  }
+
+  exports.divide = function (inRel, keepRows, operands, targetCol, newCol) {
+
+    let ret = [];
+    let keepRowsResult = [];
+
+    for (let i = 0; i < inRel.length; i++) {
+      keepRowsResult.push(keepRows[i]);
+
+      let targetVal;
+      if (newCol) {
+        // if a new column is being created, the first
+        // operand is always a column
+        targetVal = inRel[i][operands[0].__VAL__];
+      } else {
+        if (operands[0].__TYPE__ === 'col') {
+          targetVal = inRel[i][targetCol].sdiv(inRel[i][operands[0].__VAL__]);
+        } else {
+          targetVal = inRel[i][targetCol].cdiv(operands[0].__VAL__);
+        }
+      }
+
+      for (let j = 1; j < operands.length; j++) {
+        if (operands[j].__TYPE__ === "col") {
+          targetVal = targetVal.div(inRel[i][operands[j].__VAL__]);
+        } else {
+          targetVal = targetVal.div(operands[j].__VAL__);
+        }
       }
 
       if (newCol) {

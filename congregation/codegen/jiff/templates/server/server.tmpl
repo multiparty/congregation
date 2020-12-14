@@ -13,5 +13,5 @@ app.use('/dist', express.static('{{{JIFF_LIB_PATH}}}/dist'));
 app.use('/lib/ext', express.static('{{{JIFF_LIB_PATH}}}/lib/ext'));
 
 http.listen({{{SERVER_PORT}}}, function () {
-  console.log('listening on *:8080');
+  console.log('listening on *:{{{SERVER_PORT}}}');
 });
