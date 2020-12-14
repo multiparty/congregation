@@ -237,7 +237,18 @@ class JiffCodeGen(CodeGen):
         return ""
 
     def _generate_aggregate_count(self, node: AggregateCount):
-        return ""
+
+        if len(node.group_cols) > 1:
+            raise Exception("Multiple key columns for aggregation in JIFF not yet implemented.")
+
+        template = open(f"{self.templates_dir}/mpc/methods/agg_count.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": "null" if len(node.group_cols) == 0 else [n.idx for n in node.group_cols][0]
+        }
+
+        return pystache.render(template, data)
 
     def _generate_aggregate_sum(self, node: AggregateSum):
 
@@ -261,10 +272,41 @@ class JiffCodeGen(CodeGen):
         return ""
 
     def _generate_project(self, node: Project):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/project.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "SELECTED_COLS": [c.idx for c in node.selected_cols]
+        }
+
+        return pystache.render(template, data)
 
     def _generate_multiply(self, node: Multiply):
-        return ""
+
+        in_rel_cols_len = len(node.get_in_rel().columns)
+        out_rel_cols_len = len(node.out_rel.columns)
+
+        # if out_rel has one more column than in_rel,
+        # then target_col is a new column.
+        if out_rel_cols_len - in_rel_cols_len == 1:
+            new_col = 1
+        elif out_rel_cols_len - in_rel_cols_len == 0:
+            new_col = 0
+        else:
+            raise Exception(f"Unexpected out_rel behavior encountered at: {node.out_rel.name}")
+
+        template = open(f"{self.templates_dir}/mpc/methods/multiply.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "COL_OPERANDS": [c.idx for c in node.operands if isinstance(c, Column)],
+            "SCALAR_OPERANDS": [n for n in node.operands if not isinstance(n, Column)],
+            "TARGET_COL": node.target_col.idx,
+            "NEW_COL": new_col
+        }
+        
+        return pystache.render(template, data)
 
     def _generate_divide(self, node: Divide):
         return ""
@@ -332,10 +374,10 @@ class JiffCodeGen(CodeGen):
         raise Exception("Send node encountered during Jiff code generation.")
 
     def _generate_index(self, node: Index):
-        return ""
+        raise Exception("Index node encountered during Jiff code generation.")
 
     def _generate_shuffle(self, node: Shuffle):
-        return ""
+        raise Exception("Shuffle node encountered during Jiff code generation.")
 
     def _generate_open(self, node: Open):
 

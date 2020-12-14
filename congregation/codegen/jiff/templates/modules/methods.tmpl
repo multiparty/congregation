@@ -1,6 +1,123 @@
 (function (exports) {
 
-  exports._bubbleSort = async function(inRel, keepRows, keyCol, jiffInstance, numCols, minVal, maxVal) {
+  exports._aggregateCount = async function (inRel, keepRows, keyCol, jiffInstance) {
+
+    let newRel = [];
+    for (let i = 0; i < inRel.length; i++) {
+      newRel.push([inRel[i][keyCol], keepRows[i]]);
+    }
+
+    return await exports._aggregateSum(newRel, keepRows, 0, 1, jiffInstance);
+  }
+
+  exports.aggregateCount = async function (inRel, keepRows, keyCol, jiffInstance) {
+
+    if (keyCol !== null) {
+      return await exports._aggregateCount(inRel, keepRows, keyCol, jiffInstance);
+    } else {
+      return exports.numRows(keepRows);
+    }
+  }
+
+  exports._aggregateSum = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+
+    let newRel = [];
+    for (let i = 0; i < inRel.length; i++) {
+      newRel.push([inRel[i][keyCol], inRel[i][aggCol]]);
+    }
+
+    let sorted = await exports.bubbleSort(newRel, keepRows, keyCol, jiffInstance);
+    let sortedData = sorted[0];
+    let sortedKeepRows = sorted[1];
+
+    for (let i = 0; i < sortedData.length - 1; i++) {
+      let step = jiffInstance.start_barrier();
+
+      let a = sortedData[i][0];
+      let b = sortedData[i+1][0];
+      let dataCmp = a.eq(b);
+
+      let temp = dataCmp.if_else(sortedData[i][1].sadd(sortedData[i+1][1]), sortedData[i+1][1]);
+      let bothKeep = sortedKeepRows[i].smult(sortedKeepRows[i+1]);
+      let dataKeep = dataCmp.smult(bothKeep);
+      let tempResult = bothKeep.if_else(temp, sortedData[i+1][1]);
+      let tempKeep = dataKeep.if_else(keyCol, keepRows[i]);
+
+      sortedData[i+1][aggCol] = tempResult;
+      sortedKeepRows[i] = tempKeep;
+
+      await jiffInstance.end_barrier(step);
+    }
+
+    return [sortedData, sortedKeepRows];
+  }
+
+  exports.aggregateSum = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+
+    if (keyCol !== null) {
+      return await exports._aggregateSum(inRel, keepRows, keyCol, aggCol, jiffInstance);
+    } else {
+
+      let ret = inRel[0][aggCol].smult(keepRows[0]);
+      let keepRowsSum = keepRows[0];
+      for (let i = 1; i < inRel.length; i++) {
+
+        let temp = inRel[i][aggCol].smult(keepRows[i]);
+        ret = ret.sadd(temp);
+        keepRowsSum = keepRowsSum.sadd(keepRows[i]);
+      }
+
+      let keepRowsResult = keepRowsSum.gteq(1);
+
+      return [[[ret]], [keepRowsResult]];
+    }
+  }
+
+  exports.project = function (inRel, keepRows, selectedCols) {
+
+    let ret = [];
+    let keepRowsResult = [];
+
+    for (let i = 0; i < inRel.length; i++) {
+      ret.push([]);
+      keepRowsResult.push(keepRows[i]);
+      for (let j = 0; j < selectedCols.length; j++) {
+        ret[i].push(inRel[i][selectedCols[j]]);
+      }
+    }
+
+    return [ret, keepRowsResult];
+  }
+
+  exports.multiply = function (inRel, keepRows, colOperands, scalarOperands, targetCol, newCol) {
+
+    let ret = [];
+    let keepRowsResult = [];
+
+    for (let i = 0; i < inRel.length; i++) {
+      keepRowsResult.push([keepRows[i]]);
+      let targetVal = inRel[i][targetCol];
+
+      for (let j = 0; j < scalarOperands.length; j++) {
+        targetVal = targetVal.cmult(scalarOperands[j]);
+      }
+      for (let k = 0; k < colOperands.length; k++) {
+        targetVal = targetVal.smult(inRel[i][colOperands[k]]);
+      }
+
+      if (newCol) {
+        let newRow = inRel[i].concat([targetVal]);
+        ret.push(newRow);
+      } else {
+        inRel[i][targetCol] = targetVal;
+        ret.push(inRel[i]);
+      }
+    }
+
+    return [ret, keepRowsResult];
+  }
+
+  exports._bubbleSort = async function (inRel, keepRows, keyCol, jiffInstance, numCols, minVal, maxVal) {
     let loop = jiffInstance.start_barrier();
     for (let i = minVal; i < maxVal; i++) {
       let a = inRel[i][keyCol];
@@ -24,7 +141,7 @@
     await jiffInstance.end_barrier(loop);
   }
 
-  exports.bubbleSort = async function(inRel, keepRows, keyCol, jiffInstance) {
+  exports.bubbleSort = async function (inRel, keepRows, keyCol, jiffInstance) {
 
     let numCols = inRel[0].length;
     for (let i = 0; i < inRel.length; i++) {
@@ -46,6 +163,19 @@
       }
     }
     return [inRel, keepRows];
+  }
+
+  exports.numRows = function (keepRows) {
+
+    let ret = keepRows[0];
+    for (let i = 1; i < keepRows.length; i++) {
+      ret = ret.sadd(keepRows[i]);
+    }
+
+    // if return value is greater than 0, at least 1 row was valid.
+    let keepRowsResult = ret.gteq(1);
+
+    return [[[ret]], [keepRowsResult]];
   }
 
   exports.open = function (inRel, keepRows, jiffInstance) {
@@ -80,66 +210,6 @@
     }
 
     return [ret, keepRowsResult];
-  }
-
-  let _aggregateSum = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
-
-    let newRel = [];
-    for (let i = 0; i < inRel.length; i++) {
-      newRel.push([inRel[i][keyCol], inRel[i][aggCol]]);
-    }
-
-    let sorted = await exports.bubbleSort(newRel, keepRows, keyCol, jiffInstance);
-    let sortedData = sorted[0];
-    let sortedKeepRows = sorted[1];
-
-    for (let i = 0; i < sortedData.length - 1; i++) {
-      let step = jiffInstance.start_barrier();
-
-      let a = sortedData[i][keyCol];
-      let b = sortedData[i+1][keyCol];
-      let dataCmp = a.eq(b);
-
-      let temp = dataCmp.if_else(sortedData[i][aggCol].sadd(sortedData[i+1][aggCol]), sortedData[i+1][aggCol]);
-      let bothKeep = sortedKeepRows[i].smult(sortedKeepRows[i+1]);
-      let dataKeep = dataCmp.smult(bothKeep);
-      let tempResult = bothKeep.if_else(temp, sortedData[i+1][aggCol]);
-      let tempKeep = dataKeep.if_else(keyCol, keepRows[i]);
-
-      sortedData[i+1][aggCol] = tempResult;
-      sortedKeepRows[i] = tempKeep;
-
-      await jiffInstance.end_barrier(step);
-    }
-
-    return [sortedData, sortedKeepRows];
-  }
-
-  exports.aggregateSum = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
-
-    if (keyCol !== null) {
-      return await _aggregateSum(inRel, keepRows, keyCol, aggCol, jiffInstance);
-    } else {
-      let ret = inRel[0][aggCol];
-      for (let i = 1; i < inRel.length; i++) {
-        ret = ret.sadd(inRel[i][aggCol]);
-      }
-
-      return [[[ret]], [keepRows[0]]];
-    }
-  }
-
-  exports.numRows = function (keepRows) {
-
-    let ret = keepRows[0];
-    for (let i = 1; i < keepRows.length; i++) {
-      ret = ret.sadd(keepRows[i]);
-    }
-
-    // if return value is greater than 0, at least 1 row was valid.
-    let keepRowsResult = ret.gteq(1);
-
-    return [[[ret]], [keepRowsResult]];
   }
 
 }(typeof exports === 'undefined' ? this.methods = {} : exports));
