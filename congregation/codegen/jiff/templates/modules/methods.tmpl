@@ -214,6 +214,72 @@
     return [sortedData, sortedKeepRows];
   }
 
+  exports._compareGt = function (value, against) {
+    return value.gt(against);
+  }
+
+  exports._compareGteq = function (value, against) {
+    return value.gteq(against);
+  }
+
+  exports._compareLt = function (value, against) {
+    return value.lt(against);
+  }
+
+  exports._compareLteq = function (value, against) {
+    return value.lteq(against);
+  }
+
+  exports._compareEq = function (value, against) {
+    return value.eq(against);
+  }
+
+  exports._resolveCompareFn = function (operator) {
+
+    if (operator === '>') {
+      return exports._compareGt;
+    } else if (operator === '>=') {
+      return exports._compareGteq;
+    } else if (operator === '<') {
+      return exports._compareLt;
+    } else if (operator === '<=') {
+      return exports._compareLteq;
+    } else if (operator === '==') {
+      return exports._compareEq;
+    } else {
+      throw `Unrecognized operator for filterAgainstScalar function: ${operator}`
+    }
+  }
+
+
+  exports.filterAgainstCol = function (inRel, keepRows, keyCol, againstCol, operator) {
+
+    let compareFn = exports._resolveCompareFn(operator);
+    let keepRowsResult = [];
+
+    for (let i = 0; i < inRel.length; i++) {
+      let dataCmp = compareFn(inRel[i][keyCol], inRel[i][againstCol]);
+      let keepRes = keepRows[i].mult(dataCmp);
+      keepRowsResult.push(keepRes);
+    }
+
+    return [inRel, keepRowsResult];
+  }
+
+  exports.filterAgainstScalar = function (inRel, keepRows, keyCol, scalar, operator) {
+
+    let compareFn = exports._resolveCompareFn(operator);
+    let keepRowsResult = [];
+
+    for (let i = 0; i < inRel.length; i++) {
+      let dataCmp = compareFn(inRel[i][keyCol], scalar);
+      let keepRes = keepRows[i].mult(dataCmp);
+      keepRowsResult.push(keepRes);
+    }
+
+    return [inRel, keepRowsResult];
+  }
+
   exports._bubbleSort = async function (inRel, keepRows, keyCol, jiffInstance, numCols, minVal, maxVal) {
     let loop = jiffInstance.start_barrier();
     for (let i = minVal; i < maxVal; i++) {

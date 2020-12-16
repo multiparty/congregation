@@ -380,8 +380,8 @@ class FilterAgainstCol(UnaryOpNode):
     @staticmethod
     def verify_operator(op):
 
-        if op not in [">", "<", "=="]:
-            raise Exception("Filter operation only supports {<, >, ==} operators.")
+        if op not in [">", "<", "==", ">=", "<="]:
+            raise Exception("Filter operation only supports {<, >, ==, >=, <=} operators.")
         return op
 
     def update_op_specific_cols(self):
@@ -418,8 +418,8 @@ class FilterAgainstScalar(UnaryOpNode):
 
     @staticmethod
     def verify_operator(op):
-        if op not in [">", "<", "=="]:
-            raise Exception("Filter operation only supports {<, >, =} operators.")
+        if op not in [">", "<", "==", ">=", "<="]:
+            raise Exception("Filter operation only supports {<, >, ==, <=, >=} operators.")
         return op
 
     def update_op_specific_cols(self):

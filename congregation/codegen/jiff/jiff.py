@@ -380,10 +380,30 @@ class JiffCodeGen(CodeGen):
         return pystache.render(template, data)
 
     def _generate_filter_against_col(self, node: FilterAgainstCol):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/filter_against_col.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": node.filter_col.idx,
+            "AGAINST_COL": node.against_col.idx,
+            "OPERATOR": node.operator
+        }
+
+        return pystache.render(template, data)
 
     def _generate_filter_against_scalar(self, node: FilterAgainstScalar):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/filter_against_scalar.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": node.filter_col.idx,
+            "SCALAR": node.scalar,
+            "OPERATOR": node.operator
+        }
+
+        return pystache.render(template, data)
 
     def _generate_sort_by(self, node: SortBy):
 
