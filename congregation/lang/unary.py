@@ -205,7 +205,7 @@ def distinct(input_op_node: OpNode, name: str, selected_col_names: [list, None] 
     else:
         selected_cols = [find(in_rel.columns, col_name) for col_name in selected_col_names]
 
-    if not all([col is not None for col in selected_cols]):
+    if not all([c is not None for c in selected_cols]):
         raise Exception(
             f"One of the following columns was not found in relation {in_rel.name}:\n{selected_col_names}"
         )

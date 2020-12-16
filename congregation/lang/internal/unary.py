@@ -69,10 +69,10 @@ def shuffle(input_op_node: OpNode, name: str):
     return op
 
 
-def _open(input_op_node: OpNode, name: str, target_party: int):
+def open_dbg(input_op_node: OpNode, name: str, target_parties: list):
 
     out_rel = copy.deepcopy(input_op_node.out_rel)
-    out_rel.stored_with = [{target_party}]
+    out_rel.stored_with = target_parties
     out_rel.rename(name)
 
     op = Open(out_rel, input_op_node)
@@ -81,12 +81,13 @@ def _open(input_op_node: OpNode, name: str, target_party: int):
     return op
 
 
-def _close(input_op_node: OpNode, name: str, target_parties: list):
+def close_dbg(input_op_node: OpNode, name: str, target_parties: list):
 
     out_rel = copy.deepcopy(input_op_node.out_rel)
     out_rel.stored_with = target_parties
     out_rel.rename(name)
-    op = Close(out_rel, input_op_node)
+    par_stored_with = copy.deepcopy(input_op_node.out_rel.stored_with)
+    op = Close(out_rel, input_op_node, par_stored_with)
     input_op_node.children.add(op)
 
     return op

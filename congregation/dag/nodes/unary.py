@@ -359,8 +359,7 @@ class Distinct(UnaryOpNode):
     def update_out_rel_cols(self):
 
         self.update_op_specific_cols()
-        out_rel_cols = copy.deepcopy(self.get_in_rel().columns)
-        self.out_rel.columns = out_rel_cols
+        self.out_rel.columns = self.selected_cols
         self.out_rel.update_columns()
 
 

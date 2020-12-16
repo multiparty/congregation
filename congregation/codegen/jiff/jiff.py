@@ -304,6 +304,9 @@ class JiffCodeGen(CodeGen):
 
     def _generate_divide(self, node: Divide):
 
+        # if target_col.idx is the first index after the last
+        # column idx of this nodes in_rel, then this operation
+        # is storing results in a new column
         in_rel_cols_len = len(node.get_in_rel().columns)
         if node.target_col.idx == in_rel_cols_len:
             new_col = 1
@@ -318,9 +321,27 @@ class JiffCodeGen(CodeGen):
                 f"Column type in code generation for Jiff job {self.codegen_config.workflow_name}."
             )
 
+        operands = []
+        for o in node.operands:
+            if isinstance(o, Column):
+                operands.append({
+                    '__TYPE__': 'col',
+                    '__VAL__': o.idx
+                })
+            elif isinstance(o, (float, int)):
+                operands.append({
+                    '__TYPE__': 'scal',
+                    '__VAL__': o
+                })
+            else:
+                raise Exception(
+                    f"Operand passed to Divide() operator of unexpected "
+                    f"type: {type(o)}. Should be float, int, or Column."
+                )
+
         template = open(f"{self.templates_dir}/mpc/methods/divide.tmpl").read()
         data = {
-            "OPERANDS": None,
+            "OPERANDS": operands,
             "OUT_REL": node.out_rel.name,
             "IN_REL": node.get_in_rel().name,
             "TARGET_COL": node.target_col.idx,
@@ -330,10 +351,33 @@ class JiffCodeGen(CodeGen):
         return pystache.render(template, data)
 
     def _generate_limit(self, node: Limit):
-        return ""
+
+        template = open(f"{self.templates_dir}/mpc/methods/limit.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "NUM": node.num
+        }
+
+        return pystache.render(template, data)
 
     def _generate_distinct(self, node: Distinct):
-        return ""
+        """
+        TODO: Need to extend this to support selected_col_names list of size > 1. Right now,
+         we require size == 1 because the bubbleSort() method is limited to a single column.
+        """
+
+        if len(node.selected_cols) != 1:
+            raise Exception("Distinct operator does not yet support more than one selected column.")
+
+        template = open(f"{self.templates_dir}/mpc/methods/distinct.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": node.selected_cols[0].idx
+        }
+
+        return pystache.render(template, data)
 
     def _generate_filter_against_col(self, node: FilterAgainstCol):
         return ""
@@ -363,10 +407,23 @@ class JiffCodeGen(CodeGen):
         return pystache.render(template, data)
 
     def _generate_collect(self, node: Collect):
-        raise Exception("Open node encountered during Jiff code generation.")
+        raise Exception("Collect node encountered during Jiff code generation.")
 
     def _generate_join(self, node: Join):
-        return ""
+
+        if len(node.left_join_cols) > 1 or len(node.right_join_cols) > 1:
+            raise Exception("Join operator does not yet support more than one key column.")
+
+        template = open(f"{self.templates_dir}/mpc/methods/join.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "LEFT_IN_REL": node.get_left_in_rel().name,
+            "RIGHT_IN_REL": node.get_right_in_rel().name,
+            "LEFT_KEY": [n.idx for n in node.left_join_cols][0],
+            "RIGHT_KEY": [n.idx for n in node.right_join_cols][0]
+        }
+
+        return pystache.render(template, data)
 
     def _generate_concat(self, node: Concat):
 

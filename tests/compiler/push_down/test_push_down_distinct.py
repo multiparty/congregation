@@ -44,8 +44,8 @@ compiler has been run:
                 },
                 {
                     "stored_with": [{1}],
-                    "plaintext_sets": [{1}, {1}],
-                    "trust_with_sets": [{1}, {1}]
+                    "plaintext_sets": [{1}],
+                    "trust_with_sets": [{1}]
                 },
                 {
                     "stored_with": [{2}],
@@ -54,23 +54,23 @@ compiler has been run:
                 },
                 {
                     "stored_with": [{2}],
-                    "plaintext_sets": [{2}, {2}],
-                    "trust_with_sets": [{2}, {2}]
+                    "plaintext_sets": [{2}],
+                    "trust_with_sets": [{2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
+                    "plaintext_sets": [set()],
+                    "trust_with_sets": [set()]
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
+                    "plaintext_sets": [set()],
+                    "trust_with_sets": [set()]
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}],
+                    "trust_with_sets": [{1, 2}]
                 }
             ]
         }
@@ -101,8 +101,8 @@ compiler has been run:
                     },
                     {
                         "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1}, {1}]
+                        "plaintext_sets": [{1}],
+                        "trust_with_sets": [{1}]
                     },
                     {
                         "stored_with": [{2}],
@@ -111,23 +111,23 @@ compiler has been run:
                     },
                     {
                         "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
+                        "plaintext_sets": [{2}],
+                        "trust_with_sets": [{2}]
                     },
                     {
                         "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [set(), set()]
+                        "plaintext_sets": [set()],
+                        "trust_with_sets": [set()]
                     },
                     {
                         "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [set(), set()]
+                        "plaintext_sets": [set()],
+                        "trust_with_sets": [set()]
                     },
                     {
                         "stored_with": [{1}, {2}],
-                        "plaintext_sets": [{1, 2}, {1, 2}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
+                        "plaintext_sets": [{1, 2}],
+                        "trust_with_sets": [{1, 2}]
                     }
                 ]
             }
@@ -149,7 +149,7 @@ compiler has been run:
             ],
             {
                 "node_order": [Create, Distinct, Create, Distinct, Concat, Distinct, Collect],
-                "requires_mpc": [False, False, False, False, True, True, False],
+                "requires_mpc": [False, False, False, False, False, False, False],
                 "ownership_data": [
                     {
                         "stored_with": [{1}],
@@ -158,8 +158,8 @@ compiler has been run:
                     },
                     {
                         "stored_with": [{1}],
-                        "plaintext_sets": [{1}, {1}],
-                        "trust_with_sets": [{1, 2}, {1}]
+                        "plaintext_sets": [{1}],
+                        "trust_with_sets": [{1, 2}]
                     },
                     {
                         "stored_with": [{2}],
@@ -168,23 +168,23 @@ compiler has been run:
                     },
                     {
                         "stored_with": [{2}],
-                        "plaintext_sets": [{2}, {2}],
-                        "trust_with_sets": [{2}, {2}]
+                        "plaintext_sets": [{2}],
+                        "trust_with_sets": [{2}]
                     },
                     {
                         "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [{2}, set()]
+                        "plaintext_sets": [set()],
+                        "trust_with_sets": [{2}]
                     },
                     {
                         "stored_with": [{1}, {2}],
-                        "plaintext_sets": [set(), set()],
-                        "trust_with_sets": [{2}, set()]
+                        "plaintext_sets": [set()],
+                        "trust_with_sets": [{2}]
                     },
                     {
                         "stored_with": [{1}, {2}],
-                        "plaintext_sets": [{1, 2}, {1, 2}],
-                        "trust_with_sets": [{1, 2}, {1, 2}]
+                        "plaintext_sets": [{1, 2}],
+                        "trust_with_sets": [{1, 2}]
                     }
                 ]
             }
@@ -225,13 +225,13 @@ compiler has been run:
                 },
                 {
                     "stored_with": [{1, 2}],
-                    "plaintext_sets": [set(), set()],
-                    "trust_with_sets": [set(), set()]
+                    "plaintext_sets": [set()],
+                    "trust_with_sets": [set()]
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}],
+                    "trust_with_sets": [{1, 2}]
                 }
             ]
         }
@@ -246,7 +246,7 @@ def test_distinct(party_data, expected):
     rel_two = create("in2", cols_in_two, party_data[1]["stored_with"])
 
     cc = concat([rel_one, rel_two], "concat", party_data[0]["col_names"])
-    p = distinct(cc, "dist", party_data[0]["col_names"])
+    p = distinct(cc, "dist", [party_data[0]["col_names"][0]])
     collect(p, {1, 2})
 
     d = Dag({rel_one, rel_two})

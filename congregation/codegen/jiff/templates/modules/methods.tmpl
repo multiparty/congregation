@@ -168,6 +168,52 @@
     return [ret, keepRowsResult];
   }
 
+  exports.limit = function (inRel, keepRows, num) {
+
+    let ret = inRel.slice(0, num);
+    let keepRowsResult = keepRows.slice(0, num);
+
+    return [ret, keepRowsResult];
+  }
+
+  exports.distinct = async function (inRel, keepRows, keyCol, jiffInstance) {
+
+    let newRel = [];
+    for (let i = 0; i < inRel.length; i++) {
+      newRel.push([inRel[i][keyCol]]);
+    }
+
+    let sorted = await exports.bubbleSort(newRel, keepRows, keyCol, jiffInstance);
+    let sortedData = sorted[0];
+    let sortedKeepRows = sorted[1];
+
+    for (let i = 0; i < sortedData.length - 1; i++) {
+      let step = jiffInstance.start_barrier();
+
+      let a = sortedData[i][keyCol];
+      let b = sortedData[i+1][keyCol];
+      let dataCmp = a.eq(b);
+
+      let keepSum = keepRows[i].sadd(sortedKeepRows[i+1]);
+      // at least one keepRows index represents valid data
+      let atLeastOne = keepSum.gteq(1);
+
+      // if dataCmp is true and at least on keepRows index
+      // is equal to 1, then we want the one at i to be 0,
+      // and the one at i+1 to be 1. Else, do nothing
+      let firstIdx = atLeastOne.if_else(0, sortedKeepRows[i]);
+      let secondIdx = atLeastOne.if_else(1, sortedKeepRows[i+1]);
+
+      // apply conditions above to dataCmp
+      sortedKeepRows[i] = dataCmp.if_else(firstIdx, sortedKeepRows[i]);
+      sortedKeepRows[i+1] = dataCmp.if_else(secondIdx, sortedKeepRows[i+1]);
+
+      await jiffInstance.end_barrier(step);
+    }
+
+    return [sortedData, sortedKeepRows];
+  }
+
   exports._bubbleSort = async function (inRel, keepRows, keyCol, jiffInstance, numCols, minVal, maxVal) {
     let loop = jiffInstance.start_barrier();
     for (let i = minVal; i < maxVal; i++) {
@@ -229,6 +275,48 @@
     return [[[ret]], [keepRowsResult]];
   }
 
+  exports.concat = function (inRels, keepRows) {
+
+    let ret = [];
+    let keepRowsResult = [];
+    for (let i = 0; i < inRels.length; i++) {
+      for (let j = 0; j < inRels[i].length; j++) {
+        ret.push(inRels[i][j]);
+        keepRowsResult.push(keepRows[i][j]);
+      }
+    }
+
+    return [ret, keepRowsResult];
+  }
+
+  exports.join = function (leftRel, rightRel, leftKeepRows, rightKeepRows, leftKeyCol, rightKeyCol) {
+
+    let ret = [];
+    let keepRowsResult = [];
+
+    for (let i = 0; i < leftRel.length; i++) {
+      for (let j = 0; j < rightRel.length; j++) {
+
+        let leftJoinCol = leftRel[i][leftKeyCol];
+        let rightJoinCol = rightRel[j][rightKeyCol];
+
+        let newLeft = leftRel[i].slice();
+        let newRight = rightRel[j].slice();
+
+        newLeft.splice(leftKeyCol, 1);
+        newRight.splice(rightKeyCol, 1);
+        let newRow = [leftJoinCol].concat(newLeft).concat(newRight);
+        ret.push(newRow);
+
+        let eqFlag = leftJoinCol.seq(rightJoinCol);
+        let keepRowsFlag = leftKeepRows[i].smult(rightKeepRows[j]).smult(eqFlag);
+        keepRowsResult.push(keepRowsFlag);
+      }
+    }
+
+    return [ret, keepRowsResult];
+  }
+
   exports.open = function (inRel, keepRows, jiffInstance) {
 
     let results = jiffInstance.open_ND_array(inRel);
@@ -248,19 +336,5 @@
       return ret;
     });
   };
-
-  exports.concat = function (inRels, keepRows) {
-
-    let ret = [];
-    let keepRowsResult = [];
-    for (let i = 0; i < inRels.length; i++) {
-      for (let j = 0; j < inRels[i].length; j++) {
-        ret.push(inRels[i][j]);
-        keepRowsResult.push(keepRows[i][j]);
-      }
-    }
-
-    return [ret, keepRowsResult];
-  }
 
 }(typeof exports === 'undefined' ? this.methods = {} : exports));
