@@ -9,16 +9,16 @@ import pystache
 
 
 class PythonCodeGen(CodeGen):
-    def __init__(self, config: Config, dag: Dag):
-        super(PythonCodeGen, self).__init__(config, dag)
+    def __init__(self, config: Config, dag: Dag, job_name: [str, None] = None):
+        super(PythonCodeGen, self).__init__(config, dag, job_name)
         self.templates_dir = f"{os.path.dirname(os.path.realpath(__file__))}/templates/"
         self.space = "    "
 
-    def generate(self, job_name):
+    def generate(self):
 
         op_code = self._generate_code()
-        self.write_code(job_name, op_code, "workflow.py")
-        job = self._generate_job(job_name)
+        self.write_code(op_code, "workflow.py")
+        job = self._generate_job()
         return job
 
     def _generate_code(self):
@@ -28,8 +28,8 @@ class PythonCodeGen(CodeGen):
         data = {"OP_CODE": op_code}
         return pystache.render(template, data)
 
-    def _generate_job(self, job_name: str):
-        return PythonJob(job_name, self.codegen_config.code_path)
+    def _generate_job(self):
+        return PythonJob(self.job_name, self.codegen_config.code_path)
 
     def _generate_create(self, node: Create):
         return f"\n{self.space}{node.out_rel.name} = " \

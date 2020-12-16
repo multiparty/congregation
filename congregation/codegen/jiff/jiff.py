@@ -8,18 +8,18 @@ import pystache
 
 
 class JiffCodeGen(CodeGen):
-    def __init__(self, config, dag: Dag):
-        super(JiffCodeGen, self).__init__(config, dag)
+    def __init__(self, config, dag: Dag, job_name: [str, None] = None):
+        super(JiffCodeGen, self).__init__(config, dag, job_name)
         self.templates_dir = f"{os.path.dirname(os.path.realpath(__file__))}/templates/"
         self.codegen_config = config.system_configs["JIFF_CODEGEN"]
 
-    def generate(self, job_name: str):
+    def generate(self):
 
         op_code = self._generate_code()
         for k in op_code.keys():
             if op_code[k]:
-                self.write_code(job_name, op_code[k], k)
-        job = self._generate_job(job_name)
+                self.write_code(op_code[k], k)
+        job = self._generate_job()
         return job
 
     def _generate_code(self):
@@ -98,7 +98,18 @@ class JiffCodeGen(CodeGen):
             return ""
 
     def _generate_bash(self):
-        return ""
+        """
+        TODO: RUN_SERVER needs to be filled out
+        """
+
+        template = open(f"{self.templates_dir}/bash/run.tmpl").read()
+        data = {
+            "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path,
+            "CODE_PATH": f"{self.codegen_config.code_path}/{self.job_name}",
+            "RUN_SERVER": ""
+        }
+
+        return pystache.render(template, data)
 
     def _get_output_path(self):
 
@@ -224,15 +235,15 @@ class JiffCodeGen(CodeGen):
 
         return ret
 
-    def _generate_job(self, job_name: str):
-        return JiffJob(job_name, f"{self.codegen_config.code_path}/{job_name}")
+    def _generate_job(self):
+        return JiffJob(self.job_name, self.codegen_config.code_path)
 
     def _generate_create(self, node: Create):
 
         if node not in self.dag.roots:
             raise Exception(
                 f"Create node with out_rel {node.out_rel.name} not in DAG "
-                f"roots for Jiff job {self.codegen_config.workflow_name}.")
+                f"roots for Jiff job {self.job_name}.")
 
         return ""
 
@@ -318,7 +329,7 @@ class JiffCodeGen(CodeGen):
             # arithmetic operations in jiff like <scalar>.<operation>(<share>)
             raise Exception(
                 f"Encountered operands list for Divide node whose first element is not of "
-                f"Column type in code generation for Jiff job {self.codegen_config.workflow_name}."
+                f"Column type in code generation for Jiff job {self.job_name}."
             )
 
         operands = []
@@ -488,7 +499,7 @@ class JiffCodeGen(CodeGen):
         if node not in self.dag.roots:
             raise Exception(
                 f"Close node with out_rel {node.out_rel.name} not in DAG "
-                f"roots for Jiff job {self.codegen_config.workflow_name}.")
+                f"roots for Jiff job {self.codegen_config.job_name}.")
 
         return ""
 

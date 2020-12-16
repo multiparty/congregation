@@ -6,22 +6,23 @@ import os
 
 
 class CodeGen:
-    def __init__(self, config: Config, dag: Dag):
+    def __init__(self, config: Config, dag: Dag, job_name: [str, None] = None):
         self.config = config
         self.codegen_config = config.system_configs["CODEGEN"]
         self.network_config = config.system_configs["NETWORK"]
         self.dag = dag
+        self.job_name = "JOB" if job_name is None else job_name
         self.sorted_roots = sorted(list(dag.roots), key=lambda r: r.out_rel.name)
         self.pid = self.codegen_config.pid
 
-    def generate(self, job_name: str):
+    def generate(self):
         """ Overridden in subclasses """
         pass
 
-    def write_code(self, job_name: str, code: str, filename: str):
+    def write_code(self, code: str, filename: str):
 
-        os.makedirs(f"{self.codegen_config.code_path}/{job_name}", exist_ok=True)
-        code_file = open(f"{self.codegen_config.code_path}/{job_name}/{filename}", "w")
+        os.makedirs(f"{self.codegen_config.code_path}/{self.job_name}", exist_ok=True)
+        code_file = open(f"{self.codegen_config.code_path}/{self.job_name}/{filename}", "w")
         code_file.write(code)
         code_file.close()
 
@@ -35,7 +36,7 @@ class CodeGen:
 
         return op_code
 
-    def _generate_job(self, job_name: str):
+    def _generate_job(self):
         """ Overridden in subclasses """
         pass
 
