@@ -109,45 +109,59 @@
     return [ret, keepRowsResult];
   }
 
-  exports._aggregateMean = async function (inRel, keepRows, keyCol, aggCol, countCol, jiffInstance) {
+  exports._aggregateMean = async function (inRel, keepRows, keyCol, aggCols, countCol, jiffInstance) {
 
     for (let i = 0; i < inRel.length - 1; i++) {
       let step = jiffInstance.start_barrier();
 
-      let firstRowValid = inRel[i][aggCol].smult(keepRows[i]);
-      let secondRowValid = inRel[i+1][aggCol].smult(keepRows[i+1]);
+      let firstValidRows = [];
+      let secondValidRows = [];
+      for (let j = 0; j < aggCols.length; j++) {
+        firstValidRows.push(inRel[i][aggCols[j]].smult(keepRows[i]))
+        secondValidRows.push(inRel[i+1][aggCols[j]].smult(keepRows[i+1]));
+      }
 
       let firstColSum = inRel[i][countCol].smult(keepRows[i]);
       let secondColSum = inRel[i+1][countCol].smult(keepRows[i+1]);
 
-      let rowSum = firstRowValid.sadd(secondRowValid);
+      let rowSums = [];
+      for (let k = 0; k < aggCols.length; k++) {
+        rowSums.push(firstValidRows[k].sadd(secondValidRows[k]));
+      }
       let colSum = firstColSum.sadd(secondColSum);
 
       let areEqual = inRel[i][keyCol].eq(inRel[i+1][keyCol]);
       let atLeastOne = keepRows[i].or_bit(keepRows[i+1]);
 
-      inRel[i+1][aggCol] = areEqual.if_else(rowSum, inRel[i+1][aggCol]);
-      inRel[i+1][countCol] = areEqual.if_else(colSum, inRel[i+1][countCol]);
       keepRows[i] = areEqual.if_else(0, keepRows[i]);
       keepRows[i+1] = areEqual.if_else(atLeastOne, keepRows[i+1]);
+
+      for (let l = 0; l < rowSums.length; l++) {
+        inRel[i + 1][aggCols[l]] = areEqual.if_else(rowSums[l], inRel[i + 1][aggCols[l]]);
+      }
+      inRel[i+1][countCol] = areEqual.if_else(colSum, inRel[i+1][countCol]);
 
       await jiffInstance.end_barrier(step);
     }
 
+    let retRel = [];
     for (let i = 0; i < inRel.length; i++) {
-      inRel[i][aggCol] = inRel[i][aggCol].div(inRel[i][countCol]);
+      let thisRow = [inRel[i][keyCol]];
+      for (let j = 0; j < aggCols.length; j++) {
+        thisRow.push(inRel[i][aggCols[j]].div(inRel[i][countCol]));
+      }
+      retRel.push(thisRow);
     }
 
-    return [inRel, keepRows];
+    return [retRel, keepRows];
   }
 
   exports.aggregateMean = async function (inRel, keepRows, keyCol, aggCol, withCountCol, jiffInstance) {
 
     let newRelData;
     if (keyCol != null) {
-
       newRelData = await exports._formatAggMeanWithKeyCol(inRel, keepRows, keyCol, aggCol, withCountCol, jiffInstance);
-      return await exports._aggregateMean(newRelData[0], newRelData[1], 0, 1, 2, jiffInstance);
+      return await exports._aggregateMean(newRelData[0], newRelData[1], 0, [1], 2, jiffInstance);
     } else {
 
       newRelData = exports._formatAggMeanNoKeyCol(inRel, keepRows, aggCol, withCountCol, jiffInstance);
@@ -169,6 +183,82 @@
       let retMean = retSum.div(countSum);
 
       return [[[retMean]], [keepRowsResult]];
+    }
+  }
+
+  exports._computeSquaresAndCount = function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+    /*
+    NO sort on this, just walk over the inRel and add columns for squared agg col & count col (== 1 for each row)
+    */
+    let ret = [];
+    let retKeepRows = [];
+    for (let i = 0; i < inRel.length; i++) {
+
+      let thisRow = [inRel[i][keyCol], inRel[i][aggCol]];
+      let squaredAggCol = inRel[i][aggCol].mult(inRel[i][aggCol]);
+      thisRow.push(squaredAggCol);
+      let countCol = keepRows[i];
+      thisRow.push(countCol);
+      ret.push(thisRow);
+      retKeepRows.push(keepRows[i]);
+
+    }
+
+    return [ret, retKeepRows];
+  }
+
+  exports._stdDevSquaredDiff = function (inRel, keepRows, keyCol, meanAggCol, meanSquaresCol) {
+
+    let ret = [];
+    let retKeepRows = [];
+    for (let i = 0; i < inRel.length; i++) {
+      let squaredMeanCol = inRel[i][meanAggCol].mult(inRel[i][meanAggCol]);
+      let squaredDiff = inRel[i][meanSquaresCol].sub(squaredMeanCol);
+      let thisRow = [inRel[i][keyCol], squaredDiff];
+      ret.push(thisRow);
+      retKeepRows.push(keepRows[i]);
+    }
+
+    return [ret, retKeepRows];
+  }
+
+  exports._aggregateStdDev = async function (inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance) {
+    let newRel;
+    let newKeepRows;
+    if (squaresCol === null || countCol === null) {
+
+      let newData = exports._computeSquaresAndCount(inRel, keepRows, keyCol, aggCol, jiffInstance);
+      newRel = newData[0];
+      newKeepRows = newData[1];
+
+    } else {
+
+      newRel = [];
+      newKeepRows = [];
+      for (let i = 0; i < inRel.length; i++) {
+        newRel.push([inRel[i][keyCol], inRel[i][aggCol], inRel[i][squaresCol], inRel[i][countCol]]);
+        newKeepRows.push(keepRows[i]);
+      }
+    }
+
+    await exports.bubbleSort(newRel, newKeepRows, 0, jiffInstance);
+    let meanData = await exports._aggregateMean(newRel, newKeepRows, 0, [1, 2], 3, jiffInstance);
+    let meanRel = meanData[0];
+    let meanKeepRows = meanData[1];
+
+    if (doSquaredDiff) {
+      return exports._stdDevSquaredDiff(meanRel, meanKeepRows, 0, 1, 2);
+    } else {
+      return [meanRel, meanKeepRows];
+    }
+  }
+
+  exports.aggregateStdDev = async function (inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance) {
+
+    if (keyCol != null) {
+      return await exports._aggregateStdDev(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance);
+    } else {
+      console.log("NO KEY COL")
     }
   }
 

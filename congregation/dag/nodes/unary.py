@@ -194,14 +194,19 @@ class AggregateStdDev(UnaryOpNode):
             parent: OpNode,
             group_cols: [list, None],
             agg_col: Column,
-            optimized: [bool, None] = False
+            push_down_optimized: [bool, None] = False,
+            push_up_optimized: [bool, None] = False
     ):
         super(AggregateStdDev, self).__init__("aggregate_std_dev", out_rel, parent)
         self.group_cols = group_cols if group_cols else []
         self.agg_col = agg_col
-        # optimized means that the last two columns are
-        # sum of squared values and count, respectively
-        self.optimized = optimized
+        # push_down_optimized means that the last two columns
+        # are sum of squared values and count, respectively
+        self.push_down_optimized = push_down_optimized
+        # push_up_optimized means that the final step of computing
+        # the square root of the squared differences is pushed into
+        # local processing
+        self.push_up_optimized = push_up_optimized
 
     def update_op_specific_cols(self):
 

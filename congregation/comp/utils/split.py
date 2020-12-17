@@ -84,7 +84,7 @@ def split_agg_std_dev(node: AggregateStdDev, parent: Concat):
         print("WARN: Can't split aggregate for children > 1.")
         return
 
-    node.optimized = True
+    node.push_down_optimized = True
     clone = AggregateSumSquaresAndCount.from_existing_agg(node)
     clone.parents = set()
     clone.children = set()

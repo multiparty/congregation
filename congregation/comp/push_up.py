@@ -49,10 +49,19 @@ class PushUp(DagRewriter):
             node.out_rel.stored_with = copy.copy(flat_sw)
             node.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
             node.out_rel.assign_new_trust(copy.copy(sw_to_set))
+            node.push_up_optimized = True
 
             local_sqrt.out_rel.stored_with = copy.copy(flat_sw)
             local_sqrt.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
             local_sqrt.out_rel.assign_new_trust(copy.copy(sw_to_set))
+        else:
+            print(
+                f"INFO: Encountered standard deviation node that couldn't "
+                f"be split. The output column that represents the standard"
+                f"deviation will instead represent the variance. The standard"
+                f"deviation can be inferred from this value by taking its square"
+                f"root."
+            )
 
     def _rewrite_project(self, node: Project):
         self._rewrite_unary_default(node)

@@ -83,9 +83,14 @@ def aggregate_sum_squares_and_count(rel: list, group_cols: list, agg_col: int):
 
 def aggregate_std_dev_local_sqrt(rel: list):
 
-    ret = copy.deepcopy(rel)
-    for row in ret:
-        row[-1] = math.sqrt(row[-1])
+    copied_rel = copy.deepcopy(rel)
+    ret = []
+    for row in copied_rel:
+        mean_col = row[-2]
+        squared_mean = mean_col * mean_col
+        squared_diff = math.sqrt(row[-1] - squared_mean)
+        new_row = row[:-2] + [squared_diff]
+        ret.append(new_row)
 
     return ret
 

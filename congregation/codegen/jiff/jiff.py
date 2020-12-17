@@ -293,7 +293,22 @@ class JiffCodeGen(CodeGen):
         return pystache.render(template, data)
 
     def _generate_aggregate_std_dev(self, node: AggregateStdDev):
-        return ""
+
+        if len(node.group_cols) > 1:
+            raise Exception("Multiple key columns for aggregation in JIFF not yet implemented.")
+
+        template = open(f"{self.templates_dir}/mpc/methods/agg_std_dev.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": "null" if len(node.group_cols) == 0 else [n.idx for n in node.group_cols][0],
+            "AGG_COL": node.agg_col.idx,
+            "SQUARES_COL": "null" if not node.push_down_optimized else len(node.get_in_rel().columns) - 2,
+            "COUNT_COL": "null" if not node.push_down_optimized else len(node.get_in_rel().columns) - 1,
+            "DO_DIFF_FLAG": "true" if not node.push_up_optimized else "false"
+        }
+
+        return pystache.render(template, data)
 
     def _generate_project(self, node: Project):
 
