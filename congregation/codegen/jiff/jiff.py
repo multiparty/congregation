@@ -277,7 +277,20 @@ class JiffCodeGen(CodeGen):
         return pystache.render(template, data)
 
     def _generate_aggregate_mean(self, node: AggregateMean):
-        return ""
+
+        if len(node.group_cols) > 1:
+            raise Exception("Multiple key columns for aggregation in JIFF not yet implemented.")
+
+        template = open(f"{self.templates_dir}/mpc/methods/agg_mean.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": "null" if len(node.group_cols) == 0 else [n.idx for n in node.group_cols][0],
+            "AGG_COL": node.agg_col.idx,
+            "COUNT_COL": 1 if node.with_count_col else 0
+        }
+
+        return pystache.render(template, data)
 
     def _generate_aggregate_std_dev(self, node: AggregateStdDev):
         return ""

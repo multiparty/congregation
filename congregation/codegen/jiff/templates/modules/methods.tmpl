@@ -26,25 +26,22 @@
       newRel.push([inRel[i][keyCol], inRel[i][aggCol]]);
     }
 
-    let sorted = await exports.bubbleSort(newRel, keepRows, keyCol, jiffInstance);
+    let sorted = await exports.bubbleSort(newRel, keepRows, 0, jiffInstance);
     let sortedData = sorted[0];
     let sortedKeepRows = sorted[1];
 
     for (let i = 0; i < sortedData.length - 1; i++) {
       let step = jiffInstance.start_barrier();
 
-      let a = sortedData[i][0];
-      let b = sortedData[i+1][0];
-      let dataCmp = a.eq(b);
+      let firstRowValid = sortedData[i][1].smult(sortedKeepRows[i]);
+      let secondRowValid = sortedData[i+1][1].smult(sortedKeepRows[i+1]);
+      let rowSum = firstRowValid.sadd(secondRowValid);
+      let areEqual = sortedData[i][0].eq(sortedData[i+1][0]);
+      let atLeastOne = keepRows[i].or_bit(keepRows[i+1]);
 
-      let temp = dataCmp.if_else(sortedData[i][1].sadd(sortedData[i+1][1]), sortedData[i+1][1]);
-      let bothKeep = sortedKeepRows[i].smult(sortedKeepRows[i+1]);
-      let dataKeep = dataCmp.smult(bothKeep);
-      let tempResult = bothKeep.if_else(temp, sortedData[i+1][1]);
-      let tempKeep = dataKeep.if_else(keyCol, keepRows[i]);
-
-      sortedData[i+1][aggCol] = tempResult;
-      sortedKeepRows[i] = tempKeep;
+      sortedData[i+1][1] = areEqual.if_else(rowSum, sortedData[i+1][1]);
+      sortedKeepRows[i] = areEqual.if_else(0, sortedKeepRows[i]);
+      sortedKeepRows[i+1] = areEqual.if_else(atLeastOne, sortedKeepRows[i+1]);
 
       await jiffInstance.end_barrier(step);
     }
@@ -66,10 +63,112 @@
         ret = ret.sadd(temp);
         keepRowsSum = keepRowsSum.sadd(keepRows[i]);
       }
-
       let keepRowsResult = keepRowsSum.gteq(1);
 
       return [[[ret]], [keepRowsResult]];
+    }
+  }
+
+  exports._formatAggMeanWithKeyCol = async function (inRel, keepRows, keyCol, aggCol, withCountCol, jiffInstance) {
+
+    let ret = [];
+    let keepRowsResult = [];
+    let countNum;
+
+    for (let i = 0; i < inRel.length; i++) {
+      if (!withCountCol) {
+        ret.push([inRel[i][keyCol], inRel[i][aggCol], keepRows[i]]);
+        keepRowsResult.push(keepRows[i]);
+      } else {
+        countNum = inRel[i][inRel[i].length - 1].smult(keepRows[i]);
+        ret.push([inRel[i][keyCol], inRel[i][aggCol], countNum]);
+        keepRowsResult.push(keepRows[i]);
+      }
+    }
+
+    return await exports.bubbleSort(ret, keepRowsResult, 0, jiffInstance);
+  }
+
+  exports._formatAggMeanNoKeyCol = function (inRel, keepRows, aggCol, withCountCol, jiffInstance) {
+
+    let ret = [];
+    let keepRowsResult = [];
+    let countNum;
+
+    for (let i = 0; i < inRel.length; i++) {
+      if (!withCountCol) {
+        ret.push([inRel[i][aggCol], keepRows[i]]);
+        keepRowsResult.push(keepRows[i]);
+      } else {
+        countNum = inRel[i][inRel[i].length - 1].smult(keepRows[i]);
+        ret.push([inRel[i][aggCol], countNum]);
+        keepRowsResult.push(keepRows[i]);
+      }
+    }
+
+    return [ret, keepRowsResult];
+  }
+
+  exports._aggregateMean = async function (inRel, keepRows, keyCol, aggCol, countCol, jiffInstance) {
+
+    for (let i = 0; i < inRel.length - 1; i++) {
+      let step = jiffInstance.start_barrier();
+
+      let firstRowValid = inRel[i][aggCol].smult(keepRows[i]);
+      let secondRowValid = inRel[i+1][aggCol].smult(keepRows[i+1]);
+
+      let firstColSum = inRel[i][countCol].smult(keepRows[i]);
+      let secondColSum = inRel[i+1][countCol].smult(keepRows[i+1]);
+
+      let rowSum = firstRowValid.sadd(secondRowValid);
+      let colSum = firstColSum.sadd(secondColSum);
+
+      let areEqual = inRel[i][keyCol].eq(inRel[i+1][keyCol]);
+      let atLeastOne = keepRows[i].or_bit(keepRows[i+1]);
+
+      inRel[i+1][aggCol] = areEqual.if_else(rowSum, inRel[i+1][aggCol]);
+      inRel[i+1][countCol] = areEqual.if_else(colSum, inRel[i+1][countCol]);
+      keepRows[i] = areEqual.if_else(0, keepRows[i]);
+      keepRows[i+1] = areEqual.if_else(atLeastOne, keepRows[i+1]);
+
+      await jiffInstance.end_barrier(step);
+    }
+
+    for (let i = 0; i < inRel.length; i++) {
+      inRel[i][aggCol] = inRel[i][aggCol].div(inRel[i][countCol]);
+    }
+
+    return [inRel, keepRows];
+  }
+
+  exports.aggregateMean = async function (inRel, keepRows, keyCol, aggCol, withCountCol, jiffInstance) {
+
+    let newRelData;
+    if (keyCol != null) {
+
+      newRelData = await exports._formatAggMeanWithKeyCol(inRel, keepRows, keyCol, aggCol, withCountCol, jiffInstance);
+      return await exports._aggregateMean(newRelData[0], newRelData[1], 0, 1, 2, jiffInstance);
+    } else {
+
+      newRelData = exports._formatAggMeanNoKeyCol(inRel, keepRows, aggCol, withCountCol, jiffInstance);
+      let newRel = newRelData[0];
+      let newRelKeepRows = newRelData[1];
+
+      let retSum = newRel[0][0].smult(keepRows[0]);
+      // dont need to check validity of countRet (for withCountCol == true),
+      // because it was already set to 0 in _formatAggNoKeyCol if keepRows[i] == 0
+      let countSum = newRel[0][1];
+      let keepRowsSum = newRelKeepRows[0];
+      for (let i = 0; i < newRel.length; i++) {
+        let temp = newRel[i][0].smult(newRelKeepRows[0]);
+        retSum = retSum.sadd(temp);
+        countSum = countSum.sadd(newRel[i][1]);
+        keepRowsSum = keepRowsSum.sadd(newRelKeepRows[i]);
+      }
+      let keepRowsResult = keepRowsSum.gteq(1);
+      let retMean = retSum.div(countSum);
+
+      return [[[retMean]], [keepRowsResult]];
     }
   }
 
@@ -401,6 +500,6 @@
 
       return ret;
     });
-  };
+  }
 
 }(typeof exports === 'undefined' ? this.methods = {} : exports));
