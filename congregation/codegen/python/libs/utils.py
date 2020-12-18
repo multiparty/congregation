@@ -3,7 +3,7 @@
 def write_rel(output_path: str, rel: list, header: list, use_floats: [bool, None] = False):
 
     print(f"Writing python job output to {output_path}")
-    with open(f"{output_path}.csv", "w") as f:
+    with open(output_path, "w") as f:
 
         f.write(f"{','.join(header)}\n")
         if not use_floats:

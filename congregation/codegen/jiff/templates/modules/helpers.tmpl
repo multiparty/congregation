@@ -1,9 +1,12 @@
 (function (exports) {
 
   let fs = require('fs');
-  exports.formatTwoD = function (mat) {
+  exports.formatTwoD = function (mat, headers) {
 
     let output = '';
+    if (headers !== null) {
+      output += headers + '\n';
+    }
     for (let i = 0; i < mat.length; i++){
       for (let j = 0; j < mat[i].length; j++) {
         output += mat[i][j].toString() + ',';
@@ -20,7 +23,7 @@
     let inputData = fs.readFileSync(filePath.trim(), 'UTF-8').trim();
     let rows = inputData.split('\n');
 
-    for (let i = 0; i < rows.length; i++) {
+    for (let i = 1; i < rows.length; i++) {
       let arr;
       if (useBigNumber) {
         arr = rows[i].split(',').map(jiffInstance.helpers.BigNumber);
@@ -53,7 +56,7 @@
       let inputData = fs.readFileSync(filePath.trim(), 'UTF-8').trim();
       let rows = inputData.split('\n');
 
-      for (let i = 0; i < rows.length; i++) {
+      for (let i = 1; i < rows.length; i++) {
         let arr;
         if (useBigNumber) {
           arr = rows[i].split(',').map(jiffInstance.helpers.BigNumber);

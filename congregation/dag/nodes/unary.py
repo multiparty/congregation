@@ -225,6 +225,16 @@ class AggregateStdDev(UnaryOpNode):
 
         self.update_op_specific_cols()
         temp_cols = self.group_cols + [self.agg_col]
+        if self.push_up_optimized:
+            mean_squares_col = Column(
+                self.out_rel.name,
+                "__MEAN_SQUARES__", 2,
+                self.agg_col.type_str,
+                copy.deepcopy(self.agg_col.trust_with),
+                copy.deepcopy(self.agg_col.plaintext)
+            )
+            temp_cols = temp_cols + [mean_squares_col]
+
         self.out_rel.columns = copy.deepcopy(temp_cols)
         self.out_rel.update_columns()
 

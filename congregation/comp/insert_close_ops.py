@@ -21,7 +21,6 @@ class InsertCloseOps(DagRewriter):
                 if out_stored_with != par_stored_with:
 
                     out_rel = copy.deepcopy(parent.out_rel)
-                    out_rel.rename(f"{out_rel.name}_close")
                     out_rel.stored_with = copy.copy(out_stored_with)
                     op = Close(out_rel, None, par_stored_with)
                     insert_between(parent, node, op)

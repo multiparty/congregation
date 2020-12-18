@@ -649,7 +649,12 @@ def test_aggregate_sum_squares_and_count(path_to_rel: str, use_floats: bool, exp
     (
         f"{inputs_path}/rel_five.csv",
         False,
-        [[1, 2, 2], [4, 5, 4], [7, 8, 6]]
+        [[1, 0], [4, 0], [7, 0]]
+    ),
+    (
+        f"{inputs_path}/rel_six.csv",
+        False,
+        [[1, 6.0], [2, 6.855654600401044]]
     )
 ])
 def test_aggregate_std_dev_local_sqrt(path_to_rel: str, use_floats: bool, expected: list):

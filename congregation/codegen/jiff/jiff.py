@@ -75,6 +75,7 @@ class JiffCodeGen(CodeGen):
                 else "",
             "WRITE": 1,
             "OUTPUT_PATH": self._get_output_path(),
+            "HEADERS": self._get_output_header(),
             "SERVER_IP_PORT": f"http://{self.codegen_config.server_ip}:{self.codegen_config.server_port}",
             "COMPUTATION_ID": self.codegen_config.workflow_name
         }
@@ -118,6 +119,14 @@ class JiffCodeGen(CodeGen):
             raise Exception(f"Terminal node of MPC job not Open(). Is type {type(ordered[-1])}")
 
         return f"{self.codegen_config.output_path}/{ordered[-1].out_rel.name}.csv"
+
+    def _get_output_header(self):
+
+        ordered = self.dag.top_sort()
+        if not isinstance(ordered[-1], Open):
+            raise Exception(f"Terminal node of MPC job not Open(). Is type {type(ordered[-1])}")
+
+        return ",".join([c.name for c in ordered[-1].out_rel.columns])
 
     def _generate_big_number(self, file_type):
 

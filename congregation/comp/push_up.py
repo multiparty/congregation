@@ -46,10 +46,11 @@ class PushUp(DagRewriter):
             flat_sw = [{s} for c in temp_sw for s in c]
             sw_to_set = set().union(*flat_sw)
 
+            node.push_up_optimized = True
+            # node.update_out_rel_cols()
             node.out_rel.stored_with = copy.copy(flat_sw)
             node.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
             node.out_rel.assign_new_trust(copy.copy(sw_to_set))
-            node.push_up_optimized = True
 
             local_sqrt.out_rel.stored_with = copy.copy(flat_sw)
             local_sqrt.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
