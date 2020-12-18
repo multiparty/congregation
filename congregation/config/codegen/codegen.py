@@ -31,8 +31,8 @@ class CodeGenConfig:
             int(os.getenv("PID")),
             [int(p) for p in os.getenv("ALL_PIDS").split(",")],
             os.getenv("CODE_PATH"),
-            os.getenv("INPUT_PATH"),
-            os.getenv("OUTPUT_PATH"),
+            os.getenv("DATA_PATH"),
+            os.getenv("DATA_PATH"),
             os.getenv("DELIMITER"),
             os.getenv("USE_FLOATS")
         ]

@@ -18,8 +18,6 @@ class PythonCodeGen(CodeGen):
 
         op_code = self._generate_code()
         self.write_code(op_code, "workflow.py")
-        job = self._generate_job()
-        return job
 
     def _generate_code(self):
 
@@ -28,7 +26,7 @@ class PythonCodeGen(CodeGen):
         data = {"OP_CODE": op_code}
         return pystache.render(template, data)
 
-    def _generate_job(self):
+    def generate_job(self):
         return PythonJob(self.job_name, self.codegen_config.code_path)
 
     def _generate_create(self, node: Create):

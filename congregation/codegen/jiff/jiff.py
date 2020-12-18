@@ -19,8 +19,6 @@ class JiffCodeGen(CodeGen):
         for k in op_code.keys():
             if op_code[k]:
                 self.write_code(op_code[k], k)
-        job = self._generate_job()
-        return job
 
     def _generate_code(self):
 
@@ -244,7 +242,7 @@ class JiffCodeGen(CodeGen):
 
         return ret
 
-    def _generate_job(self):
+    def generate_job(self):
         return JiffJob(self.job_name, self.codegen_config.code_path)
 
     def _generate_create(self, node: Create):

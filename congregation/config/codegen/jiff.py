@@ -36,8 +36,24 @@ class JiffConfig(CodeGenConfig):
         self.server_ip = server_ip if server_ip is not None else "0.0.0.0"
         self.server_port = server_port if server_port is not None else 9000
         self.server_pid = None if server_pid is None else int(server_pid)
-        self.zp = None if zp is None else int(zp)
-        self.extensions = extensions if extensions is not None else {}
+        self.zp = 16777729 if zp is None else int(zp)
+        self.extensions = extensions if extensions is not None else self._get_default_extension_data()
+
+    @staticmethod
+    def _get_default_extension_data():
+        return {
+            "fixed_point": {
+                "use": False,
+                "decimal_digits": 1,
+                "integer_digits": 1
+            },
+            "negative_number": {
+                "use": False
+            },
+            "big_number": {
+                "use": False
+            }
+        }
 
     @staticmethod
     def _get_extension_data_from_env():

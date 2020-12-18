@@ -36,7 +36,7 @@ class CodeGen:
 
         return op_code
 
-    def _generate_job(self):
+    def generate_job(self):
         """ Overridden in subclasses """
         pass
 
