@@ -1,5 +1,1 @@
-{
-  "test_push_up_agg_std_dev.py::test_std_dev[party_data1-expected1]": true,
-  "test_push_up_agg_std_dev.py::test_std_dev[party_data2-expected2]": true,
-  "test_push_up_agg_std_dev.py::test_std_dev[party_data3-expected3]": true
-}
+{}

@@ -8,6 +8,18 @@ class Dag:
     def __str__(self):
         return "\n".join(str(node) for node in self.top_sort())
 
+    def involves_compute_party(self, pid: int):
+        """
+        For a given PID, check if it owns any
+        data associated with this DAG
+        """
+
+        for r in self.roots:
+            for sw_set in r.out_rel.stored_with:
+                if pid in sw_set:
+                    return True
+        return False
+
     def dfs_visit(self, visitor):
 
         visited = set()

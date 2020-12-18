@@ -62,8 +62,8 @@ compiler has been run:
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -121,8 +121,8 @@ compiler has been run:
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -180,8 +180,8 @@ compiler has been run:
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -239,8 +239,8 @@ compiler has been run:
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -322,9 +322,9 @@ def test_std_dev(party_data, expected):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}],
-                    "col_names": ["b", "a"]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "col_names": ["b", "a", "__MEAN_SQUARES__"]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -380,9 +380,9 @@ def test_std_dev(party_data, expected):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}],
-                    "col_names": ["b", "a"]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "col_names": ["b", "a", "__MEAN_SQUARES__"]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -438,9 +438,9 @@ def test_std_dev(party_data, expected):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}],
-                    "col_names": ["b", "a"]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "col_names": ["b", "a", "__MEAN_SQUARES__"]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -525,8 +525,8 @@ def test_std_dev_alt_key_col(party_data, expected):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}],
-                    "trust_with_sets": [{1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -584,8 +584,8 @@ def test_std_dev_alt_key_col(party_data, expected):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}],
-                    "trust_with_sets": [{1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -643,8 +643,8 @@ def test_std_dev_alt_key_col(party_data, expected):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}],
-                    "trust_with_sets": [{1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -695,8 +695,8 @@ def test_std_dev_alt_key_col(party_data, expected):
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}],
-                    "trust_with_sets": [{1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],

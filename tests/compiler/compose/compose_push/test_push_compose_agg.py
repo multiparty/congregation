@@ -63,8 +63,8 @@ import pytest
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -135,8 +135,8 @@ import pytest
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -207,8 +207,8 @@ import pytest
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
@@ -267,8 +267,8 @@ import pytest
                 },
                 {
                     "stored_with": [{1}, {2}],
-                    "plaintext_sets": [{1, 2}, {1, 2}],
-                    "trust_with_sets": [{1, 2}, {1, 2}]
+                    "plaintext_sets": [{1, 2}, {1, 2}, {1, 2}],
+                    "trust_with_sets": [{1, 2}, {1, 2}, {1, 2}]
                 },
                 {
                     "stored_with": [{1}, {2}],
