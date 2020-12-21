@@ -1,18 +1,14 @@
+import asyncio
 from congregation.config import Config, JiffConfig, CodeGenConfig, NetworkConfig
 from congregation.dag import Dag
 from congregation.comp import compile_dag
 from congregation.part import HeuristicPart
 from congregation.codegen.jiff import JiffCodeGen
 from congregation.codegen.python import PythonCodeGen
+from congregation.net import Peer
 
 
 class Assemble:
-    """
-    TODO: have up to generating code/jobs
-     need setup networked peer
-     need dispatch from list of jobs
-     need generate_and_dispatch from protocol / iteration_limit
-    """
     def __init__(self):
         self.config = Config()
 
@@ -71,7 +67,9 @@ class Assemble:
         return self
 
     def setup_config(self, cfg: [dict, None] = None):
-
+        """
+        Wraps all config setup methods
+        """
         self.configure_network(cfg)
         self.configure_codegen(cfg)
         self.configure_jiff(cfg)
@@ -92,7 +90,9 @@ class Assemble:
         return p.partition(iteration_limit)
 
     def generate_code(self, parts: list):
-
+        """
+        Generate code from partitions list and write to disk
+        """
         for i in range(len(parts)):
             if parts[i][1] == "python":
                 cg = PythonCodeGen(
@@ -112,7 +112,9 @@ class Assemble:
                 raise Exception(f"Unrecognized backend from partition: {parts[i][1]}.")
 
     def generate_jobs(self, parts: list):
-
+        """
+        Generate and return jobs from partitions list
+        """
         ret = []
         for i in range(len(parts)):
             if parts[i][1] == "python":
@@ -144,7 +146,12 @@ class Assemble:
         return job_queue
 
     def setup_peer(self):
-        return "TODO-PEER"
+
+        loop = asyncio.get_event_loop()
+        peer = Peer(loop, self.config)
+        peer.connect_to_others()
+
+        return peer
 
     def dispatch_jobs(self, job_queue, networked_peer):
         return

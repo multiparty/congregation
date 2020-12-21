@@ -13,11 +13,15 @@ class NetworkConfig:
         ret = dict()
         ret["pid"] = self.pid
         ret["parties"] = dict()
-        for i in range(len(self.parties)):
-            ret["parties"][i] = {}
-            party_data = self.parties[i].split(":")
-            ret["parties"][i]["host"] = party_data[0]
-            ret["parties"][i]["port"] = party_data[1]
+
+        for p in self.parties:
+            party_data = p.split(":")
+            pid = int(party_data[0])
+            if pid in ret["parties"]:
+                raise Exception(f"PID {p['pid']} already used.")
+            ret["parties"][pid] = {}
+            ret["parties"][pid]["host"] = party_data[1]
+            ret["parties"][pid]["port"] = party_data[2]
 
         return ret
 
