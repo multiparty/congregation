@@ -43,9 +43,7 @@ class JiffConfig(CodeGenConfig):
     def _get_default_extension_data():
         return {
             "fixed_point": {
-                "use": False,
-                "decimal_digits": 1,
-                "integer_digits": 1
+                "use": False
             },
             "negative_number": {
                 "use": False
