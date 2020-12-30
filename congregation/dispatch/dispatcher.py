@@ -30,11 +30,3 @@ class Dispatcher:
 
     def setup_config(self):
         return {}
-
-    def receive_msg(self, msg):
-
-        ready_peer = msg.pid
-        if ready_peer in self.parties_ready:
-            self.parties_ready[ready_peer].set_result = True
-        else:
-            print(f"Received ReadyMsg from unrecognized party: {msg.pid}")

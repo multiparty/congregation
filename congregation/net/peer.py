@@ -3,7 +3,8 @@ import pickle
 from functools import partial
 from congregation.config import Config
 from congregation.net.messages import *
-from congregation.net.protocol import ClientProtocol, ServerProtocol
+from congregation.net.protocol import CongregationProtocol
+from congregation.net.handler import Handler
 from congregation.dispatch.dispatcher import Dispatcher
 
 
@@ -17,11 +18,12 @@ class Peer:
         self.peer_connections = {}
         self.msg_buffer = []
         self.server = self.loop.create_server(
-            lambda: ServerProtocol(self),
+            lambda: CongregationProtocol(self),
             host=self.host,
             port=self.port
         )
         self.loop.run_until_complete(self.server)
+        self.handler = Handler(self)
         self.dispatcher = None
 
     def register_dispatcher(self, dispatcher: Dispatcher):
@@ -29,11 +31,11 @@ class Peer:
         self.dispatcher = dispatcher
         ret = []
         # TODO: might want to match instead on a job_id or something
-        for msg in self.msg_buffer:
-            if msg.job_type == dispatcher.dispatch_type:
-                self.dispatcher.receive_msg(msg)
-                continue
-            ret.append(msg)
+        for m in self.msg_buffer:
+            if m.job_type == dispatcher.dispatch_type:
+                self.handler.handle_msg(m)
+            else:
+                ret.append(m)
         self.msg_buffer = ret
 
     async def _create_connection(self, f, other_host, other_port):
@@ -57,7 +59,7 @@ class Peer:
                 print(f"Will connect to {other_pid}")
                 conn = asyncio.ensure_future(
                     self._create_connection(
-                        lambda: ClientProtocol(self),
+                        lambda: CongregationProtocol(self),
                         self.parties[other_pid]["host"],
                         self.parties[other_pid]["port"]
                     )
@@ -79,28 +81,33 @@ class Peer:
             completed_future = self.peer_connections[pid]
             self.peer_connections[pid] = completed_future.result()[0]
 
-    @staticmethod
-    def _send_msg(transport, msg):
+    def _send_msg(self, to_pid, m):
 
-        formatted = pickle.dumps(msg) + b"\n\n\n"
-        transport.write(formatted)
+        if to_pid not in self.peer_connections:
+            raise Exception(
+                f"Can't send {m.msg_type} Msg to party {to_pid}. "
+                f"PID not found in peer connections."
+            )
+        formatted = pickle.dumps(m) + b"\n\n\n"
+        self.peer_connections[to_pid].write(formatted)
 
     def send_iam(self, conn):
 
-        msg = IAMMsg(self.pid)
         if isinstance(conn, asyncio.Future):
             transport, protocol = conn.result()
         else:
             transport = conn
-        self._send_msg(transport, msg)
 
-    def send_cfg(self, conn, cfg, job_type):
+        m = IAMMsg(self.pid)
+        formatted = pickle.dumps(m) + b"\n\n\n"
+        transport.write(formatted)
 
-        msg = ConfigMsg(self.pid, cfg, job_type)
-        self._send_msg(conn, msg)
+    def send_cfg(self, to_pid, cfg, job_type):
 
-    def send_ack(self, conn, ack_type, job_type):
+        m = ConfigMsg(self.pid, cfg, job_type)
+        self._send_msg(to_pid, m)
 
-        msg = AckMsg(self.pid, ack_type, job_type)
-        self._send_msg(conn, msg)
+    def send_ack(self, to_pid, ack_type, job_type):
 
+        m = AckMsg(self.pid, ack_type, job_type)
+        self._send_msg(to_pid, m)

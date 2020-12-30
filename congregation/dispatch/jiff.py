@@ -91,26 +91,16 @@ class JiffDispatcher(Dispatcher):
     def exchange_config(self):
 
         to_wait_on = []
-        for pid in self.parties_config.keys():
-            if pid < self.pid:
-                print(f"Sending ConfigMsg to {pid}")
-                self.peer.send_cfg(
-                    self.peer.peer_connections[pid],
-                    self.config_to_exchange,
-                    "JIFF"
-                )
-                to_wait_on.append(self.parties_config[pid]["CFG"])
-            elif pid > self.pid:
-                print(f"Waiting for ConfigMsg from {pid}")
-                to_wait_on.append(self.parties_config[pid]["CFG"])
-            else:
-                pass
+        for other_pid in self.parties_config.keys():
+            print(f"Sending ConfigMsg to {other_pid}")
+            self.peer.send_cfg(other_pid, self.config_to_exchange, "JIFF")
+            to_wait_on.append(self.parties_config[other_pid]["CFG"])
+
         self.peer.loop.run_until_complete(asyncio.gather(*to_wait_on))
 
-        for pid in self.parties_config.keys():
-            if pid != self.pid:
-                completed_future = self.parties_config[pid]["CFG"]
-                self.parties_config[pid]["CFG"] = completed_future.result()
+        for other_pid in self.parties_config.keys():
+            completed_future = self.parties_config[other_pid]["CFG"]
+            self.parties_config[other_pid]["CFG"] = completed_future.result()
 
         self._wait_on_acks()
 
@@ -118,14 +108,12 @@ class JiffDispatcher(Dispatcher):
 
         to_wait_on = []
         for pid in self.parties_config.keys():
-            if pid != self.pid:
-                to_wait_on.append(self.parties_config[pid]["ACK"])
+            to_wait_on.append(self.parties_config[pid]["ACK"])
 
         self.peer.loop.run_until_complete(asyncio.gather(*to_wait_on))
         for pid in self.parties_config.keys():
-            if pid != self.pid:
-                completed_future = self.parties_config[pid]["ACK"]
-                self.parties_config[pid]["ACK"] = completed_future.result()
+            completed_future = self.parties_config[pid]["ACK"]
+            self.parties_config[pid]["ACK"] = completed_future.result()
 
     def _verify_config_against_others(self):
 
@@ -138,6 +126,7 @@ class JiffDispatcher(Dispatcher):
         their config. Once config messages are received, make
         sure they're all equivalent before proceeding.
         """
+
         self.exchange_config()
         self._verify_config_against_others()
 
