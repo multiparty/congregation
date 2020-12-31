@@ -9,4 +9,4 @@ class AckMsg(Msg):
         self.job_type = job_type
 
     def __str__(self):
-        return f"AckMsg({self.pid}): {self.job_type}"
+        return f"AckMsg({self.pid}): {self.job_type} for {self.ack_type}"

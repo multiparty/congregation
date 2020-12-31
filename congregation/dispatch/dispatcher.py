@@ -22,10 +22,16 @@ class Dispatcher:
         self.config_to_exchange = self.setup_config()
 
     def dispatch(self, job: Job):
-        self.peer.register_dispatcher(self)
+        """ overridden in subclasses """
+        pass
 
-    def synchronize(self):
-        """ Overridden in subclasses """
+    def setup_dispatch(self, job: Job):
+
+        self.peer.register_dispatcher(self)
+        self.synchronize(job)
+
+    def synchronize(self, job: Job):
+        """ overridden in subclasses """
         pass
 
     def setup_config(self):

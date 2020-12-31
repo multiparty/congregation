@@ -11,6 +11,11 @@ class PythonDispatcher(Dispatcher):
 
     def dispatch(self, job: PythonJob):
 
+        self.setup_dispatch(job)
         cmd = f"{job.code_dir}/{job.name}/workflow.py"
         print(f"Running python job at {job.code_dir}/{job.name}/workflow.py")
         call(["python", cmd])
+
+    def synchronize(self, job: PythonJob):
+        # TODO: if it's a networked job then synchronize else pass
+        pass

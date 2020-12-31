@@ -19,16 +19,10 @@ class CongregationProtocol(asyncio.Protocol):
         print('The server closed the connection')
 
     def data_received(self, data: bytes):
-        """
-        Add incoming messages to buffer and process them
-        """
         self.buffer += data
         self.handle_lines()
 
     def handle_lines(self):
-        """
-        Process messages from buffer
-        """
         while b"\n\n\n" in self.buffer:
             data, self.buffer = self.buffer.split(b"\n\n\n", 1)
             self.handler.handle_msg(data)

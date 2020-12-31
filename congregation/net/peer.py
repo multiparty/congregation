@@ -50,9 +50,10 @@ class Peer:
 
     def connect_to_others(self):
         """
-        Establish connections with all parties
-        present in network configuration dict
+        establish connections to parties
+        from network configuration dict
         """
+
         to_wait_on = []
         for other_pid in self.parties.keys():
             if other_pid < self.pid:
@@ -85,9 +86,10 @@ class Peer:
 
         if to_pid not in self.peer_connections:
             raise Exception(
-                f"Can't send {m.msg_type} Msg to party {to_pid}. "
-                f"PID not found in peer connections."
+                f"Can't send {m.msg_type} Msg: party "
+                f"{to_pid} not in peer connections."
             )
+
         formatted = pickle.dumps(m) + b"\n\n\n"
         self.peer_connections[to_pid].write(formatted)
 
@@ -102,6 +104,11 @@ class Peer:
         formatted = pickle.dumps(m) + b"\n\n\n"
         transport.write(formatted)
 
+    def send_ready(self, to_pid, job_type):
+
+        m = ReadyMsg(self.pid, job_type)
+        self._send_msg(to_pid, m)
+
     def send_cfg(self, to_pid, cfg, job_type):
 
         m = ConfigMsg(self.pid, cfg, job_type)
@@ -110,4 +117,9 @@ class Peer:
     def send_ack(self, to_pid, ack_type, job_type):
 
         m = AckMsg(self.pid, ack_type, job_type)
+        self._send_msg(to_pid, m)
+
+    def send_request(self, to_pid, request_type, job_type):
+
+        m = RequestMsg(self.pid, request_type, job_type)
         self._send_msg(to_pid, m)

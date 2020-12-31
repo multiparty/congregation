@@ -12,8 +12,7 @@ class JiffDispatcher(Dispatcher):
 
     def dispatch(self, job: JiffJob):
 
-        super().dispatch(job)
-        self.synchronize()
+        self.setup_dispatch(job)
         cmd = f"{job.code_dir}/{job.name}/party.js"
         print(f"Running jiff job at {job.code_dir}/{job.name}/party.js")
         call(["node", cmd])
@@ -31,6 +30,9 @@ class JiffDispatcher(Dispatcher):
         return cfg
 
     def _mismatch_alert(self, pid: int, k: str, v: [str, int, list], other_v: [str, int, list]):
+        """
+        TODO: Need to send AlertMsg to other parties indicating the mismatch
+        """
         raise Exception(
             f"Jiff config mismatch between self and other party for key {k}\n"
             f"Own value: {v}\nValue for party {pid}: {other_v}"
@@ -88,32 +90,55 @@ class JiffDispatcher(Dispatcher):
             self._mismatch_alert(other_pid, "zp", jiff_cfg.zp, other_cfg["zp"])
         self._compare_extensions(other_cfg.get("extensions"), other_pid)
 
+    def _send_config(self, other_pid):
+
+        print(f"Sending ConfigMsg to {other_pid}")
+        self.peer.send_cfg(other_pid, self.config_to_exchange, "JIFF")
+
+    def send_config(self, pids):
+
+        for other_pid in pids:
+            self._send_config(other_pid)
+
+    def send_config_request(self, other_pid):
+
+        print(f"Sending request for Jiff config to {other_pid}")
+        self.peer.send_request(other_pid, "CONFIG", "JIFF")
+
+    def send_config_requests(self, pids):
+
+        for other_pid in pids:
+            self.send_config_request(other_pid)
+
+    def config_wait_on(self, pids: list, send_fn: callable, cfg_key: str):
+        """
+        wait for some msg (determined by cfg_key) from a list of other parties
+        on timeout, send a request (determined by send_fn) for the msg we're
+        seeking to all parties that timed out
+        """
+
+        to_wait_on = [self.parties_config[other_pid][cfg_key] for other_pid in pids]
+        self.peer.loop.run_until_complete(asyncio.wait(to_wait_on, timeout=30))
+
+        not_done = []
+        for other_pid in pids:
+            fut = self.parties_config[other_pid][cfg_key]
+            if isinstance(fut, asyncio.Future):
+                if fut.done():
+                    self.parties_config[other_pid][cfg_key] = fut.result()
+                else:
+                    not_done.append(other_pid)
+
+        if not_done:
+            print(f"Timeout while waiting for {cfg_key} from the following parties: {not_done}, trying again.")
+            send_fn(not_done)
+            self.config_wait_on(not_done, send_fn, cfg_key)
+
     def exchange_config(self):
 
-        to_wait_on = []
-        for other_pid in self.parties_config.keys():
-            print(f"Sending ConfigMsg to {other_pid}")
-            self.peer.send_cfg(other_pid, self.config_to_exchange, "JIFF")
-            to_wait_on.append(self.parties_config[other_pid]["CFG"])
-
-        self.peer.loop.run_until_complete(asyncio.gather(*to_wait_on))
-
-        for other_pid in self.parties_config.keys():
-            completed_future = self.parties_config[other_pid]["CFG"]
-            self.parties_config[other_pid]["CFG"] = completed_future.result()
-
-        self._wait_on_acks()
-
-    def _wait_on_acks(self):
-
-        to_wait_on = []
-        for pid in self.parties_config.keys():
-            to_wait_on.append(self.parties_config[pid]["ACK"])
-
-        self.peer.loop.run_until_complete(asyncio.gather(*to_wait_on))
-        for pid in self.parties_config.keys():
-            completed_future = self.parties_config[pid]["ACK"]
-            self.parties_config[pid]["ACK"] = completed_future.result()
+        self.send_config([pid for pid in self.parties_config.keys()])
+        self.config_wait_on([pid for pid in self.parties_config.keys()], self.send_config_requests, "CFG")
+        self.config_wait_on([pid for pid in self.parties_config.keys()], self.send_config, "ACK")
 
     def _verify_config_against_others(self):
 
@@ -130,10 +155,32 @@ class JiffDispatcher(Dispatcher):
         self.exchange_config()
         self._verify_config_against_others()
 
-    def synchronize(self):
+    def _dispatch_server(self, job: JiffJob):
         """
-        if server_pid in all_pids, party who is server launches
-        server and sends ready to all other parties
-        then dispatch party.js
+        TODO: Non-blocking subprocess.call here (maybe launch server in screen session)
         """
+        print(f"Dispatching Jiff server for job {job.name}")
+
+    def _synchronize_server(self, job: JiffJob):
+        """
+        TODO timeout stuff
+        """
+
+        jc = self.config.system_configs["JIFF_CODEGEN"]
+        if jc.server_pid in jc.all_pids:
+            if self.pid == jc.server_pid:
+                # dispatch server and send ready msgs to other parties
+                self._dispatch_server(job)
+                for pid in self.parties_ready.keys():
+                    print(f"Sending ReadyMsg to {pid}")
+                    self.peer.send_ready(pid, "JIFF")
+            else:
+                # wait for ReadyMsg from server party
+                self.peer.loop.run_until_complete(
+                    asyncio.wait_for(self.parties_ready[jc.server_pid], timeout=None)
+                )
+
+    def synchronize(self, job: JiffJob):
+
         self._synchronize_config()
+        self._synchronize_server(job)
