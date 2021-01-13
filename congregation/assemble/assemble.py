@@ -1,11 +1,12 @@
 import asyncio
+import json
+from congregation.codegen import JiffCodeGen, PythonCodeGen
+from congregation.comp import compile_dag
 from congregation.config import Config, JiffConfig, CodeGenConfig, NetworkConfig
 from congregation.dag import Dag
-from congregation.comp import compile_dag
-from congregation.part import HeuristicPart
-from congregation.codegen.jiff import JiffCodeGen
-from congregation.codegen.python import PythonCodeGen
+from congregation.dispatch import JiffDispatcher, PythonDispatcher
 from congregation.net import Peer
+from congregation.part import HeuristicPart
 
 
 class Assemble:
@@ -31,7 +32,7 @@ class Assemble:
             cg_cfg = CodeGenConfig(
                 cfg["general"]["workflow_name"] if "workflow_name" in cfg["general"] else "congregation-workflow",
                 cfg["general"]["pid"],
-                cfg["general"]["all_parties"],
+                cfg["general"]["all_pids"],
                 cfg["general"]["code_path"] if "code_path" in cfg["general"] else "/tmp/",
                 cfg["general"]["data_path"],
                 cfg["general"]["data_path"],
@@ -55,7 +56,7 @@ class Assemble:
                     "jiff_lib_path": cfg["jiff"]["jiff_lib_path"],
                     "server_ip": cfg["jiff"]["server_ip"],
                     "server_port": cfg["jiff"]["server_port"],
-                    "server_pid": cfg["jiff"]["server_port"],
+                    "server_pid": cfg["jiff"]["server_pid"],
                     "zp": cfg["jiff"]["zp"] if "zp" in cfg["jiff"] else None,
                     "extensions": cfg["jiff"]["extensions"] if "extensions" in cfg["jiff"] else None
                 }
@@ -66,10 +67,13 @@ class Assemble:
 
         return self
 
-    def setup_config(self, cfg: [dict, None] = None):
+    def setup_config(self, cfg: [dict, str, None] = None):
         """
         Wraps all config setup methods
         """
+        if isinstance(cfg, str):
+            print(f"Loading config from file: {cfg}")
+            cfg = json.loads(open(cfg, "r").read())
         self.configure_network(cfg)
         self.configure_codegen(cfg)
         self.configure_jiff(cfg)
@@ -89,11 +93,26 @@ class Assemble:
         p = HeuristicPart(dag)
         return p.partition(iteration_limit)
 
+    def _involves_this_party(self, d: Dag):
+        """
+        Look at input DAG and see if it involves data that we're holding
+        """
+        for r in d.roots:
+            for ps in r.out_rel.stored_with:
+                if self.config.system_configs['CODEGEN'].pid in ps:
+                    return True
+        return False
+
     def generate_code(self, parts: list):
         """
         Generate code from partitions list and write to disk
         """
         for i in range(len(parts)):
+
+            if not self._involves_this_party(parts[i][0]):
+                # not our data, skip job
+                continue
+
             if parts[i][1] == "python":
                 cg = PythonCodeGen(
                     self.config,
@@ -117,6 +136,11 @@ class Assemble:
         """
         ret = []
         for i in range(len(parts)):
+
+            if not self._involves_this_party(parts[i][0]):
+                # not our data, skip job
+                continue
+
             if parts[i][1] == "python":
                 cg = PythonCodeGen(
                     self.config,
@@ -153,10 +177,26 @@ class Assemble:
 
         return peer
 
-    def dispatch_jobs(self, job_queue, networked_peer):
-        return
+    def dispatch_jobs(self, job_queue: list, networked_peer: Peer):
 
-    def generate_and_dispatch(self, protocol: callable, cfg: [dict, None] = None, iteration_limit: [int, None] = 100):
+        dispatchers = {
+            "JIFF": JiffDispatcher,
+            "PYTHON": PythonDispatcher
+        }
+
+        for j in job_queue:
+            try:
+                dispatcher = dispatchers[j.job_type](networked_peer, self.config)
+                dispatcher.dispatch(j)
+            except KeyError:
+                print(f"No dispatcher found for job type {j.job_type}")
+
+    def generate_and_dispatch(
+            self,
+            protocol: callable,
+            cfg: [dict, str, None] = None,
+            iteration_limit: [int, None] = 100
+    ):
 
         self.setup_config(cfg)
         peer = self.setup_peer()

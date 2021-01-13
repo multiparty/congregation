@@ -28,7 +28,8 @@ class JiffCodeGen(CodeGen):
         ret["mpc.js"] = self._generate_mpc()
         ret["party.js"] = self._generate_party()
         ret["server.js"] = self._generate_server()
-        ret["run.sh"] = self._generate_bash()
+        ret["run_client.sh"] = self._generate_client_bash()
+        ret["run_server.sh"] = self._generate_server_bash()
 
         return ret
 
@@ -96,19 +97,28 @@ class JiffCodeGen(CodeGen):
         else:
             return ""
 
-    def _generate_bash(self):
-        """
-        TODO: RUN_SERVER needs to be filled out
-        """
+    def _generate_client_bash(self):
 
-        template = open(f"{self.templates_dir}/bash/run.tmpl").read()
+        template = open(f"{self.templates_dir}/bash/run_client.tmpl").read()
         data = {
             "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path,
-            "CODE_PATH": f"{self.codegen_config.code_path}/{self.job_name}",
-            "RUN_SERVER": ""
+            "CODE_PATH": f"{self.codegen_config.code_path}/{self.job_name}"
         }
 
         return pystache.render(template, data)
+
+    def _generate_server_bash(self):
+
+        if self.codegen_config.server_pid == self.codegen_config.pid:
+            template = open(f"{self.templates_dir}/bash/run_server.tmpl").read()
+            data = {
+                "JIFF_LIB_PATH": self.codegen_config.jiff_lib_path,
+                "CODE_PATH": f"{self.codegen_config.code_path}/{self.job_name}"
+            }
+
+            return pystache.render(template, data)
+        else:
+            return ""
 
     def _get_output_path(self):
 

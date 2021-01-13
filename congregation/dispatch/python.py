@@ -1,4 +1,4 @@
-from subprocess import call
+import subprocess
 from congregation.dispatch.dispatcher import Dispatcher
 from congregation.config import Config
 from congregation.job import PythonJob
@@ -14,7 +14,7 @@ class PythonDispatcher(Dispatcher):
         self.setup_dispatch(job)
         cmd = f"{job.code_dir}/{job.name}/workflow.py"
         print(f"Running python job at {job.code_dir}/{job.name}/workflow.py")
-        call(["python", cmd])
+        subprocess.call(["python", cmd])
 
     def synchronize(self, job: PythonJob):
         # TODO: if it's a networked job then synchronize else pass

@@ -1,5 +1,5 @@
 import asyncio
-from subprocess import call
+import subprocess
 from congregation.dispatch.dispatcher import Dispatcher
 from congregation.config import Config
 from congregation.job import JiffJob
@@ -13,9 +13,9 @@ class JiffDispatcher(Dispatcher):
     def dispatch(self, job: JiffJob):
 
         self.setup_dispatch(job)
-        cmd = f"{job.code_dir}/{job.name}/party.js"
+        cmd = f"{job.code_dir}/{job.name}/run_client.sh"
         print(f"Running jiff job at {job.code_dir}/{job.name}/party.js")
-        call(["node", cmd])
+        subprocess.call(["bash", cmd])
 
     def setup_config(self):
 
@@ -155,11 +155,15 @@ class JiffDispatcher(Dispatcher):
         self.exchange_config()
         self._verify_config_against_others()
 
-    def _dispatch_server(self, job: JiffJob):
+    @staticmethod
+    def _dispatch_server(job: JiffJob):
         """
-        TODO: Non-blocking subprocess.call here (maybe launch server in screen session)
+        TODO: get proc id and print to screen so user can kill it later
         """
+
+        cmd = f"{job.code_dir}/{job.name}/run_server.sh"
         print(f"Dispatching Jiff server for job {job.name}")
+        p = subprocess.Popen(["bash", cmd])
 
     def _synchronize_server(self, job: JiffJob):
         """
@@ -167,6 +171,8 @@ class JiffDispatcher(Dispatcher):
         """
 
         jc = self.config.system_configs["JIFF_CODEGEN"]
+        # if server party isn't a compute party, we assume that
+        # the jiff server for this computation is already running
         if jc.server_pid in jc.all_pids:
             if self.pid == jc.server_pid:
                 # dispatch server and send ready msgs to other parties
