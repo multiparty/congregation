@@ -1,0 +1,38 @@
+{
+  "general": {
+    "workflow_name": "demo",
+    "pid": 3,
+    "all_pids": [1, 2, 3],
+    "data_path": "party_three/data/",
+    "code_path": "party_three/code/",
+    "delimiter": ",",
+    "use_floats": false
+  },
+  "network": {
+    "parties": [
+      "1:localhost:9001",
+      "2:localhost:9002",
+      "3:localhost:9003"
+    ]
+  },
+  "jiff": {
+    "jiff_lib_path": "",
+    "server_ip": "0.0.0.0",
+    "server_port": 9004,
+    "server_pid": 1,
+    "zp": 16777729,
+    "extensions": {
+      "fixed_point": {
+        "use": false,
+        "decimal_digits": 1,
+        "integer_digits": 1
+      },
+      "negative_number": {
+        "use": false
+      },
+      "big_number": {
+        "use": false
+      }
+    }
+  }
+}

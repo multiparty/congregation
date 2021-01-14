@@ -3,6 +3,18 @@
 .DS_Store
 ex/
 
+# Demo
+demo/party_one/code/*
+demo/party_two/code/*
+demo/party_three/code/*
+
+demo/party_one/data/*
+demo/party_two/data/*
+demo/party_three/data/*
+!*demo/party_one/data/in1.csv
+!*demo/party_two/data/in2.csv
+!*demo/party_three/data/in3.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -157,13 +157,11 @@ class JiffDispatcher(Dispatcher):
 
     @staticmethod
     def _dispatch_server(job: JiffJob):
-        """
-        TODO: get proc id and print to screen so user can kill it later
-        """
 
         cmd = f"{job.code_dir}/{job.name}/run_server.sh"
         print(f"Dispatching Jiff server for job {job.name}")
         p = subprocess.Popen(["bash", cmd])
+        print(f"Jiff server launched with PID {p.pid}")
 
     def _synchronize_server(self, job: JiffJob):
         """

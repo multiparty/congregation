@@ -2,7 +2,7 @@ let express = require('express');
 let app = express();
 let http = require('http').Server(app);
 let jiffServer = require('{{{JIFF_LIB_PATH}}}/lib/jiff-server');
-let jiffServerInstance = new jiffServer(http, { logs: true });
+let jiffServerInstance = new jiffServer(http, { logs: false });
 
 {{{BIG_NUMBER}}}
 
