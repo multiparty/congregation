@@ -7,7 +7,7 @@ server is run by party 1, but you can modify the `server_ip`,
 at `party_one/config.json` / `party_two/config.json` / `party_three/config.json`
 if you would rather run it separately.
 
-For any other kind of customization, refer to the [Wiki](https://github.com/CCD-HRI/congregation/wiki)
+For any other kind of customization, just refer to the [Wiki](https://github.com/CCD-HRI/congregation/wiki).
 
 ## run
 
@@ -31,3 +31,7 @@ terminal windows as follows:
 The output will be written to each party's `data` directory. If
 you haven't edited the protocol at all, it will be in a file called
 `agg_collect.csv`.
+
+- Note that you'll have to manually kill the process running the jiff server 
+  after each computation. If a compute party is running the server, it's PID 
+  will be displayed once it's launched during the computation.
