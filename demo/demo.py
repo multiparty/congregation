@@ -1,35 +1,51 @@
-from congregation import *
+from congregation import create_column, lang, Assemble
 import sys
 import json
 
 
 def protocol():
 
+    # 3 columns for party 1
     a = create_column("a", "INTEGER")
     b = create_column("b", "INTEGER")
     c = create_column("c", "INTEGER")
 
-    d = create_column("a", "INTEGER")
-    e = create_column("b", "INTEGER")
-    f = create_column("c", "INTEGER")
+    # 3 columns for party 2
+    d = create_column("d", "INTEGER")
+    e = create_column("e", "INTEGER")
+    f = create_column("f", "INTEGER")
 
-    g = create_column("a", "INTEGER")
-    h = create_column("b", "INTEGER")
-    i = create_column("c", "INTEGER")
+    # 3 columns for party 3
+    g = create_column("g", "INTEGER")
+    h = create_column("h", "INTEGER")
+    i = create_column("i", "INTEGER")
 
-    rel_one = create("in1", [a, b, c], {1})
-    rel_two = create("in2", [d, e, f], {2})
-    rel_three = create("in3", [g, h, i], {3})
+    # create all input relations
+    rel_one = lang.create("in1", [a, b, c], {1})
+    rel_two = lang.create("in2", [d, e, f], {2})
+    rel_three = lang.create("in3", [g, h, i], {3})
 
-    cc = concat([rel_one, rel_two, rel_three], "cc")
-    agg = aggregate(cc, "agg", ["b"], "a", "sum")
-    collect(agg, {1, 2, 3})
+    # concatenate input relations
+    cc = lang.concat([rel_one, rel_two, rel_three], "cc")
 
+    # simple sum aggregation over column "a", grouped by the values
+    # from column "b".
+    # note that since we didn't explicitly pass column names to concat(),
+    # the columns in its output relation were named according to the first
+    # relation in its input (here, relation rel_one).
+    agg = lang.aggregate(cc, "agg", ["b"], "a", "sum")
+
+    # reveal output to parties 1, 2, and 3
+    lang.collect(agg, {1, 2, 3})
+
+    # return the workflow's root nodes
     return {rel_one, rel_two, rel_three}
 
 
 cfg = json.loads(open(sys.argv[1], "r").read())
 cfg["jiff"]["jiff_lib_path"] = sys.argv[2]
 
+# the Assemble class (at congregation/assemble/assemble.py) exposes
+# all the main steps related to workflow generation and dispatching
 a = Assemble()
 a.generate_and_dispatch(protocol, cfg)
