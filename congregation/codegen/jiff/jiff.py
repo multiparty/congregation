@@ -338,16 +338,12 @@ class JiffCodeGen(CodeGen):
 
         return pystache.render(template, data)
 
-    def _generate_multiply(self, node: Multiply):
+    @staticmethod
+    def _generate_arithmetic_commutative(node: [Add, Multiply]):
 
-        in_rel_cols_len = len(node.get_in_rel().columns)
-        if node.target_col.idx == in_rel_cols_len:
-            new_col = 1
-        else:
-            new_col = 0
+        new_col = 1 if node.target_col.idx == len(node.get_in_rel().columns) else 0
 
-        template = open(f"{self.templates_dir}/mpc/methods/multiply.tmpl").read()
-        data = {
+        return {
             "OUT_REL": node.out_rel.name,
             "IN_REL": node.get_in_rel().name,
             "COL_OPERANDS": [c.idx for c in node.operands if isinstance(c, Column)],
@@ -356,53 +352,60 @@ class JiffCodeGen(CodeGen):
             "NEW_COL": new_col
         }
 
-        return pystache.render(template, data)
+    @staticmethod
+    def _generate_arithmetic_non_commutative(node: [Subtract, Divide]):
 
-    def _generate_divide(self, node: Divide):
+        new_col = 1 if node.target_col.idx == len(node.get_in_rel().columns) else 0
+        operands = [
+            {"__TYPE__": "col", "v": o.idx}
+            if isinstance(o, Column)
+            else {"__TYPE__": "scal", "v": o}
+            for o in node.operands
+        ]
 
-        # if target_col.idx is the first index after the last
-        # column idx of this nodes in_rel, then this operation
-        # is storing results in a new column
-        in_rel_cols_len = len(node.get_in_rel().columns)
-        if node.target_col.idx == in_rel_cols_len:
-            new_col = 1
-        else:
-            new_col = 0
-
-        if new_col and not isinstance(node.operands[0], Column):
-            # can't have operands list starting with a scalar because we can't do
-            # arithmetic operations in jiff like <scalar>.<operation>(<share>)
-            raise Exception(
-                f"Encountered operands list for Divide node whose first element is not of "
-                f"Column type in code generation for Jiff job {self.job_name}."
-            )
-
-        operands = []
-        for o in node.operands:
-            if isinstance(o, Column):
-                operands.append({
-                    '__TYPE__': 'col',
-                    '__VAL__': o.idx
-                })
-            elif isinstance(o, (float, int)):
-                operands.append({
-                    '__TYPE__': 'scal',
-                    '__VAL__': o
-                })
-            else:
-                raise Exception(
-                    f"Operand passed to Divide() operator of unexpected "
-                    f"type: {type(o)}. Should be float, int, or Column."
-                )
-
-        template = open(f"{self.templates_dir}/mpc/methods/divide.tmpl").read()
-        data = {
+        return {
             "OPERANDS": operands,
             "OUT_REL": node.out_rel.name,
             "IN_REL": node.get_in_rel().name,
             "TARGET_COL": node.target_col.idx,
             "NEW_COL": new_col
         }
+
+    def _generate_add(self, node: Add):
+
+        template = open(f"{self.templates_dir}/mpc/methods/add.tmpl").read()
+        data = self._generate_arithmetic_commutative(node)
+
+        return pystache.render(template, data)
+
+    def _generate_subtract(self, node: Subtract):
+
+        template = open(f"{self.templates_dir}/mpc/methods/subtract.tmpl").read()
+        data = self._generate_arithmetic_non_commutative(node)
+
+        return pystache.render(template, data)
+
+    def _generate_multiply(self, node: Multiply):
+
+        template = open(f"{self.templates_dir}/mpc/methods/multiply.tmpl").read()
+        data = self._generate_arithmetic_commutative(node)
+
+        return pystache.render(template, data)
+
+    def _generate_divide(self, node: Divide):
+
+        if len(node.get_in_rel().columns) == len(node.get_in_rel().columns) \
+                and not isinstance(node.operands[0], Column):
+            # can't have operands list starting with a scalar because we can't do
+            # arithmetic operations in jiff like <scalar>.<operation>(<share>)
+            # note that this is only the case for division since it isn't commutative
+            raise Exception(
+                f"Encountered operands list for Divide node whose first element is not of "
+                f"Column type in code generation for Jiff job {self.job_name}."
+            )
+
+        template = open(f"{self.templates_dir}/mpc/methods/divide.tmpl").read()
+        data = self._generate_arithmetic_non_commutative(node)
 
         return pystache.render(template, data)
 

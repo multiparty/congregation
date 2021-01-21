@@ -90,6 +90,12 @@ class PushDown(DagRewriter):
     def _rewrite_project(self, node: Project):
         self._rewrite_unary_default(node)
 
+    def _rewrite_add(self, node: Add):
+        self._rewrite_unary_default(node)
+
+    def _rewrite_subtract(self, node: Subtract):
+        self._rewrite_unary_default(node)
+
     def _rewrite_multiply(self, node: Multiply):
         self._rewrite_unary_default(node)
 

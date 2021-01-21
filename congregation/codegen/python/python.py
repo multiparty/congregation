@@ -64,6 +64,25 @@ class PythonCodeGen(CodeGen):
         return f"\n{self.space}{node.out_rel.name} = " \
                f"project({node.get_in_rel().name}, {proj_cols_idx})"
 
+    def _generate_add(self, node: Add):
+
+        col_operands = [c.idx for c in node.operands if isinstance(c, Column)]
+        scalar_operands = [n for n in node.operands if not isinstance(n, Column)]
+        return f"\n{self.space}{node.out_rel.name} = " \
+               f"add({node.get_in_rel().name}, {col_operands}, {scalar_operands}, {node.target_col.idx})"
+
+    def _generate_subtract(self, node: Subtract):
+
+        operands = [
+            {"__TYPE__": "col", "v": o.idx}
+            if isinstance(o, Column)
+            else {"__TYPE__": "scal", "v": o}
+            for o in node.operands
+        ]
+
+        return f"\n{self.space}{node.out_rel.name} = " \
+               f"subtract({node.get_in_rel().name}, {operands}, {node.target_col.idx})"
+
     def _generate_multiply(self, node: Multiply):
 
         col_operands = [c.idx for c in node.operands if isinstance(c, Column)]
@@ -73,12 +92,12 @@ class PythonCodeGen(CodeGen):
 
     def _generate_divide(self, node: Divide):
 
-        operands = []
-        for o in node.operands:
-            if isinstance(o, Column):
-                operands.append({"__TYPE__": "col", "v": o.idx})
-            else:
-                operands.append({"__TYPE__": "scal", "v": o})
+        operands = [
+            {"__TYPE__": "col", "v": o.idx}
+            if isinstance(o, Column)
+            else {"__TYPE__": "scal", "v": o}
+            for o in node.operands
+        ]
 
         return f"\n{self.space}{node.out_rel.name} = " \
                f"divide({node.get_in_rel().name}, {operands}, {node.target_col.idx})"

@@ -278,6 +278,48 @@
     return [ret, keepRowsResult];
   }
 
+  exports.add = function (inRel, keepRows, colOperands, scalarOperands, targetCol, newCol) {
+
+    let ret = [];
+    let keepRowsResult = [];
+
+    for (let i = 0; i < inRel.length; i++) {
+      keepRowsResult.push([keepRows[i]]);
+
+      let targetVal;
+      let k;
+      if (newCol) {
+        // if newCol is true, there will be at least one colOperand
+        targetVal = inRel[i][colOperands[0]];
+        k = 1;
+      } else {
+        targetVal = inRel[i][targetCol];
+        k = 0;
+      }
+
+      for (let j = 0; j < scalarOperands.length; j++) {
+        targetVal = targetVal.cadd(scalarOperands[j]);
+      }
+      for (k; k < colOperands.length; k++) {
+        targetVal = targetVal.sadd(inRel[i][colOperands[k]]);
+      }
+
+      if (newCol) {
+        let newRow = inRel[i].concat([targetVal]);
+        ret.push(newRow);
+      } else {
+        inRel[i][targetCol] = targetVal;
+        ret.push(inRel[i]);
+      }
+    }
+
+    return [ret, keepRowsResult];
+  }
+
+  exports.subtract = function (inRel, keepRows, operands, targetCol, newCol) {
+    // TODO
+  }
+
   exports.multiply = function (inRel, keepRows, colOperands, scalarOperands, targetCol, newCol) {
 
     let ret = [];

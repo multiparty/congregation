@@ -115,9 +115,8 @@ def project(input_op_node: OpNode, name: str, selected_col_names: list):
     return op
 
 
-def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: list):
+def _arithmetic_build_out_rel(in_rel: Relation, name: str, target_col_name: str, operands: list):
 
-    in_rel = input_op_node.out_rel
     out_rel_cols = copy.deepcopy(in_rel.columns)
     operands = build_operands_from_in_rel(in_rel, operands)
 
@@ -141,6 +140,34 @@ def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: l
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
 
+    return out_rel, target_col
+
+
+def add(input_op_node: OpNode, name: str, target_col_name: str, operands: list):
+
+    in_rel = input_op_node.out_rel
+    operands = build_operands_from_in_rel(in_rel, operands)
+    out_rel, target_col = _arithmetic_build_out_rel(in_rel, name, target_col_name, operands)
+    op = Add(out_rel, input_op_node, target_col, operands)
+    input_op_node.children.add(op)
+
+    return op
+
+
+def subtract(input_op_node: OpNode, name: str, target_col_name: str, operands: list):
+
+    in_rel = input_op_node.out_rel
+    operands = build_operands_from_in_rel(in_rel, operands)
+    out_rel, target_col = _arithmetic_build_out_rel(in_rel, name, target_col_name, operands)
+    op = Subtract(out_rel, input_op_node, target_col, operands)
+    input_op_node.children.add(op)
+
+
+def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: list):
+
+    in_rel = input_op_node.out_rel
+    operands = build_operands_from_in_rel(in_rel, operands)
+    out_rel, target_col = _arithmetic_build_out_rel(in_rel, name, target_col_name, operands)
     op = Multiply(out_rel, input_op_node, target_col, operands)
     input_op_node.children.add(op)
 
@@ -150,33 +177,8 @@ def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: l
 def divide(input_op_node: OpNode, name: str, target_col_name: str, operands: list):
 
     in_rel = input_op_node.out_rel
-    out_rel_cols = copy.deepcopy(in_rel.columns)
     operands = build_operands_from_in_rel(in_rel, operands)
-
-    target_col = find(out_rel_cols, target_col_name)
-    if target_col is None:
-
-        cols_only = [c for c in operands if isinstance(c, Column)]
-        target_col_trust_set = min_trust_with_from_columns(cols_only)
-        pt = min_pt_set_from_cols(cols_only)
-        col_type = infer_output_type(cols_only)
-
-        target_col = Column(name, target_col_name, len(in_rel.columns), col_type, target_col_trust_set, plaintext=pt)
-        out_rel_cols.append(target_col)
-
-    else:
-
-        # need to re-compute target column's trust set to reflect min trust set across
-        # all target column + all operand columns. same for pt
-        all_cols = [c for c in operands if isinstance(c, Column)] + [target_col]
-        target_col_trust_set = min_trust_with_from_columns(all_cols)
-        pt = min_pt_set_from_cols(all_cols)
-        target_col.trust_with = target_col_trust_set
-        target_col.plaintext = pt
-
-    out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
-    out_rel.update_columns()
-
+    out_rel, target_col = _arithmetic_build_out_rel(in_rel, name, target_col_name, operands)
     op = Divide(out_rel, input_op_node, target_col, operands)
     input_op_node.children.add(op)
 

@@ -96,6 +96,98 @@ def project(rel: list, selected_cols: list):
     return [[row[idx] for idx in selected_cols] for row in rel]
 
 
+def _add_new_col(rel: list, col_operands: list, scalar_operands: list):
+
+    ret = []
+    for row in rel:
+        col_sum = sum([row[i] for i in col_operands])
+        scalar_sum = sum(scalar_operands)
+        ret.append(row + [col_sum + scalar_sum])
+    return ret
+
+
+def _add(rel: list, col_operands: list, scalar_operands: list, target_col_idx: int):
+
+    ret = []
+    for row in rel:
+        col_sum = sum([row[i] for i in col_operands])
+        scalar_sum = sum(scalar_operands)
+        ret.append(
+            [
+                row[i]
+                if i != target_col_idx
+                else sum([col_sum, scalar_sum, row[target_col_idx]])
+                for i in range(len(row))
+            ]
+        )
+    return ret
+
+
+def add(rel: list, col_operands: list, scalar_operands: list, target_col_idx: int):
+
+    if target_col_idx > len(rel[0]):
+        raise Exception(
+            f"Input relation has only {len(rel[0])} columns. "
+            f"Can't add column with idx {target_col_idx}."
+        )
+
+    if len(rel[0]) == target_col_idx:
+        return _add_new_col(rel, col_operands, scalar_operands)
+    else:
+        return _add(rel, col_operands, scalar_operands, target_col_idx)
+
+
+def _sub_list(li: list):
+
+    if len(li) == 0:
+        return 0
+
+    ret = li[0]
+    for i in li[1:]:
+        ret = ret - i
+    return ret
+
+
+def _subtract_new_col(rel: list, operands: List[dict]):
+
+    ret = []
+    for row in rel:
+        vals = [row[o["v"]] if o["__TYPE__"] == "col" else o["v"] for o in operands]
+        sub_result = _sub_list(vals)
+        ret.append(row + [sub_result])
+    return ret
+
+
+def _subtract(rel: list, operands: List[dict], target_col_idx: int):
+
+    ret = []
+    for row in rel:
+        vals = [row[o["v"]] if o["__TYPE__"] == "col" else o["v"] for o in operands]
+        ret.append(
+            [
+                row[i]
+                if i != target_col_idx
+                else _sub_list([row[target_col_idx]] + vals)
+                for i in range(len(row))
+            ]
+        )
+    return ret
+
+
+def subtract(rel: list, operands: List[dict], target_col_idx: int):
+
+    if target_col_idx > len(rel[0]):
+        raise Exception(
+            f"Input relation has only {len(rel[0])} columns. "
+            f"Can't add column with idx {target_col_idx}."
+        )
+
+    if len(rel[0]) == target_col_idx:
+        return _subtract_new_col(rel, operands)
+    else:
+        return _subtract(rel, operands, target_col_idx)
+
+
 def _multiply_new_col(rel: list, col_operands: list, scalar_operands: list):
 
     ret = []
@@ -112,8 +204,14 @@ def _multiply(rel: list, col_operands: list, scalar_operands: list, target_col_i
     for row in rel:
         col_product = math.prod([row[i] for i in col_operands])
         scalar_product = math.prod(scalar_operands)
-        target_col_result = col_product * scalar_product * row[target_col_idx]
-        ret.append([row[i] if i != target_col_idx else target_col_result for i in range(len(row))])
+        ret.append(
+            [
+                row[i]
+                if i != target_col_idx
+                else math.prod([col_product, scalar_product, row[target_col_idx]])
+                for i in range(len(row))
+            ]
+        )
     return ret
 
 
@@ -134,21 +232,23 @@ def multiply(rel: list, col_operands: list, scalar_operands: list, target_col_id
 def _divide_list(li: list):
 
     if len(li) == 0:
-        return 1
-    elif len(li) == 1:
-        return li[0]
-    else:
-        ret = li[0]
-        for i in li[1:]:
-            ret = ret / i
-        return ret
+        return 0
+
+    ret = li[0]
+    for i in li[1:]:
+        ret = ret / i
+    return ret
 
 
 def _divide_new_col(rel: list, operands: List[dict]):
 
     ret = []
     for row in rel:
-        vals = [row[o["v"]] if o["__TYPE__"] == "col" else o["v"] for o in operands]
+        vals = [
+            row[o["v"]]
+            if o["__TYPE__"] == "col"
+            else o["v"] for o in operands
+        ]
         div_result = _divide_list(vals)
         ret.append(row + [div_result])
     return ret
@@ -158,9 +258,20 @@ def _divide(rel: list, operands: List[dict], target_col_idx: int):
 
     ret = []
     for row in rel:
-        vals = [row[o["v"]] if o["__TYPE__"] == "col" else o["v"] for o in operands]
-        target_col_result = _divide_list([row[target_col_idx]] + vals)
-        ret.append([row[i] if i != target_col_idx else target_col_result for i in range(len(row))])
+        vals = [
+            row[o["v"]]
+            if o["__TYPE__"] == "col"
+            else o["v"]
+            for o in operands
+        ]
+        ret.append(
+            [
+                row[i]
+                if i != target_col_idx
+                else _divide_list([row[target_col_idx]] + vals)
+                for i in range(len(row))
+            ]
+        )
     return ret
 
 

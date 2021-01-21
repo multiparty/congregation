@@ -259,56 +259,20 @@ class Project(UnaryOpNode):
         self.out_rel.update_columns()
 
 
-class Multiply(UnaryOpNode):
-
-    def __init__(self, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
-        super(Multiply, self).__init__("multiply", out_rel, parent)
+class ArithmeticOp(UnaryOpNode):
+    def __init__(self, op_type: str, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
+        super(ArithmeticOp, self).__init__(op_type, out_rel, parent)
         self.operands = operands
         self.target_col = target_col
+        self.verify_operands(operands, target_col)
 
-    def is_reversible(self):
-        return all([op != 0 for op in self.operands])
-
-    def update_op_specific_cols(self):
-
-        temp_cols = copy.deepcopy(self.get_in_rel().columns)
-        old_operands = copy.deepcopy(self.operands)
-        self.operands = [temp_cols[o.idx] if isinstance(o, Column) else o for o in old_operands]
-
-        if self.target_col.idx == len(temp_cols):
-            temp_target_col = copy.deepcopy(self.target_col)
-            all_cols = [o for o in self.operands if isinstance(o, Column)]
-        else:
-            temp_target_col = copy.deepcopy(temp_cols[self.target_col.idx])
-            all_cols = [o for o in self.operands if isinstance(o, Column)] + [temp_target_col]
-
-        target_col_trust_set = min_trust_with_from_columns(all_cols)
-        target_col_pt_set = min_pt_set_from_cols(all_cols)
-        temp_target_col.trust_with = target_col_trust_set
-        temp_target_col.plaintext = target_col_pt_set
-
-        self.target_col = temp_target_col
-
-    def update_out_rel_cols(self):
-
-        self.update_op_specific_cols()
-        out_rel_cols = copy.deepcopy(self.get_in_rel().columns)
-        temp_target_col = copy.deepcopy(self.target_col)
-
-        if self.target_col.idx == len(out_rel_cols):
-            out_rel_cols = out_rel_cols + [temp_target_col]
-        else:
-            out_rel_cols[self.target_col.idx] = temp_target_col
-
-        self.out_rel.columns = out_rel_cols
-        self.out_rel.update_columns()
-
-
-class Divide(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
-        super(Divide, self).__init__("divide", out_rel, parent)
-        self.operands = operands
-        self.target_col = target_col
+    @staticmethod
+    def verify_operands(operands: list, target_col: Column):
+        """
+        TODO: need to check that all operands are either a column or a valid scalar
+            and raise exception if not the case
+        """
+        return
 
     def is_reversible(self):
         return True
@@ -346,6 +310,29 @@ class Divide(UnaryOpNode):
 
         self.out_rel.columns = out_rel_cols
         self.out_rel.update_columns()
+
+
+class Add(ArithmeticOp):
+    def __init__(self, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
+        super(Add, self).__init__("add", out_rel, parent, target_col, operands)
+
+
+class Subtract(ArithmeticOp):
+    def __init__(self, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
+        super(Subtract, self).__init__("subtract", out_rel, parent, target_col, operands)
+
+
+class Multiply(ArithmeticOp):
+    def __init__(self, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
+        super(Multiply, self).__init__("multiply", out_rel, parent, target_col, operands)
+
+    def is_reversible(self):
+        return all([op != 0 for op in self.operands])
+
+
+class Divide(ArithmeticOp):
+    def __init__(self, out_rel: Relation, parent: OpNode, target_col: Column, operands: list):
+        super(Divide, self).__init__("divide", out_rel, parent, target_col, operands)
 
 
 class Limit(UnaryOpNode):

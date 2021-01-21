@@ -26,6 +26,10 @@ class DagRewriter:
                 self._rewrite_aggregate_std_dev(node)
             elif isinstance(node, Project):
                 self._rewrite_project(node)
+            elif isinstance(node, Add):
+                self._rewrite_add(node)
+            elif isinstance(node, Subtract):
+                self._rewrite_subtract(node)
             elif isinstance(node, Multiply):
                 self._rewrite_multiply(node)
             elif isinstance(node, Divide):
@@ -95,6 +99,12 @@ class DagRewriter:
         pass
 
     def _rewrite_project(self, node: Project):
+        pass
+
+    def _rewrite_add(self, node: Add):
+        pass
+
+    def _rewrite_subtract(self, node: Subtract):
         pass
 
     def _rewrite_multiply(self, node: Multiply):

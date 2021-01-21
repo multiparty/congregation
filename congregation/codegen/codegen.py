@@ -49,6 +49,8 @@ class CodeGen:
             AggregateMean: self._generate_aggregate_mean,
             AggregateStdDev: self._generate_aggregate_std_dev,
             Project: self._generate_project,
+            Add: self._generate_add,
+            Subtract: self._generate_subtract,
             Multiply: self._generate_multiply,
             Divide: self._generate_divide,
             Limit: self._generate_limit,
@@ -94,6 +96,12 @@ class CodeGen:
         return ""
 
     def _generate_project(self, node: Project):
+        return ""
+
+    def _generate_add(self, node: Add):
+        return ""
+
+    def _generate_subtract(self, node: Subtract):
         return ""
 
     def _generate_multiply(self, node: Multiply):
