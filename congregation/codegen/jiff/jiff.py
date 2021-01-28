@@ -205,7 +205,10 @@ class JiffCodeGen(CodeGen):
 
         template = open(f"{self.templates_dir}/mpc/share/share_secret.tmpl").read()
         data = {
-            "FILE_PATH": f"{self.codegen_config.input_path}/{create_node.out_rel.name}.csv",
+            "FILE_PATH":
+                create_node.input_path
+                if create_node.input_path is not None
+                else f"{self.codegen_config.input_path}/{create_node.out_rel.name}.csv",
             "USE_BIG_NUMBER": int(self.codegen_config.extensions["big_number"]["use"]),
             "COMPUTE_PARTIES": self.codegen_config.all_pids
         }

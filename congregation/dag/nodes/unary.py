@@ -42,9 +42,16 @@ class UnaryOpNode(OpNode):
 
 
 class Create(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: [OpNode, None] = None, name: [str, None] = None):
+    def __init__(
+            self,
+            out_rel: Relation,
+            parent: [OpNode, None] = None,
+            name: [str, None] = None,
+            input_path: [str, None] = None
+    ):
         name = f"create-{out_rel.name}" if name is None else name
         super(Create, self).__init__(name, out_rel, parent)
+        self.input_path = input_path
 
     def requires_mpc(self):
         """

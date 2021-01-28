@@ -4,7 +4,7 @@ from congregation.dag.nodes.unary import *
 from congregation.utils.col import *
 
 
-def create(name: str, columns: list, stored_with: [set, list]):
+def create(name: str, columns: list, stored_with: [set, list], input_path: [str, None] = None):
 
     cols_in_rel = [
         Column(name, col_name, idx, type_str, trust_set, plaintext_set)

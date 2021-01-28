@@ -30,9 +30,15 @@ class PythonCodeGen(CodeGen):
         return PythonJob(self.job_name, self.codegen_config.code_path)
 
     def _generate_create(self, node: Create):
-        return f"\n{self.space}{node.out_rel.name} = " \
-               f"create(\"{self.codegen_config.input_path}/{node.out_rel.name}.csv\", " \
-               f"{self.codegen_config.use_floats})"
+
+        file_path = \
+            node.input_path \
+            if node.input_path is not None \
+            else f"\"{self.codegen_config.input_path}/{node.out_rel.name}.csv\""
+
+        return \
+            f"\n{self.space}{node.out_rel.name} = " \
+            f"create({file_path}, {self.codegen_config.use_floats})"
 
     def _generate_aggregate_count(self, node: AggregateCount):
 
