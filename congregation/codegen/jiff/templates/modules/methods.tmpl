@@ -1,5 +1,6 @@
 (function (exports) {
 
+  let helpers = require('./helpers');
   exports._aggregateCount = async function (inRel, keepRows, keyCol, jiffInstance) {
 
     let newRel = [];
@@ -26,7 +27,7 @@
       newRel.push([inRel[i][keyCol], inRel[i][aggCol]]);
     }
 
-    let sorted = await exports.bubbleSort(newRel, keepRows, 0, jiffInstance);
+    let sorted = await exports.oddEvenSort(newRel, keepRows, 0, jiffInstance);
     let sortedData = sorted[0];
     let sortedKeepRows = sorted[1];
 
@@ -86,7 +87,7 @@
       }
     }
 
-    return await exports.bubbleSort(ret, keepRowsResult, 0, jiffInstance);
+    return await exports.oddEvenSort(ret, keepRowsResult, 0, jiffInstance);
   }
 
   exports._formatAggMeanNoKeyCol = function (inRel, keepRows, aggCol, withCountCol, jiffInstance) {
@@ -241,8 +242,8 @@
       }
     }
 
-    await exports.bubbleSort(newRel, newKeepRows, 0, jiffInstance);
-    let meanData = await exports._aggregateMean(newRel, newKeepRows, 0, [1, 2], 3, jiffInstance);
+    let sortedData = await exports.oddEvenSort(newRel, newKeepRows, 0, jiffInstance);
+    let meanData = await exports._aggregateMean(sortedData[0], sortedData[1], 0, [1, 2], 3, jiffInstance);
     let meanRel = meanData[0];
     let meanKeepRows = meanData[1];
 
@@ -414,7 +415,7 @@
       newRel.push([inRel[i][keyCol]]);
     }
 
-    let sorted = await exports.bubbleSort(newRel, keepRows, keyCol, jiffInstance);
+    let sorted = await exports.oddEvenSort(newRel, keepRows, keyCol, jiffInstance);
     let sortedData = sorted[0];
     let sortedKeepRows = sorted[1];
 
@@ -510,51 +511,86 @@
     return [inRel, keepRowsResult];
   }
 
-  exports._bubbleSort = async function (inRel, keepRows, keyCol, jiffInstance, numCols, minVal, maxVal) {
+  exports.compareExchange = function(inRel, keepRows, keyCol, numCols, i, j) {
+
+    if (j >= inRel.length || i >= inRel.length) {
+      return;
+    }
+
+    let x = inRel[i][keyCol];
+    let y = inRel[j][keyCol];
+    let cmp = x.lt(y);
+
+    for (let k = 0; k < numCols; k++) {
+      let tempOne = cmp.if_else(inRel[i][k], inRel[j][k]);
+      let tempTwo = cmp.if_else(inRel[j][k], inRel[i][k]);
+
+      inRel[i][k] = tempOne;
+      inRel[j][k] = tempTwo;
+    }
+
+    let tempKeepOne = cmp.if_else(keepRows[i], keepRows[j]);
+    let tempKeepTwo = cmp.if_else(keepRows[j], keepRows[i]);
+
+    keepRows[i] = tempKeepOne;
+    keepRows[j] = tempKeepTwo;
+  }
+
+  exports.compareExchangeBatched = async function(inRel, keepRows, jiffInstance, keyCol, numCols, minVal, maxVal, m, r) {
+
     let loop = jiffInstance.start_barrier();
-    for (let i = minVal; i < maxVal; i++) {
-      let a = inRel[i][keyCol];
-      let b = inRel[i+1][keyCol];
-      let cmp = a.slt(b);
-
-      for (let j = 0; j < numCols; j++) {
-        let tempOne = cmp.if_else(inRel[i][j], inRel[i+1][j]);
-        let tempTwo = cmp.if_else(inRel[i+1][j], inRel[i][j]);
-
-        inRel[i][j] = tempOne;
-        inRel[i+1][j] = tempTwo;
-      }
-
-      let keepOne = cmp.if_else(keepRows[i], keepRows[i+1]);
-      let keepTwo = cmp.if_else(keepRows[i+1], keepRows[i]);
-
-      keepRows[i] = keepOne;
-      keepRows[i+1] = keepTwo;
+    for (let i = minVal; i < maxVal; i+=m) {
+      exports.compareExchange(inRel, keepRows, keyCol, numCols, i, i+r);
     }
     await jiffInstance.end_barrier(loop);
   }
 
-  exports.bubbleSort = async function (inRel, keepRows, keyCol, jiffInstance) {
+  exports.oddEvenMerge = async function(inRel, keepRows, jiffInstance, keyCol, numCols, lo, n, r) {
 
-    let numCols = inRel[0].length;
-    for (let i = 0; i < inRel.length; i++) {
-      let minVal;
-      let maxVal;
+    let m = r * 2;
+    if (m < n) {
+      await exports.oddEvenMerge(inRel, keepRows, jiffInstance, keyCol, numCols, lo, n, m);
+      await exports.oddEvenMerge(inRel, keepRows, jiffInstance, keyCol, numCols, lo+r, n, m);
 
-      let totalRows = inRel.length - i - 1;
-      let chunks = Math.floor(totalRows/20);
+      let start = lo+r;
+      let end = lo+n-r;
+      let steps = Math.floor((end-start)/m);
+      let chunks = Math.floor(steps/20);
+
       if (chunks > 0) {
-        for (let j = 0; j < chunks; j++) {
-          minVal = 20 * j;
-          maxVal = minVal + 20;
-          await exports._bubbleSort(inRel, keepRows, keyCol, jiffInstance, numCols, minVal, maxVal);
+        for (let i = 0; i < chunks; i++) {
+          let minVal = start + (i*20)*m;
+          let maxVal = minVal + (20*m);
+          await exports.compareExchangeBatched(inRel, keepRows, jiffInstance, keyCol, numCols, minVal, maxVal, m, r);
         }
         // finish last bit
-        await exports._bubbleSort(inRel, keepRows, keyCol, jiffInstance, numCols, maxVal, totalRows);
-      } else {
-        await exports._bubbleSort(inRel, keepRows, keyCol, jiffInstance, numCols, 0, totalRows);
+        await exports.compareExchangeBatched(inRel, keepRows, jiffInstance, keyCol, numCols, maxVal, end, m, r);
+      }
+      else {
+        await exports.compareExchangeBatched(inRel, keepRows, jiffInstance, keyCol, numCols, start, end, m ,r);
       }
     }
+    else {
+      exports.compareExchange(inRel, keepRows, keyCol, numCols, lo, lo+r);
+    }
+  }
+
+  exports._oddEvenSort = async function(inRel, keepRows, jiffInstance, keyCol, numCols, lo, n) {
+
+    if (n > 1) {
+      let m = Math.floor(n/2);
+      await exports._oddEvenSort(inRel, keepRows, jiffInstance, keyCol, numCols, lo, m);
+      await exports._oddEvenSort(inRel, keepRows, jiffInstance, keyCol, numCols, lo+m, m);
+      await exports.oddEvenMerge(inRel, keepRows, jiffInstance, keyCol, numCols, lo, n, 1);
+    }
+  }
+
+  exports.oddEvenSort = async function(inRel, keepRows, keyCol, jiffInstance) {
+
+    let numCols = inRel[0].length;
+    let nextPowTwo = helpers.nextPowerOfTwo(inRel.length);
+    await exports._oddEvenSort(inRel, keepRows, jiffInstance, keyCol, numCols, 0, nextPowTwo);
+
     return [inRel, keepRows];
   }
 

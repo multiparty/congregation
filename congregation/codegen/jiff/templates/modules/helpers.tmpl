@@ -67,13 +67,29 @@
         }
         parsedData.push(arr);
       }
+
       dataShares = jiffInstance.share_ND_array(parsedData, null, null, allParties, [inputParty]);
       keepRowShares = jiffInstance.share_array(keepRows, null, null, allParties, [inputParty]);
     } else {
       dataShares = jiffInstance.share_ND_array(null, null, null, allParties, [inputParty]);
       keepRowShares = jiffInstance.share_array(null, null, null, allParties, [inputParty]);
     }
+
     return [dataShares, keepRowShares];
+  }
+
+  exports.nextPowerOfTwo = function(n) {
+
+    let p = 1;
+    if (n && !(n & (n-1))) {
+      return n;
+    }
+
+    while (p < n) {
+      p <<= 1;
+    }
+
+    return p;
   }
 
 

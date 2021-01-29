@@ -1,7 +1,7 @@
 # Added manually
 .idea/
 .DS_Store
-ex/
+sandbox/
 
 # Demo
 demo/party_one/code/*

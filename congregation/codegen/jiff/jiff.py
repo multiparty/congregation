@@ -426,7 +426,7 @@ class JiffCodeGen(CodeGen):
     def _generate_distinct(self, node: Distinct):
         """
         TODO: Need to extend this to support selected_col_names list of size > 1. Right now,
-         we require size == 1 because the bubbleSort() method is limited to a single column.
+         we require size == 1 because the oddEvenSort() method is limited to a single column.
         """
 
         if len(node.selected_cols) != 1:
@@ -469,7 +469,7 @@ class JiffCodeGen(CodeGen):
 
     def _generate_sort_by(self, node: SortBy):
 
-        template = open(f"{self.templates_dir}/mpc/methods/bubble_sort.tmpl").read()
+        template = open(f"{self.templates_dir}/mpc/methods/odd_even_sort.tmpl").read()
         data = {
             "OUT_REL": node.out_rel.name,
             "IN_REL": node.get_in_rel().name,
