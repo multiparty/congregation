@@ -262,7 +262,7 @@
   }
 
   exports.aggregateVariance = async function(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance) {
-    return await aggregateStdDev(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance);
+    return await exports.aggregateStdDev(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance);
   }
 
   exports.project = function (inRel, keepRows, selectedCols) {
@@ -320,7 +320,44 @@
   }
 
   exports.subtract = function (inRel, keepRows, operands, targetCol, newCol) {
-    // TODO
+
+    let ret = [];
+    let keepRowsResult = [];
+
+    for (let i = 0; i < inRel.length; i++) {
+      keepRowsResult.push(keepRows[i]);
+
+      let targetVal;
+      if (newCol) {
+        // if a new column is being created, the first
+        // operand is always a column
+        targetVal = inRel[i][operands[0].__VAL__];
+      } else {
+        if (operands[0].__TYPE__ === 'col') {
+          targetVal = inRel[i][targetCol].ssub(inRel[i][operands[0].__VAL__]);
+        } else {
+          targetVal = inRel[i][targetCol].csub(operands[0].__VAL__);
+        }
+      }
+
+      for (let j = 1; j < operands.length; j++) {
+        if (operands[j].__TYPE__ === "col") {
+          targetVal = targetVal.ssub(inRel[i][operands[j].__VAL__]);
+        } else {
+          targetVal = targetVal.csub(operands[j].__VAL__);
+        }
+      }
+
+      if (newCol) {
+        let newRow = inRel[i].concat([targetVal]);
+        ret.push(newRow);
+      } else {
+        inRel[i][targetCol] = targetVal;
+        ret.push(inRel[i]);
+      }
+    }
+
+    return [ret, keepRowsResult];
   }
 
   exports.multiply = function (inRel, keepRows, colOperands, scalarOperands, targetCol, newCol) {
@@ -384,9 +421,9 @@
 
       for (let j = 1; j < operands.length; j++) {
         if (operands[j].__TYPE__ === "col") {
-          targetVal = targetVal.div(inRel[i][operands[j].__VAL__]);
+          targetVal = targetVal.sdiv(inRel[i][operands[j].__VAL__]);
         } else {
-          targetVal = targetVal.div(operands[j].__VAL__);
+          targetVal = targetVal.cdiv(operands[j].__VAL__);
         }
       }
 

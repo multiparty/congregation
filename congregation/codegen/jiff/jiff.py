@@ -335,7 +335,7 @@ class JiffCodeGen(CodeGen):
         if len(node.group_cols) > 1:
             raise Exception("Multiple key columns for aggregation in JIFF not yet implemented.")
 
-        template = open(f"{self.templates_dir}/mpd/methods/agg_variance.tmpl").read()
+        template = open(f"{self.templates_dir}/mpc/methods/agg_variance.tmpl").read()
         data = {
             "OUT_REL": node.out_rel.name,
             "IN_REL": node.get_in_rel().name,
@@ -378,9 +378,9 @@ class JiffCodeGen(CodeGen):
 
         new_col = 1 if node.target_col.idx == len(node.get_in_rel().columns) else 0
         operands = [
-            {"__TYPE__": "col", "v": o.idx}
+            {"__TYPE__": "col", "__VAL__": o.idx}
             if isinstance(o, Column)
-            else {"__TYPE__": "scal", "v": o}
+            else {"__TYPE__": "scal", "__VAL__": o}
             for o in node.operands
         ]
 

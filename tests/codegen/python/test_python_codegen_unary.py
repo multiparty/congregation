@@ -219,6 +219,68 @@ def test_project(path_to_rel: str, use_floats: bool, expected: list):
 
 @pytest.mark.parametrize("path_to_rel, use_floats, expected", [
     (
+            f"{inputs_path}/rel_one.csv",
+            False,
+            [[1, 2, 10], [4, 5, 19], [7, 8, 28]]
+    ),
+    (
+            f"{inputs_path}/rel_two.csv",
+            False,
+            [[1, 3, 14], [7, 1, 20]]
+    ),
+    (
+            f"{inputs_path}/rel_two.csv",
+            True,
+            [[1.4, 3.2, 15.3], [7.0, 1.6, 21.5]]
+    ),
+    (
+            f"{inputs_path}/rel_invalid.csv",
+            False,
+            [[2, 3, 13]]
+
+    )
+])
+def test_add(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    a = add(r, [0, 1], [-1, 5], 2)
+
+    assert a == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+            f"{inputs_path}/rel_one.csv",
+            False,
+            [[1, 2, 3, 7], [4, 5, 6, 13], [7, 8, 9, 19]]
+    ),
+    (
+            f"{inputs_path}/rel_two.csv",
+            False,
+            [[1, 3, 6, 8], [7, 1, 8, 12]]
+    ),
+    (
+            f"{inputs_path}/rel_two.csv",
+            True,
+            [[1.4, 3.2, 6.7, 8.6], [7.0, 1.6, 8.9, 12.6]]
+    ),
+    (
+            f"{inputs_path}/rel_invalid.csv",
+            False,
+            [[2, 3, 4, 9]]
+
+    )
+])
+def test_add_new_col(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    a = add(r, [0, 1], [-1, 5], 3)
+
+    assert a == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
         f"{inputs_path}/rel_one.csv",
         False,
         [[12, 2, 3], [240, 5, 6], [1008, 8, 9]]
@@ -297,6 +359,66 @@ def test_multiply_new_col(path_to_rel: str, use_floats: bool, expected: list):
     mult = multiply(r, [0, 1], [3], 3)
 
     assert mult == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+            f"{inputs_path}/rel_one.csv",
+            False,
+            [[-4, 2, 3], [-4, 5, 6], [-4, 8, 9]]
+    ),
+    (
+            f"{inputs_path}/rel_two.csv",
+            False,
+            [[-7, 3, 6], [-3, 1, 8]]
+    ),
+    (
+            f"{inputs_path}/rel_invalid.csv",
+            False,
+            [[-4, 3, 4]]
+
+    )
+])
+def test_subtract(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    ops = [
+        {"__TYPE__": "col", "v": 2},
+        {"__TYPE__": "scal", "v": 2}
+    ]
+    s = subtract(r, ops, 0)
+
+    assert s == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
+            f"{inputs_path}/rel_one.csv",
+            False,
+            [[1, 2, 3, 1], [4, 5, 6, 4], [7, 8, 9, 7]]
+    ),
+    (
+            f"{inputs_path}/rel_two.csv",
+            False,
+            [[1, 3, 6, 4], [7, 1, 8, 6]]
+    ),
+    (
+            f"{inputs_path}/rel_invalid.csv",
+            False,
+            [[2, 3, 4, 2]]
+
+    )
+])
+def test_subtract_new_col(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    ops = [
+        {"__TYPE__": "col", "v": 2},
+        {"__TYPE__": "scal", "v": 2}
+    ]
+    s = subtract(r, ops, 3)
+
+    assert s == expected
 
 
 @pytest.mark.parametrize("path_to_rel, use_floats, expected", [

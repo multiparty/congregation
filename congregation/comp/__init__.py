@@ -19,3 +19,15 @@ def compile_dag(d: Dag):
     ]
     for s in steps:
         s.rewrite(d)
+
+
+def compile_dag_without_optimizations(d: Dag):
+
+    steps = [
+        InsertCloseOps(),
+        InsertOpenOps(),
+        InsertReadOps(),
+        InsertStoreOps()
+    ]
+    for s in steps:
+        s.rewrite(d)

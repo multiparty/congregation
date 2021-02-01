@@ -1,7 +1,7 @@
 import asyncio
 import json
 from congregation.codegen import JiffCodeGen, PythonCodeGen
-from congregation.comp import compile_dag
+from congregation.comp import compile_dag, compile_dag_without_optimizations
 from congregation.config import Config, JiffConfig, CodeGenConfig, NetworkConfig
 from congregation.dag import Dag
 from congregation.dispatch import JiffDispatcher, PythonDispatcher
@@ -81,10 +81,14 @@ class Assemble:
         return self
 
     @staticmethod
-    def compile(protocol: callable):
+    def compile(protocol: callable, enable_optimizations: [bool, None] = True):
 
         dag = Dag(protocol())
-        compile_dag(dag)
+        if enable_optimizations:
+            compile_dag(dag)
+        else:
+            compile_dag_without_optimizations(dag)
+
         return dag
 
     @staticmethod
@@ -160,9 +164,14 @@ class Assemble:
 
         return ret
 
-    def generate(self, protocol: callable, iteration_limit: [int, None] = 100):
+    def generate(
+            self,
+            protocol: callable,
+            iteration_limit: [int, None] = 100,
+            enable_optimizations: [bool, None] = True
+    ):
 
-        dag = self.compile(protocol)
+        dag = self.compile(protocol, enable_optimizations)
         parts = self.partition(dag, iteration_limit)
         self.generate_code(parts)
         job_queue = self.generate_jobs(parts)
@@ -195,12 +204,11 @@ class Assemble:
             self,
             protocol: callable,
             cfg: [dict, str, None] = None,
-            iteration_limit: [int, None] = 100
+            iteration_limit: [int, None] = 100,
+            enable_optimizations: [bool, None] = True
     ):
 
         self.setup_config(cfg)
         peer = self.setup_peer()
-        job_queue = self.generate(protocol, iteration_limit)
+        job_queue = self.generate(protocol, iteration_limit, enable_optimizations)
         self.dispatch_jobs(job_queue, peer)
-
-

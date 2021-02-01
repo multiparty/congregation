@@ -164,6 +164,8 @@ def subtract(input_op_node: OpNode, name: str, target_col_name: str, operands: l
     op = Subtract(out_rel, input_op_node, target_col, operands)
     input_op_node.children.add(op)
 
+    return op
+
 
 def multiply(input_op_node: OpNode, name: str, target_col_name: str, operands: list):
 
