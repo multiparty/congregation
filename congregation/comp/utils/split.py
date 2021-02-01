@@ -78,7 +78,7 @@ def split_agg_mean(node: AggregateMean, parent: Concat):
     insert_between(parent, node, clone)
 
 
-def split_agg_std_dev(node: AggregateStdDev, parent: Concat):
+def split_agg_sum_squares_and_count(node: [AggregateStdDev, AggregateVariance], parent: Concat):
 
     if not len(node.children) <= 1:
         print("WARN: Can't split aggregate for children > 1.")

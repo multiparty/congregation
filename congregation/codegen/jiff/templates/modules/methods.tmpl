@@ -188,9 +188,7 @@
   }
 
   exports._computeSquaresAndCount = function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
-    /*
-    NO sort on this, just walk over the inRel and add columns for squared agg col & count col (== 1 for each row)
-    */
+
     let ret = [];
     let retKeepRows = [];
     for (let i = 0; i < inRel.length; i++) {
@@ -261,6 +259,10 @@
     } else {
       console.log("NO KEY COL")
     }
+  }
+
+  exports.aggregateVariance = async function(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance) {
+    return await aggregateStdDev(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance);
   }
 
   exports.project = function (inRel, keepRows, selectedCols) {

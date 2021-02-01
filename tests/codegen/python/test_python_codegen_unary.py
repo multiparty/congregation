@@ -667,6 +667,26 @@ def test_aggregate_std_dev_local_sqrt(path_to_rel: str, use_floats: bool, expect
 
 @pytest.mark.parametrize("path_to_rel, use_floats, expected", [
     (
+            f"{inputs_path}/rel_five.csv",
+            False,
+            [[1, 0], [4, 0], [7, 0]]
+    ),
+    (
+            f"{inputs_path}/rel_six.csv",
+            False,
+            [[1, 36.0], [2, 47]]
+    )
+])
+def test_aggregate_variance_local_diff(path_to_rel: str, use_floats: bool, expected: list):
+
+    r = create(path_to_rel, use_floats=use_floats)
+    agg = aggregate_variance_local_diff(r)
+
+    assert agg == expected
+
+
+@pytest.mark.parametrize("path_to_rel, use_floats, expected", [
+    (
         f"{inputs_path}/rel_one.csv",
         False,
         [[12, 15, 18]]

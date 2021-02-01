@@ -37,7 +37,7 @@ class PushDown(DagRewriter):
 
         out_rel_cols_copy = copy.deepcopy(parent_node.out_rel.columns)
         child = next(iter(parent_node.children))
-        if isinstance(child, (AggregateSum, AggregateMean, AggregateStdDev)):
+        if isinstance(child, (AggregateSum, AggregateMean, AggregateStdDev, AggregateVariance)):
             num_group_cols = len(child.group_cols)
             child.group_cols = out_rel_cols_copy[:num_group_cols]
             child.agg_col = out_rel_cols_copy[num_group_cols]
@@ -82,7 +82,17 @@ class PushDown(DagRewriter):
         parent = next(iter(node.parents))
         if parent.requires_mpc():
             if isinstance(parent, Concat) and parent.is_upper_boundary():
-                split_agg_std_dev(node, parent)
+                split_agg_sum_squares_and_count(node, parent)
+                # node.parent is now AggregateSumSquaresAndCount
+                push_parent_op_node_down(parent, node.parent)
+                self._update_bottom_node(parent)
+
+    def _rewrite_aggregate_variance(self, node: AggregateVariance):
+
+        parent = next(iter(node.parents))
+        if parent.requires_mpc():
+            if isinstance(parent, Concat) and parent.is_upper_boundary():
+                split_agg_sum_squares_and_count(node, parent)
                 # node.parent is now AggregateSumSquaresAndCount
                 push_parent_op_node_down(parent, node.parent)
                 self._update_bottom_node(parent)

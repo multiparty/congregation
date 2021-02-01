@@ -64,6 +64,28 @@ class PushUp(DagRewriter):
                 f"root."
             )
 
+    def _rewrite_aggregate_variance(self, node: AggregateVariance):
+
+        if node.is_lower_boundary():
+            local_diff = AggregateVarianceLocalDiff.from_existing_agg(node)
+            local_diff.parents = set()
+            local_diff.children = set()
+            insert_between(node, next(iter(node.children)), local_diff)
+
+            temp_sw = copy.copy(node.out_rel.stored_with)
+            flat_sw = [{s} for c in temp_sw for s in c]
+            sw_to_set = set().union(*flat_sw)
+
+            node.push_up_optimized = True
+            node.update_out_rel_cols()
+            node.out_rel.stored_with = copy.copy(flat_sw)
+            node.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
+            node.out_rel.assign_new_trust(copy.copy(sw_to_set))
+
+            local_diff.out_rel.stored_with = copy.copy(flat_sw)
+            local_diff.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
+            local_diff.out_rel.assign_new_trust(copy.copy(sw_to_set))
+
     def _rewrite_project(self, node: Project):
         self._rewrite_unary_default(node)
 

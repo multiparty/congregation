@@ -36,6 +36,9 @@ class InsertOpenOps(DagRewriter):
     def _rewrite_aggregate_std_dev(self, node: AggregateStdDev):
         self._rewrite_default(node)
 
+    def _rewrite_aggregate_variance(self, node: AggregateVariance):
+        self._rewrite_default(node)
+
     def _rewrite_project(self, node: Project):
         self._rewrite_default(node)
 

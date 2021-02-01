@@ -246,6 +246,58 @@ class AggregateStdDev(UnaryOpNode):
         self.out_rel.update_columns()
 
 
+class AggregateVariance(UnaryOpNode):
+    def __init__(
+            self,
+            out_rel: Relation,
+            parent: OpNode,
+            group_cols: [list, None],
+            agg_col: Column,
+            push_down_optimized: [bool, None] = False,
+            push_up_optimized: [bool, None] = False
+    ):
+        super(AggregateVariance, self).__init__("aggregate_variance", out_rel, parent)
+        self.group_cols = group_cols if group_cols else []
+        self.agg_col = agg_col
+        # push_down_optimized means that the last two columns
+        # are sum of squared values and count, respectively
+        self.push_down_optimized = push_down_optimized
+        # push_up_optimized means that the final step of computing
+        # the square root of the squared differences is pushed into
+        # local processing
+        self.push_up_optimized = push_up_optimized
+
+    def update_op_specific_cols(self):
+
+        temp_cols = copy.deepcopy(self.get_in_rel().columns)
+        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
+
+        agg_col_name = copy.copy(self.agg_col.name)
+        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
+        min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
+        self.agg_col.name = agg_col_name
+        self.agg_col = temp_cols[self.agg_col.idx]
+        self.agg_col.trust_with = min_trust_set
+        self.agg_col.plaintext = min_pt
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        temp_cols = self.group_cols + [self.agg_col]
+        if self.push_up_optimized:
+            mean_squares_col = Column(
+                self.out_rel.name,
+                "__MEAN_SQUARES__", 2,
+                self.agg_col.type_str,
+                copy.deepcopy(self.agg_col.trust_with),
+                copy.deepcopy(self.agg_col.plaintext)
+            )
+            temp_cols = temp_cols + [mean_squares_col]
+
+        self.out_rel.columns = copy.deepcopy(temp_cols)
+        self.out_rel.update_columns()
+
+
 class Project(UnaryOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, selected_cols: list):
         super(Project, self).__init__("project", out_rel, parent)

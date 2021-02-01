@@ -63,7 +63,7 @@ def aggregate_mean(rel: list, group_cols: list, agg_col: int):
     return ret
 
 
-def aggregate_std_dev(rel: list, group_cols: list, agg_col: int):
+def aggregate_variance(rel: list, group_cols: list, agg_col: int):
 
     acc = {}
     for row in rel:
@@ -86,8 +86,20 @@ def aggregate_std_dev(rel: list, group_cols: list, agg_col: int):
         squared_mean = math.pow(m, 2)
         sum_squares = sum([math.pow(v, 2) for v in acc[k]["__VALUES__"]])
         sum_squares_mean = sum_squares / count
-        std_dev = math.sqrt(sum_squares_mean - squared_mean)
+        std_dev = sum_squares_mean - squared_mean
         ret.append(list(k) + [std_dev])
+
+    return ret
+
+
+def aggregate_std_dev(rel: list, group_cols: list, agg_col: int):
+
+    variance_rel = aggregate_variance(rel, group_cols, agg_col)
+
+    ret = []
+    for row in variance_rel:
+        v = math.sqrt(row[-1])
+        ret.append(row[:-1] + [v])
 
     return ret
 

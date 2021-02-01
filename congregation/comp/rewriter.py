@@ -24,6 +24,8 @@ class DagRewriter:
                 self._rewrite_aggregate_mean(node)
             elif isinstance(node, AggregateStdDev):
                 self._rewrite_aggregate_std_dev(node)
+            elif isinstance(node, AggregateVariance):
+                self._rewrite_aggregate_variance(node)
             elif isinstance(node, Project):
                 self._rewrite_project(node)
             elif isinstance(node, Add):
@@ -74,6 +76,8 @@ class DagRewriter:
                 self._rewrite_aggregate_sum_squares_and_count(node)
             elif isinstance(node, AggregateStdDevLocalSqrt):
                 self._rewrite_aggregate_std_dev_local_sqrt(node)
+            elif isinstance(node, AggregateVarianceLocalDiff):
+                self._rewrite_aggregate_variance_local_diff(node)
             elif isinstance(node, ColSum):
                 self._rewrite_col_sum(node)
             elif isinstance(node, MemberFilter):
@@ -96,6 +100,9 @@ class DagRewriter:
         pass
 
     def _rewrite_aggregate_std_dev(self, node: AggregateStdDev):
+        pass
+
+    def _rewrite_aggregate_variance(self, node: AggregateVariance):
         pass
 
     def _rewrite_project(self, node: Project):
@@ -171,6 +178,9 @@ class DagRewriter:
         pass
 
     def _rewrite_aggregate_std_dev_local_sqrt(self, node: AggregateStdDevLocalSqrt):
+        pass
+
+    def _rewrite_aggregate_variance_local_diff(self, node: AggregateVarianceLocalDiff):
         pass
 
     def _rewrite_col_sum(self, node: ColSum):

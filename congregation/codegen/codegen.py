@@ -48,6 +48,7 @@ class CodeGen:
             AggregateSum: self._generate_aggregate_sum,
             AggregateMean: self._generate_aggregate_mean,
             AggregateStdDev: self._generate_aggregate_std_dev,
+            AggregateVariance: self._generate_aggregate_variance,
             Project: self._generate_project,
             Add: self._generate_add,
             Subtract: self._generate_subtract,
@@ -73,6 +74,7 @@ class CodeGen:
             AggregateSumCountCol: self._generate_aggregate_sum_count_col,
             AggregateSumSquaresAndCount: self._generate_aggregate_sum_squares_and_count,
             AggregateStdDevLocalSqrt: self._generate_aggregate_std_dev_local_sqrt,
+            AggregateVarianceLocalDiff: self._generate_aggregate_variance_local_diff,
             ColSum: self._generate_col_sum,
             MemberFilter: self._generate_member_filter,
             ColumnUnion: self._generate_column_union
@@ -93,6 +95,9 @@ class CodeGen:
         return ""
 
     def _generate_aggregate_std_dev(self, node: AggregateStdDev):
+        return ""
+
+    def _generate_aggregate_variance(self, node: AggregateVariance):
         return ""
 
     def _generate_project(self, node: Project):
@@ -168,6 +173,9 @@ class CodeGen:
         return ""
 
     def _generate_aggregate_std_dev_local_sqrt(self, node: AggregateStdDevLocalSqrt):
+        return ""
+
+    def _generate_aggregate_variance_local_diff(self, node: AggregateVarianceLocalDiff):
         return ""
 
     def _generate_col_sum(self, node: ColSum):

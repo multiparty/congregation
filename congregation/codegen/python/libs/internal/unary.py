@@ -95,5 +95,20 @@ def aggregate_std_dev_local_sqrt(rel: list):
     return ret
 
 
+def aggregate_variance_local_diff(rel: list):
+
+    copied_rel = copy.deepcopy(rel)
+    ret = []
+    for row in copied_rel:
+        mean_col = row[-2]
+        squared_mean = mean_col * mean_col
+        diff = row[-1] - squared_mean
+        new_row = row[:-2] + [diff]
+        ret.append(new_row)
+
+    return ret
+
+
+
 def col_sum(rel: list):
     return [[sum(r) for r in zip(*rel)]]

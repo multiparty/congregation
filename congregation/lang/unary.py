@@ -67,6 +67,8 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: [list, None], a
         op = AggregateMean(out_rel, input_op_node, group_cols, agg_out_col)
     elif agg_type == "std_dev":
         op = AggregateStdDev(out_rel, input_op_node, group_cols, agg_out_col)
+    elif agg_type == "variance":
+        op = AggregateVariance(out_rel, input_op_node, group_cols, agg_out_col)
     else:
         raise Exception(
             f"Aggregate type {agg_type} not recognized. Must be of the following: [sum, mean, std_dev]."
