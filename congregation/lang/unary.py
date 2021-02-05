@@ -19,12 +19,15 @@ def create(name: str, columns: list, stored_with: [set, list], input_path: [str,
     return op
 
 
-def _build_out_cols_agg(in_cols: list, group_col_names: list, agg_col_name: str, agg_out_col_name: [str, None]):
+def _build_out_cols_agg(in_cols: list, group_col_names: [list, None], agg_col_name: str, agg_out_col_name: [str, None]):
 
-    group_cols = sorted(
-        [find(in_cols, group_col_name) for group_col_name in group_col_names],
-        key=lambda c: c.idx
-    )
+    if group_col_names is None:
+        group_cols = []
+    else:
+        group_cols = sorted(
+            [find(in_cols, group_col_name) for group_col_name in group_col_names],
+            key=lambda c: c.idx
+        )
 
     agg_col = find(in_cols, agg_col_name)
     agg_out_col = copy.deepcopy(agg_col)
