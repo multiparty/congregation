@@ -14,7 +14,7 @@ def create(name: str, columns: list, stored_with: [set, list], input_path: [str,
     if isinstance(stored_with, set):
         stored_with = [stored_with]
     out_rel = Relation(name, cols_in_rel, stored_with)
-    op = Create(out_rel)
+    op = Create(out_rel, input_path=input_path)
 
     return op
 
