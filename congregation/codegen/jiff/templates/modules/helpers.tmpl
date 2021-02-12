@@ -20,6 +20,7 @@
   exports.reconstructFromShares = function(filePath, jiffInstance, useBigNumber, computeParties) {
 
     let ret = [];
+    let keepRows = [];
     let inputData = fs.readFileSync(filePath.trim(), 'UTF-8').trim();
     let rows = inputData.split('\n');
 
@@ -32,7 +33,7 @@
       }
 
       let shares = [];
-      for (let j = 0; j < arr.length; j++) {
+      for (let j = 0; j < arr.length - 1; j++) {
         shares.push(
           new jiffInstance.SecretShare(
             arr[j],
@@ -42,13 +43,25 @@
           )
         )
       }
+
+      keepRows.push(
+          new jiffInstance.SecretShare(
+              arr[arr.length - 1],
+              computeParties,
+              jiffInstance.party_count,
+              jiffInstance.Zp
+          )
+      )
       ret.push(shares);
     }
 
-    return ret;
+    return [ret, keepRows];
   }
 
   exports.sharePlaintext = function(filePath, jiffInstance, useBigNumber, inputParty, allParties) {
+
+    let dataShares;
+    let keepRowShares;
 
     if (filePath) {
       let parsedData = [];
