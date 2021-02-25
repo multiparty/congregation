@@ -4,16 +4,30 @@
 sandbox/
 
 # Demo
-demo/party_one/code/*
-demo/party_two/code/*
-demo/party_three/code/*
+demo/plaintext/party_one/code/*
+demo/plaintext/party_two/code/*
+demo/plaintext/party_three/code/*
 
-demo/party_one/data/*
-demo/party_two/data/*
-demo/party_three/data/*
-!*demo/party_one/data/in1.csv
-!*demo/party_two/data/in2.csv
-!*demo/party_three/data/in3.csv
+demo/plaintext/party_one/data/*
+demo/plaintext/party_two/data/*
+demo/plaintext/party_three/data/*
+
+!demo/plaintext/party_one/data/in1.csv
+!demo/plaintext/party_two/data/in2.csv
+!demo/plaintext/party_three/data/in3.csv
+
+demo/shares/party_one/code/*
+demo/shares/party_two/code/*
+demo/shares/party_three/code/*
+
+demo/shares/party_one/data/*
+demo/shares/party_two/data/*
+demo/shares/party_three/data/*
+
+!demo/shares/party_one/data/inpt.csv
+!demo/shares/party_two/data/inpt.csv
+!demo/shares/party_three/data/inpt.csv
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
