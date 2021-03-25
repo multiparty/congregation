@@ -586,7 +586,7 @@ class JiffCodeGen(CodeGen):
 
     def _generate_col_sum(self, node: ColSum):
 
-        if len(node.get_in_rel().columns) > 0:
+        if len(node.get_in_rel().columns) > 1:
             raise Exception(f"ColSum node encountered with more than 1 column in input relation.")
 
         template = open(f"{self.templates_dir}/mpc/methods/agg_sum.tmpl").read()
