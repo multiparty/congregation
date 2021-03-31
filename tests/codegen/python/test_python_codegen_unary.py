@@ -176,6 +176,32 @@ def test_aggregate_std_dev(path_to_rel: str, use_floats: bool, expected: list):
     assert std_dev == expected
 
 
+@pytest.mark.parametrize("path_to_rel, group_cols, expected", [
+    (
+            f"{inputs_path}/rel_three.csv",
+            [0, 1],
+            [
+                [1, 2, 3, 3, 3],
+                [4, 5, 4, 6, 6],
+                [1, 6, 7, 7, 7],
+                [2, 4, 8, 8, 8],
+                [2, 8, 9, 9, 9]
+            ]
+    ),
+    (
+            f"{inputs_path}/rel_three.csv",
+            None,
+            [3, 9, 6]
+    )
+])
+def test_aggregate_min_max_median(path_to_rel: str, group_cols: [list, None], expected: list):
+
+    r = create(path_to_rel)
+    mmm = min_max_median(r, group_cols, 2)
+
+    assert mmm == expected
+
+
 @pytest.mark.parametrize("path_to_rel, use_floats, expected", [
     (
         f"{inputs_path}/rel_one.csv",

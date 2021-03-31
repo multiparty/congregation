@@ -104,6 +104,35 @@ def aggregate_std_dev(rel: list, group_cols: list, agg_col: int):
     return ret
 
 
+def _min_max_median_with_group_cols(acc: dict):
+
+    ret = []
+    for k in acc.keys():
+        acc[k].sort()
+        middle_idx = int(len(acc[k]) / 2)
+        mmm = [acc[k][0], acc[k][-1], acc[k][middle_idx]]
+        ret.append(list(k) + mmm)
+    return ret
+
+
+def min_max_median(rel: list, group_cols: list, agg_col: int):
+
+    if group_cols:
+        acc = {}
+        for row in rel:
+            k = tuple(row[idx] for idx in group_cols)
+            if k in acc:
+                acc[k].append(row[agg_col])
+            else:
+                acc[k] = [row[agg_col]]
+        return _min_max_median_with_group_cols(acc)
+    else:
+        rel_copy = deepcopy(rel)
+        rel_copy.sort(key=lambda r: r[agg_col])
+        middle_idx = int(len(rel_copy) / 2)
+        return [rel_copy[0][agg_col], rel_copy[-1][agg_col], rel_copy[middle_idx][agg_col]]
+
+
 def project(rel: list, selected_cols: list):
     return [[row[idx] for idx in selected_cols] for row in rel]
 

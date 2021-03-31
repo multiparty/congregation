@@ -74,10 +74,76 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: [list, None], a
         op = AggregateVariance(out_rel, input_op_node, group_cols, agg_out_col)
     else:
         raise Exception(
-            f"Aggregate type {agg_type} not recognized. Must be of the following: [sum, mean, std_dev]."
+            f"Aggregate type {agg_type} not recognized. \n"
+            f"Must be one of the following: [sum, mean, std_dev, variance, min/max/median]."
         )
 
     input_op_node.children.add(op)
+    return op
+
+
+def _build_out_cols_mmm(rel_name: str, in_cols: list, group_col_names: [list, None], agg_col_name: str):
+
+    if group_col_names is None:
+        group_cols = []
+    else:
+        group_cols = sorted(
+            [find(in_cols, group_col_name) for group_col_name in group_col_names],
+            key=lambda c: c.idx
+        )
+
+    agg_col = find(in_cols, agg_col_name)
+    agg_out_col = copy.deepcopy(agg_col)
+
+    # calculate min pt and trust sets for group cols
+    out_group_cols = [copy.deepcopy(group_col) for group_col in group_cols]
+    min_pt = min_pt_set_from_cols(out_group_cols)
+    min_ts = min_trust_with_from_columns(out_group_cols)
+    for c in out_group_cols:
+        c.plaintext = min_pt
+        c.trust_with = min_ts
+
+    # calculate min pit and trust set for agg and stats cols
+    min_pt = min_pt_set_from_cols(out_group_cols + [agg_out_col])
+    min_ts = min_trust_with_from_columns(out_group_cols + [agg_out_col])
+
+    agg_out_col.plaintext = min_pt
+    agg_out_col.trust_set = min_ts
+
+    cols_len = len(out_group_cols)
+    cols_to_add = [("__MIN__", cols_len), ("__MAX__", cols_len + 1), ("__MEDIAN__", cols_len + 2)]
+
+    stats_cols = [
+        Column(
+            rel_name,
+            cols_to_add[i][0],
+            cols_to_add[i][1],
+            "INTEGER",
+            min_ts,
+            min_pt
+        )
+        for i in range(len(cols_to_add))
+    ]
+
+    out_rel_cols = out_group_cols + stats_cols
+
+    return out_rel_cols, group_cols, agg_out_col
+
+
+def aggregate_mmm(input_op_node: OpNode, name: str, group_col_names: [list, None], agg_col_name: str):
+
+    in_rel = input_op_node.out_rel
+    in_cols = in_rel.columns
+
+    out_rel_cols, group_cols, agg_out_col = \
+        _build_out_cols_mmm(name, in_cols, group_col_names, agg_col_name)
+
+    out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
+    out_rel.update_columns()
+
+    op = AggregateMinMaxMedian(out_rel, input_op_node, group_cols, agg_out_col)
+    input_op_node.children.add(op)
+
     return op
 
 

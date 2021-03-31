@@ -331,6 +331,30 @@
     return await exports.aggregateStdDev(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance);
   }
 
+  exports.min_max_median = async function(inRel, keepRows, keyCol, aggCol, jiffInstance) {
+
+    if (keyCol !== null) {
+    	console.log("TODO");
+    } else {
+
+    	let filteredData = await exports.filterRel(inRel, keepRows, jiffInstance);
+    	let filteredRel = filteredData[0];
+    	let filteredKeepRows = filteredData[1];
+
+    	let sortedData = await exports.oddEvenSort(filteredRel, filteredKeepRows, aggCol, jiffInstance);
+    	let sortedRel = sortedData[0];
+    	let sortedKeepRows = sortedData[1];
+
+        let ret = [];
+    	let middleIdx = Math.floor(sortedRel.length / 2);
+
+    	ret.push([sortedRel[0][aggCol], sortedRel[middleIdx][aggCol], sortedRel[sortedRel.length - 1][aggCol]]);
+    	retKeepRows = [sortedKeepRows[0], sortedKeepRows[middleIdx], sortedKeepRows[sortedKeepRows.length - 1]];
+
+    	return [ret, retKeepRows];
+    }
+  }
+
   exports.project = function (inRel, keepRows, selectedCols) {
 
     let ret = [];
@@ -505,10 +529,14 @@
     return [ret, keepRowsResult];
   }
 
-  exports.limit = function (inRel, keepRows, num) {
+  exports.limit = async function (inRel, keepRows, num, jiffInstance) {
 
-    let ret = inRel.slice(0, num);
-    let keepRowsResult = keepRows.slice(0, num);
+    let filteredData = await exports.filterRel(inRel, keepRows, jiffInstance);
+    let filteredRel = filteredData[0];
+    let filteredKeepRows = filteredData[1];
+
+    let ret = filteredRel.slice(0, num);
+    let keepRowsResult = filteredKeepRows.slice(0, num);
 
     return [ret, keepRowsResult];
   }
@@ -752,6 +780,32 @@
     }
 
     return [ret, keepRowsResult];
+  }
+
+  exports.filterRel = async function(inRel, keepRows, jiffInstance) {
+
+  	let newRel = [];
+  	let newKeepRows = [];
+
+  	for (let i = 0; i < inRel.length; i++) {
+
+  		let sharedVal = keepRows[i];
+  		let keepRowVal = await exports.openValue(sharedVal, jiffInstance);
+  		if (keepRowVal > 0) {
+  			newRel.push(inRel[i]);
+  			newKeepRows.push(keepRows[i]);
+  		}
+  	}
+
+  	return [newRel, newKeepRows];
+  }
+
+  exports.openValue = async function (val, jiffInstance) {
+
+  	let promise = jiffInstance.open(val);
+  	return promise.then(function(v) {
+  		return v;
+  	});
   }
 
   exports.open = function (inRel, keepRows, jiffInstance) {

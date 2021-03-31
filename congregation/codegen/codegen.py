@@ -49,6 +49,7 @@ class CodeGen:
             AggregateMean: self._generate_aggregate_mean,
             AggregateStdDev: self._generate_aggregate_std_dev,
             AggregateVariance: self._generate_aggregate_variance,
+            AggregateMinMaxMedian: self._generate_aggregate_min_max_median,
             Project: self._generate_project,
             Add: self._generate_add,
             Subtract: self._generate_subtract,
@@ -98,6 +99,9 @@ class CodeGen:
         return ""
 
     def _generate_aggregate_variance(self, node: AggregateVariance):
+        return ""
+
+    def _generate_aggregate_min_max_median(self, node: AggregateMinMaxMedian):
         return ""
 
     def _generate_project(self, node: Project):

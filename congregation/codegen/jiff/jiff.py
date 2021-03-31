@@ -348,6 +348,21 @@ class JiffCodeGen(CodeGen):
 
         return pystache.render(template, data)
 
+    def _generate_aggregate_min_max_median(self, node: AggregateMinMaxMedian):
+
+        if node.group_cols:
+            raise Exception("Group cols for min/max/median not yet implemented.")
+
+        template = open(f"{self.templates_dir}/mpc/methods/min_max_median.tmpl").read()
+        data = {
+            "OUT_REL": node.out_rel.name,
+            "IN_REL": node.get_in_rel().name,
+            "KEY_COL": "null" if len(node.group_cols) == 0 else [n.idx for n in node.group_cols][0],
+            "AGG_COL": node.agg_col.idx
+        }
+
+        return pystache.render(template, data)
+
     def _generate_project(self, node: Project):
 
         template = open(f"{self.templates_dir}/mpc/methods/project.tmpl").read()

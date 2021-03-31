@@ -58,8 +58,8 @@ class PushUp(DagRewriter):
         else:
             print(
                 f"INFO: Encountered standard deviation node that couldn't "
-                f"be split. The output column that represents the standard"
-                f"deviation will instead represent the variance. The standard"
+                f"be split. The output column that represents \n the standard "
+                f"deviation will instead represent the variance. The standard \n"
                 f"deviation can be inferred from this value by taking its square"
                 f"root."
             )

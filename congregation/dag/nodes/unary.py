@@ -105,9 +105,9 @@ class AggregateCount(UnaryOpNode):
         self.out_rel.update_columns()
 
 
-class AggregateSum(UnaryOpNode):
-    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: [list, None], agg_col: Column):
-        super(AggregateSum, self).__init__("aggregate_sum", out_rel, parent)
+class Aggregate(UnaryOpNode):
+    def __init__(self, name, out_rel: Relation, parent: OpNode, group_cols: [list, None], agg_col: Column):
+        super(Aggregate, self).__init__(name, out_rel, parent)
         self.group_cols = group_cols if group_cols else []
         self.agg_col = agg_col
 
@@ -119,6 +119,7 @@ class AggregateSum(UnaryOpNode):
         agg_col_name = copy.copy(self.agg_col.name)
         min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
         min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
+
         self.agg_col = temp_cols[self.agg_col.idx]
         self.agg_col.name = agg_col_name
         self.agg_col.trust_with = min_trust_set
@@ -130,6 +131,11 @@ class AggregateSum(UnaryOpNode):
         temp_cols = self.group_cols + [self.agg_col]
         self.out_rel.columns = copy.deepcopy(temp_cols)
         self.out_rel.update_columns()
+
+
+class AggregateSum(Aggregate):
+    def __init__(self, out_rel: Relation, parent: OpNode, group_cols: [list, None], agg_col: Column):
+        super(AggregateSum, self).__init__("aggregate_sum", out_rel, parent, group_cols, agg_col)
 
     @staticmethod
     def from_agg_count(node: AggregateCount):
@@ -146,7 +152,7 @@ class AggregateSum(UnaryOpNode):
         return node
 
 
-class AggregateMean(UnaryOpNode):
+class AggregateMean(Aggregate):
     def __init__(
             self,
             out_rel: Relation,
@@ -155,30 +161,8 @@ class AggregateMean(UnaryOpNode):
             agg_col: Column,
             with_count_col: [bool, None] = False
     ):
-        super(AggregateMean, self).__init__("aggregate_mean", out_rel, parent)
-        self.group_cols = group_cols if group_cols else []
-        self.agg_col = agg_col
+        super(AggregateMean, self).__init__("aggregate_mean", out_rel, parent, group_cols, agg_col)
         self.with_count_col = with_count_col
-
-    def update_op_specific_cols(self):
-
-        temp_cols = copy.deepcopy(self.get_in_rel().columns)
-        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
-
-        agg_col_name = copy.copy(self.agg_col.name)
-        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
-        min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
-        self.agg_col.name = agg_col_name
-        self.agg_col = temp_cols[self.agg_col.idx]
-        self.agg_col.trust_with = min_trust_set
-        self.agg_col.plaintext = min_pt
-
-    def update_out_rel_cols(self):
-
-        self.update_op_specific_cols()
-        temp_cols = self.group_cols + [self.agg_col]
-        self.out_rel.columns = copy.deepcopy(temp_cols)
-        self.out_rel.update_columns()
 
     @staticmethod
     def from_existing_agg(node):
@@ -193,7 +177,7 @@ class AggregateMean(UnaryOpNode):
         return out_node
 
 
-class AggregateStdDev(UnaryOpNode):
+class AggregateStdDev(Aggregate):
     def __init__(
             self,
             out_rel: Relation,
@@ -203,9 +187,7 @@ class AggregateStdDev(UnaryOpNode):
             push_down_optimized: [bool, None] = False,
             push_up_optimized: [bool, None] = False
     ):
-        super(AggregateStdDev, self).__init__("aggregate_std_dev", out_rel, parent)
-        self.group_cols = group_cols if group_cols else []
-        self.agg_col = agg_col
+        super(AggregateStdDev, self).__init__("aggregate_std_dev", out_rel, parent, group_cols, agg_col)
         # push_down_optimized means that the last two columns
         # are sum of squared values and count, respectively
         self.push_down_optimized = push_down_optimized
@@ -213,19 +195,6 @@ class AggregateStdDev(UnaryOpNode):
         # the square root of the squared differences is pushed into
         # local processing
         self.push_up_optimized = push_up_optimized
-
-    def update_op_specific_cols(self):
-
-        temp_cols = copy.deepcopy(self.get_in_rel().columns)
-        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
-
-        agg_col_name = copy.copy(self.agg_col.name)
-        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
-        min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
-        self.agg_col.name = agg_col_name
-        self.agg_col = temp_cols[self.agg_col.idx]
-        self.agg_col.trust_with = min_trust_set
-        self.agg_col.plaintext = min_pt
 
     def update_out_rel_cols(self):
 
@@ -245,7 +214,7 @@ class AggregateStdDev(UnaryOpNode):
         self.out_rel.update_columns()
 
 
-class AggregateVariance(UnaryOpNode):
+class AggregateVariance(Aggregate):
     def __init__(
             self,
             out_rel: Relation,
@@ -255,9 +224,7 @@ class AggregateVariance(UnaryOpNode):
             push_down_optimized: [bool, None] = False,
             push_up_optimized: [bool, None] = False
     ):
-        super(AggregateVariance, self).__init__("aggregate_variance", out_rel, parent)
-        self.group_cols = group_cols if group_cols else []
-        self.agg_col = agg_col
+        super(AggregateVariance, self).__init__("aggregate_variance", out_rel, parent, group_cols, agg_col)
         # push_down_optimized means that the last two columns
         # are sum of squared values and count, respectively
         self.push_down_optimized = push_down_optimized
@@ -265,19 +232,6 @@ class AggregateVariance(UnaryOpNode):
         # the square root of the squared differences is pushed into
         # local processing
         self.push_up_optimized = push_up_optimized
-
-    def update_op_specific_cols(self):
-
-        temp_cols = copy.deepcopy(self.get_in_rel().columns)
-        self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
-
-        agg_col_name = copy.copy(self.agg_col.name)
-        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
-        min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
-        self.agg_col.name = agg_col_name
-        self.agg_col = temp_cols[self.agg_col.idx]
-        self.agg_col.trust_with = min_trust_set
-        self.agg_col.plaintext = min_pt
 
     def update_out_rel_cols(self):
 
@@ -294,6 +248,41 @@ class AggregateVariance(UnaryOpNode):
             temp_cols = temp_cols + [mean_squares_col]
 
         self.out_rel.columns = copy.deepcopy(temp_cols)
+        self.out_rel.update_columns()
+
+
+class AggregateMinMaxMedian(Aggregate):
+    def __init__(
+            self,
+            out_rel: Relation,
+            parent: OpNode,
+            group_cols: [list, None],
+            agg_col: Column
+    ):
+        super(AggregateMinMaxMedian, self).__init__("aggregate_min_max_median", out_rel, parent, group_cols, agg_col)
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+        min_ts = min_trust_with_from_columns(self.group_cols + [self.agg_col])
+        min_pt = min_pt_set_from_cols(self.group_cols + [self.agg_col.idx])
+
+        cols_len = len(self.group_cols)
+        cols_to_add = [("__MIN__", cols_len), ("__MAX__", cols_len + 1), ("__MEDIAN__", cols_len + 2)]
+
+        stats_cols = [
+            Column(
+                self.out_rel.name,
+                cols_to_add[i][0],
+                cols_to_add[i][1],
+                "INTEGER",
+                min_ts,
+                min_pt
+            )
+            for i in range(len(cols_to_add))
+        ]
+
+        self.out_rel.columns = self.group_cols + stats_cols
         self.out_rel.update_columns()
 
 
