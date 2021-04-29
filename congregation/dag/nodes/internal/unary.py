@@ -110,7 +110,7 @@ class AggregateSumCountCol(UnaryOpNode):
     def update_count_col(self):
 
         if self.group_cols:
-            min_trust = min_trust_with_from_columns(self.group_cols)
+            min_trust = min_trust_with_from_cols(self.group_cols)
             min_pt = min_pt_set_from_cols(self.group_cols)
         else:
             # count col will just be the number of rows, which
@@ -183,7 +183,7 @@ class AggregateSumSquaresAndCount(UnaryOpNode):
     def update_count_col(self):
 
         if self.group_cols:
-            min_trust = min_trust_with_from_columns(self.group_cols)
+            min_trust = min_trust_with_from_cols(self.group_cols)
             min_pt = min_pt_set_from_cols(self.group_cols)
         else:
             # count col will just be the number of rows, which

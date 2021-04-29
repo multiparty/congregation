@@ -90,7 +90,7 @@ class AggregateCount(UnaryOpNode):
         Won't be part of input relation, need to generate fresh
         """
 
-        min_trust = min_trust_with_from_columns(self.group_cols)
+        min_trust = min_trust_with_from_cols(self.group_cols)
         min_pt = min_pt_set_from_cols(self.group_cols)
         return Column(
             self.get_in_rel().name, self.count_col.name, len(self.group_cols),
@@ -105,11 +105,28 @@ class AggregateCount(UnaryOpNode):
         self.out_rel.update_columns()
 
 
-class Aggregate(UnaryOpNode):
+class GroupedOpNode(UnaryOpNode):
     def __init__(self, name, out_rel: Relation, parent: OpNode, group_cols: [list, None], agg_col: Column):
-        super(Aggregate, self).__init__(name, out_rel, parent)
+        super(GroupedOpNode, self).__init__(name, out_rel, parent)
         self.group_cols = group_cols if group_cols else []
         self.agg_col = agg_col
+
+    def build_extra_cols(self, col_names):
+
+        min_ts = min_trust_with_from_cols(self.group_cols + [self.agg_col])
+        min_pt = min_pt_set_from_cols(self.group_cols + [self.agg_col])
+
+        return [
+            Column(
+                self.out_rel.name,
+                col_names[i],
+                i + len(self.group_cols),
+                "INTEGER",
+                min_ts,
+                min_pt
+            )
+            for i in range(len(col_names))
+        ]
 
     def update_op_specific_cols(self):
 
@@ -117,7 +134,7 @@ class Aggregate(UnaryOpNode):
         self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
 
         agg_col_name = copy.copy(self.agg_col.name)
-        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
+        min_trust_set = min_trust_with_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
         min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
 
         self.agg_col = temp_cols[self.agg_col.idx]
@@ -133,7 +150,7 @@ class Aggregate(UnaryOpNode):
         self.out_rel.update_columns()
 
 
-class AggregateSum(Aggregate):
+class AggregateSum(GroupedOpNode):
     def __init__(self, out_rel: Relation, parent: OpNode, group_cols: [list, None], agg_col: Column):
         super(AggregateSum, self).__init__("aggregate_sum", out_rel, parent, group_cols, agg_col)
 
@@ -152,7 +169,7 @@ class AggregateSum(Aggregate):
         return node
 
 
-class AggregateMean(Aggregate):
+class AggregateMean(GroupedOpNode):
     def __init__(
             self,
             out_rel: Relation,
@@ -177,7 +194,7 @@ class AggregateMean(Aggregate):
         return out_node
 
 
-class AggregateStdDev(Aggregate):
+class AggregateStdDev(GroupedOpNode):
     def __init__(
             self,
             out_rel: Relation,
@@ -214,7 +231,7 @@ class AggregateStdDev(Aggregate):
         self.out_rel.update_columns()
 
 
-class AggregateVariance(Aggregate):
+class AggregateVariance(GroupedOpNode):
     def __init__(
             self,
             out_rel: Relation,
@@ -251,7 +268,7 @@ class AggregateVariance(Aggregate):
         self.out_rel.update_columns()
 
 
-class AggregateMinMaxMedian(Aggregate):
+class MinMaxMedian(GroupedOpNode):
     def __init__(
             self,
             out_rel: Relation,
@@ -259,28 +276,38 @@ class AggregateMinMaxMedian(Aggregate):
             group_cols: [list, None],
             agg_col: Column
     ):
-        super(AggregateMinMaxMedian, self).__init__("aggregate_min_max_median", out_rel, parent, group_cols, agg_col)
+        super(MinMaxMedian, self).__init__("min_max_median", out_rel, parent, group_cols, agg_col)
 
     def update_out_rel_cols(self):
 
         self.update_op_specific_cols()
-        min_ts = min_trust_with_from_columns(self.group_cols + [self.agg_col])
-        min_pt = min_pt_set_from_cols(self.group_cols + [self.agg_col.idx])
 
-        cols_len = len(self.group_cols)
-        cols_to_add = [("__MIN__", cols_len), ("__MAX__", cols_len + 1), ("__MEDIAN__", cols_len + 2)]
+        col_names = ["__MIN__", "__MAX__", "__MEDIAN__"]
+        stats_cols = self.build_extra_cols(col_names)
 
-        stats_cols = [
-            Column(
-                self.out_rel.name,
-                cols_to_add[i][0],
-                cols_to_add[i][1],
-                "INTEGER",
-                min_ts,
-                min_pt
-            )
-            for i in range(len(cols_to_add))
+        self.out_rel.columns = self.group_cols + stats_cols
+        self.out_rel.update_columns()
+
+
+class Deciles(GroupedOpNode):
+    def __init__(
+            self,
+            out_rel: Relation,
+            parent: OpNode,
+            group_cols: [list, None],
+            agg_col: Column
+    ):
+        super(Deciles, self).__init__("deciles", out_rel, parent, group_cols, agg_col)
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+
+        col_names = [
+            "1-DECILE", "2-DECILE", "3-DECILE", "4-DECILE", "5-DECILE",
+            "6-DECILE", "7-DECILE", "8-DECILE", "9-DECILE"
         ]
+        stats_cols = self.build_extra_cols(col_names)
 
         self.out_rel.columns = self.group_cols + stats_cols
         self.out_rel.update_columns()
@@ -337,7 +364,7 @@ class ArithmeticOp(UnaryOpNode):
             temp_target_col = copy.deepcopy(temp_cols[self.target_col.idx])
             all_cols = [o for o in self.operands if isinstance(o, Column)] + [temp_target_col]
 
-        target_col_trust_set = min_trust_with_from_columns(all_cols)
+        target_col_trust_set = min_trust_with_from_cols(all_cols)
         target_col_pt_set = min_pt_set_from_cols(all_cols)
         temp_target_col.trust_with = target_col_trust_set
         temp_target_col.plaintext = target_col_pt_set
@@ -442,7 +469,7 @@ class FilterAgainstCol(UnaryOpNode):
     def _update_out_rel_cols(self):
 
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
-        min_trust_set = min_trust_with_from_columns([temp_cols[self.filter_col.idx], temp_cols[self.against_col.idx]])
+        min_trust_set = min_trust_with_from_cols([temp_cols[self.filter_col.idx], temp_cols[self.against_col.idx]])
         min_pt_set = min_pt_set_from_cols([temp_cols[self.filter_col.idx], temp_cols[self.against_col.idx]])
         temp_cols[self.filter_col.idx].trust_with = min_trust_set
         temp_cols[self.filter_col.idx].plaintext = min_pt_set
@@ -519,7 +546,7 @@ class NumRows(UnaryOpNode):
         """
 
         temp_cols = copy.deepcopy(self.get_in_rel().columns)
-        max_trust_set = max_trust_with_from_columns(temp_cols)
+        max_trust_set = max_trust_with_from_cols(temp_cols)
         max_pt_set = max_pt_set_from_cols(temp_cols)
 
         out_col = Column(

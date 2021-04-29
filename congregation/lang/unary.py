@@ -19,47 +19,15 @@ def create(name: str, columns: list, stored_with: [set, list], input_path: [str,
     return op
 
 
-def _build_out_cols_agg(in_cols: list, group_col_names: [list, None], agg_col_name: str, agg_out_col_name: [str, None]):
-
-    if group_col_names is None:
-        group_cols = []
-    else:
-        group_cols = sorted(
-            [find(in_cols, group_col_name) for group_col_name in group_col_names],
-            key=lambda c: c.idx
-        )
-
-    agg_col = find(in_cols, agg_col_name)
-    agg_out_col = copy.deepcopy(agg_col)
-    if agg_out_col_name is not None:
-        agg_out_col.name = agg_out_col_name
-
-    # calculate min pt and trust sets for group cols
-    out_group_cols = [copy.deepcopy(group_col) for group_col in group_cols]
-    min_pt = min_pt_set_from_cols(out_group_cols)
-    min_trust = min_trust_with_from_columns(out_group_cols)
-    for c in out_group_cols:
-        c.plaintext = min_pt
-        c.trust_with = min_trust
-
-    # calculate min pit and trust set for agg col
-    min_pt_agg_col = min_pt_set_from_cols(out_group_cols + [agg_out_col])
-    min_trust_agg_col = min_trust_with_from_columns(out_group_cols + [agg_out_col])
-    agg_out_col.plaintext = min_pt_agg_col
-    agg_out_col.trust_with = min_trust_agg_col
-    out_rel_cols = out_group_cols + [copy.deepcopy(agg_out_col)]
-
-    return out_rel_cols, group_cols, agg_out_col
-
-
 def aggregate(input_op_node: OpNode, name: str, group_col_names: [list, None], agg_col_name: str,
               agg_type: str, agg_out_col_name: [str, None] = None):
 
     in_rel = input_op_node.out_rel
     in_cols = in_rel.columns
 
-    out_rel_cols, group_cols, agg_out_col = \
-        _build_out_cols_agg(in_cols, group_col_names, agg_col_name, agg_out_col_name)
+    group_cols, out_group_cols = construct_group_cols(in_cols, group_col_names)
+    agg_out_col = construct_target_col(in_cols, agg_col_name, out_group_cols, agg_out_col_name)
+    out_rel_cols = out_group_cols + [copy.deepcopy(agg_out_col)]
 
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
@@ -82,69 +50,66 @@ def aggregate(input_op_node: OpNode, name: str, group_col_names: [list, None], a
     return op
 
 
-def _build_out_cols_mmm(rel_name: str, in_cols: list, group_col_names: [list, None], agg_col_name: str):
+def _build_cols(rel_name: str, col_names: list, dtype: str, min_ts: set, min_pt: set, start_idx: int):
 
-    if group_col_names is None:
-        group_cols = []
-    else:
-        group_cols = sorted(
-            [find(in_cols, group_col_name) for group_col_name in group_col_names],
-            key=lambda c: c.idx
-        )
-
-    agg_col = find(in_cols, agg_col_name)
-    agg_out_col = copy.deepcopy(agg_col)
-
-    # calculate min pt and trust sets for group cols
-    out_group_cols = [copy.deepcopy(group_col) for group_col in group_cols]
-    min_pt = min_pt_set_from_cols(out_group_cols)
-    min_ts = min_trust_with_from_columns(out_group_cols)
-    for c in out_group_cols:
-        c.plaintext = min_pt
-        c.trust_with = min_ts
-
-    # calculate min pit and trust set for agg and stats cols
-    min_pt = min_pt_set_from_cols(out_group_cols + [agg_out_col])
-    min_ts = min_trust_with_from_columns(out_group_cols + [agg_out_col])
-
-    agg_out_col.plaintext = min_pt
-    agg_out_col.trust_set = min_ts
-
-    cols_len = len(out_group_cols)
-    cols_to_add = [("__MIN__", cols_len), ("__MAX__", cols_len + 1), ("__MEDIAN__", cols_len + 2)]
-
-    stats_cols = [
+    return [
         Column(
             rel_name,
-            cols_to_add[i][0],
-            cols_to_add[i][1],
-            "INTEGER",
+            col_names[i],
+            i + start_idx,
+            dtype,
             min_ts,
             min_pt
         )
-        for i in range(len(cols_to_add))
+        for i in range(len(col_names))
     ]
 
-    out_rel_cols = out_group_cols + stats_cols
 
-    return out_rel_cols, group_cols, agg_out_col
-
-
-def aggregate_mmm(input_op_node: OpNode, name: str, group_col_names: [list, None], agg_col_name: str):
+def min_max_median(input_op_node: OpNode, name: str, group_col_names: [list, None], target_col_name: str):
 
     in_rel = input_op_node.out_rel
     in_cols = in_rel.columns
 
-    out_rel_cols, group_cols, agg_out_col = \
-        _build_out_cols_mmm(name, in_cols, group_col_names, agg_col_name)
+    group_cols, out_group_cols = construct_group_cols(in_cols, group_col_names)
+    agg_out_col = construct_target_col(in_cols, target_col_name, out_group_cols)
+    mmm_cols = _build_cols(
+        name,
+        ["__MIN__", "__MAX__", "__MEDIAN__"],
+        "INTEGER",
+        agg_out_col.trust_with,
+        agg_out_col.plaintext,
+        len(group_cols)
+    )
+    out_rel_cols = out_group_cols + copy.deepcopy(mmm_cols)
 
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
 
-    op = AggregateMinMaxMedian(out_rel, input_op_node, group_cols, agg_out_col)
+    op = MinMaxMedian(out_rel, input_op_node, group_cols, agg_out_col)
     input_op_node.children.add(op)
 
     return op
+
+
+def deciles(input_op_node: OpNode, name: str, group_col_names: [list, None], target_col_name: str):
+
+    in_rel = input_op_node.out_rel
+    in_cols = in_rel.columns
+
+    group_cols, out_group_cols = construct_group_cols(in_cols, group_col_names)
+    agg_out_col = construct_target_col(in_cols, target_col_name, out_group_cols)
+    decile_cols = _build_cols(
+        name,
+        ["1-DECILE", "2-DECILE", "3-DECILE", "4-DECILE", "5-DECILE", "6-DECILE", "7-DECILE", "8-DECILE", "9-DECILE"],
+        "INTEGER",
+        agg_out_col.trust_with,
+        agg_out_col.plaintext,
+        len(group_cols)
+    )
+    out_rel_cols = out_group_cols + copy.deepcopy(decile_cols)
+
+    out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
+    out_rel.update_columns()
 
 
 def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, count_col_name: [str, None] = "__COUNT__"):
@@ -154,7 +119,7 @@ def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, cou
     group_cols = sorted([find(in_cols, group_col_name) for group_col_name in group_col_names], key=lambda c: c.idx)
     count_col = Column(name, count_col_name, len(group_cols), "INTEGER", set(), set())
 
-    min_trust = min_trust_with_from_columns(group_cols)
+    min_trust = min_trust_with_from_cols(group_cols)
     min_pt = min_pt_set_from_cols(group_cols)
     out_rel_cols = [copy.deepcopy(group_col) for group_col in group_cols] + [count_col]
 
@@ -194,7 +159,7 @@ def _arithmetic_build_out_rel(in_rel: Relation, name: str, target_col_name: str,
     target_col = find(out_rel_cols, target_col_name)
     if target_col is None:
         cols_only = [c for c in operands if isinstance(c, Column)]
-        min_trust_set = min_trust_with_from_columns(cols_only)
+        min_trust_set = min_trust_with_from_cols(cols_only)
         min_pt_set = min_pt_set_from_cols(cols_only)
         col_type = infer_output_type(cols_only)
         target_col = Column(name, target_col_name, len(in_rel.columns), col_type, min_trust_set, plaintext=min_pt_set)
@@ -203,7 +168,7 @@ def _arithmetic_build_out_rel(in_rel: Relation, name: str, target_col_name: str,
         # need to re-compute target column's trust set to reflect min trust set across
         # all target column + all operand columns. same for pt
         all_cols = [c for c in operands if isinstance(c, Column)] + [target_col]
-        min_trust_set = min_trust_with_from_columns(all_cols)
+        min_trust_set = min_trust_with_from_cols(all_cols)
         min_pt_set = min_pt_set_from_cols(all_cols)
         target_col.trust_with = min_trust_set
         target_col.plaintext = min_pt_set
@@ -312,7 +277,7 @@ def filter_by(input_op_node: OpNode, name: str, filter_col_name: str, operator: 
         if against_col is None:
             raise Exception(f"Column {filter_against} not found in relation {in_rel.name}.")
 
-        min_trust = min_trust_with_from_columns([filter_col, against_col])
+        min_trust = min_trust_with_from_cols([filter_col, against_col])
         min_pt = min_pt_set_from_cols([filter_col, against_col])
         out_rel.columns[filter_col.idx].trust_with = min_trust
         out_rel.columns[filter_col.idx].plaintext = min_pt
@@ -358,7 +323,7 @@ def num_rows(input_op_node: OpNode, name: str, count_col_name: str = "num_rows")
     cols_in_rel = copy.deepcopy(in_rel.columns)
 
     # max bc if you can know the content of any given column, you can know how many rows it has
-    max_trust_set = max_trust_with_from_columns(cols_in_rel)
+    max_trust_set = max_trust_with_from_cols(cols_in_rel)
     max_pt_set = max_pt_set_from_cols(cols_in_rel)
     count_col = Column(name, count_col_name, len(in_rel.columns), "INTEGER", max_trust_set, max_pt_set)
     out_rel_col = [count_col]

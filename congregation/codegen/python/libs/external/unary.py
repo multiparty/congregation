@@ -133,6 +133,50 @@ def min_max_median(rel: list, group_cols: list, agg_col: int):
         return [rel_copy[0][agg_col], rel_copy[-1][agg_col], rel_copy[middle_idx][agg_col]]
 
 
+def _get_deciles_from_group(values: list):
+    """
+    Note: this method assumes the input list is already sorted
+    """
+
+    ret = []
+    deciles = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
+
+    for d in deciles:
+        d_idx = int(len(values) * d)
+        ret.append(values[d_idx])
+
+    return ret
+
+
+def _decile_with_group_cols(acc: dict):
+
+    ret = []
+    for k in acc.keys():
+        acc[k].sort()
+        dcs = _get_deciles_from_group(acc[k])
+        ret.append(list(k) + dcs)
+
+    return ret
+
+
+def deciles(rel: list, group_cols: list, agg_col: int):
+
+    if group_cols:
+        acc = {}
+        for row in rel:
+            k = tuple(row[idx] for idx in group_cols)
+            if k in acc:
+                acc[k].append(row[agg_col])
+            else:
+                acc[k] = [row[agg_col]]
+        return _decile_with_group_cols(acc)
+    else:
+        ac = [r[agg_col] for r in rel]
+        rel_copy = deepcopy(ac)
+        rel_copy.sort()
+        return [_get_deciles_from_group(rel_copy)]
+
+
 def project(rel: list, selected_cols: list):
     return [[row[idx] for idx in selected_cols] for row in rel]
 
