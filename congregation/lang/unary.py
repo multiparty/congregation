@@ -111,6 +111,11 @@ def deciles(input_op_node: OpNode, name: str, group_col_names: [list, None], tar
     out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
     out_rel.update_columns()
 
+    op = Deciles(out_rel, input_op_node, group_cols, agg_out_col)
+    input_op_node.children.add(op)
+
+    return op
+
 
 def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, count_col_name: [str, None] = "__COUNT__"):
 
