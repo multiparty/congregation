@@ -85,7 +85,7 @@ class Relation:
         return len(self.trust_party_min_set()) > 0
 
     def trust_party_min_set(self):
-        return min_trust_with_from_columns(self.columns)
+        return min_trust_with_from_cols(self.columns)
 
     def is_local(self):
         """

@@ -38,7 +38,7 @@ def column_union(left_input_node: OpNode, right_input_node: OpNode,
     if right_col is None:
         raise Exception(f"Column {right_col_name} not found in relation {right_in_rel.name}.")
 
-    new_trust_set = min_trust_with_from_columns([left_col, right_col])
+    new_trust_set = min_trust_with_from_cols([left_col, right_col])
     pt = min_pt_set_from_cols([left_col, right_col])
     out_col = Column(name, left_col_name, 0, "INTEGER", new_trust_set, plaintext=pt)
     out_stored_with = copy.copy(left_in_rel.stored_with) + copy.copy(right_in_rel.stored_with)

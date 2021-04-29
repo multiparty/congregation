@@ -70,11 +70,17 @@ class PythonCodeGen(CodeGen):
         return f"\n{self.space}{node.out_rel.name} = " \
                f"aggregate_variance({node.get_in_rel().name}, {group_cols_idx}, {node.agg_col.idx})"
 
-    def _generate_aggregate_min_max_median(self, node: AggregateMinMaxMedian):
+    def _generate_aggregate_min_max_median(self, node: MinMaxMedian):
 
         group_cols_idx = [c.idx for c in node.group_cols]
         return f"\n{self.space}{node.out_rel.name} = " \
                f"min_max_median({node.get_in_rel().name}, {group_cols_idx}, {node.agg_col.idx})"
+
+    def _generate_deciles(self, node: Deciles):
+
+        group_cols_idx = [c.idx for c in node.group_cols]
+        return f"\n{self.space}{node.out_rel.name} = " \
+               f"deciles({node.get_in_rel().name}, {group_cols_idx}, {node.agg_col.idx})"
 
     def _generate_project(self, node: Project):
 

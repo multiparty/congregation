@@ -202,6 +202,38 @@ def test_aggregate_min_max_median(path_to_rel: str, group_cols: [list, None], ex
     assert mmm == expected
 
 
+@pytest.mark.parametrize("path_to_rel, group_cols, expected", [
+    (
+        f"{inputs_path}/rel_seven.csv",
+        [0, 1],
+        [
+            [2, 3, 1, 1, 1, 2, 3, 3, 6, 7, 10],
+            [4, 5, 1, 2, 6, 6, 7, 7, 8, 9, 9]
+        ]
+    ),
+    (
+        f"{inputs_path}/rel_seven.csv",
+        None,
+        [
+            [1, 1, 2, 3, 6, 7, 7, 9, 9]
+        ]
+    ),
+    (
+        f"{inputs_path}/rel_six.csv",
+        None,
+        [
+            [52, 52, 52, 52, 83, 83, 83, 83, 83]
+        ]
+    )
+])
+def test_deciles(path_to_rel: str, group_cols: [list, None], expected: list):
+
+    r = create(path_to_rel)
+    dec = deciles(r, group_cols, 2)
+
+    assert dec == expected
+
+
 @pytest.mark.parametrize("path_to_rel, use_floats, expected", [
     (
         f"{inputs_path}/rel_one.csv",

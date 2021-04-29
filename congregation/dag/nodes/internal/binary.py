@@ -80,7 +80,7 @@ class OptimizedStdDev(BinaryOpNode):
         temp_cols = copy.deepcopy(self.get_in_rels()[0].columns)
         self.group_cols = [temp_cols[group_col.idx] for group_col in self.group_cols]
 
-        min_trust_set = min_trust_with_from_columns(self.group_cols + [temp_cols[self.agg_col.idx]])
+        min_trust_set = min_trust_with_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
         min_pt = min_pt_set_from_cols(self.group_cols + [temp_cols[self.agg_col.idx]])
         self.agg_col = temp_cols[self.agg_col.idx]
         self.agg_col.trust_with = min_trust_set

@@ -26,8 +26,10 @@ class DagRewriter:
                 self._rewrite_aggregate_std_dev(node)
             elif isinstance(node, AggregateVariance):
                 self._rewrite_aggregate_variance(node)
-            elif isinstance(node, AggregateMinMaxMedian):
+            elif isinstance(node, MinMaxMedian):
                 self._rewrite_min_max_median(node)
+            elif isinstance(node, Deciles):
+                self._rewrite_deciles(node)
             elif isinstance(node, Project):
                 self._rewrite_project(node)
             elif isinstance(node, Add):
@@ -107,7 +109,10 @@ class DagRewriter:
     def _rewrite_aggregate_variance(self, node: AggregateVariance):
         pass
 
-    def _rewrite_min_max_median(self, node: AggregateMinMaxMedian):
+    def _rewrite_min_max_median(self, node: MinMaxMedian):
+        pass
+
+    def _rewrite_deciles(self, node: Deciles):
         pass
 
     def _rewrite_project(self, node: Project):

@@ -327,11 +327,11 @@
     }
   }
 
-  exports.aggregateVariance = async function(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance) {
+  exports.aggregateVariance = async function (inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance) {
     return await exports.aggregateStdDev(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance);
   }
 
-  exports.min_max_median = async function(inRel, keepRows, keyCol, aggCol, jiffInstance) {
+  exports.min_max_median = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
 
     if (keyCol !== null) {
     	console.log("TODO");
@@ -352,6 +352,34 @@
     	retKeepRows = [sortedKeepRows[0], sortedKeepRows[middleIdx], sortedKeepRows[sortedKeepRows.length - 1]];
 
     	return [ret, retKeepRows];
+    }
+  }
+
+  exports.deciles = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+
+    if (keyCol != null) {
+        console.log("TODO");
+    } else {
+
+        let filteredData = await exports.filterRel(inRel, keepRows, jiffInstance);
+        let filteredRel = filteredData[0];
+        let filteredKeepRows = filteredData[1];
+
+        let sortedData = await exports.oddEvenSort(filteredRel, filteredKeepRows, aggCol, jiffInstance);
+        let sortedRel = sortedData[0];
+        let sortedKeepRows = sortedData[1];
+
+        let ret = [];
+        let retKeepRows = [];
+        let dcs = [.1, .2, .3, .4, .5, .6, .7, .8, .9];
+
+        for (let i = 0; i < dcs.length; i++) {
+            let idx = Math.floor(sortedRel.length * dcs[i]);
+            ret.push(sortedRel[idx][aggCol]);
+            retKeepRows.push(sortedKeepRows[idx]);
+        }
+
+        return [[ret], retKeepRows];
     }
   }
 

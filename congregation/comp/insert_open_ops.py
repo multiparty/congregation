@@ -39,7 +39,10 @@ class InsertOpenOps(DagRewriter):
     def _rewrite_aggregate_variance(self, node: AggregateVariance):
         self._rewrite_default(node)
 
-    def _rewrite_min_max_median(self, node: AggregateMinMaxMedian):
+    def _rewrite_min_max_median(self, node: MinMaxMedian):
+        self._rewrite_default(node)
+
+    def _rewrite_deciles(self, node: Deciles):
         self._rewrite_default(node)
 
     def _rewrite_project(self, node: Project):

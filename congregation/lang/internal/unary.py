@@ -41,8 +41,8 @@ def send(input_op_node: OpNode, name: str):
 def index(input_op_node: OpNode, name: str, idx_col_name: str = "index"):
 
     in_rel = input_op_node.out_rel
-    trust_set_union = max_trust_with_from_columns(in_rel.columns)
-    pt_set_union = max_trust_with_from_columns(in_rel.columns)
+    trust_set_union = max_trust_with_from_cols(in_rel.columns)
+    pt_set_union = max_trust_with_from_cols(in_rel.columns)
     index_col = Column(name, idx_col_name, len(in_rel.columns), "INTEGER", trust_set_union, pt_set_union)
     out_rel_cols = [index_col] + copy.deepcopy(in_rel.columns)
 

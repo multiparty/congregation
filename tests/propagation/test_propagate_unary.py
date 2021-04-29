@@ -417,6 +417,280 @@ def test_agg_sum_no_group_cols(party_data, expected):
             }
         ],
         {
+            "node_order": [Create, MinMaxMedian, Collect],
+            "requires_mpc": [True, True, False],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [set(), set()],
+                    "trust_with_sets": [set(), set()]
+                },
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [set(), set(), set(), set()],
+                    "trust_with_sets": [set(), set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}, {3}],
+                    "plaintext_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}],
+                    "trust_with_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1, 2, 3},
+                "plaintext_sets": [{1, 2, 3}, set()],
+                "trust_with_sets": [{1, 2, 3}, set()]
+            }
+        ],
+        {
+            "node_order": [Create, MinMaxMedian, Collect],
+            "requires_mpc": [True, True, False],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1, 2, 3}, set()],
+                    "trust_with_sets": [{1, 2, 3}, set()]
+                },
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1, 2, 3}, set(), set(), set()],
+                    "trust_with_sets": [{1, 2, 3}, set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}, {3}],
+                    "plaintext_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}],
+                    "trust_with_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1, 2, 3},
+                "plaintext_sets": [{1}, {2}],
+                "trust_with_sets": [{1}, {2}]
+            }
+        ],
+        {
+            "node_order": [Create, MinMaxMedian, Collect],
+            "requires_mpc": [True, True, False],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1}, {2}],
+                    "trust_with_sets": [{1}, {2}]
+                },
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1}, set(), set(), set()],
+                    "trust_with_sets": [{1}, set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}, {3}],
+                    "plaintext_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}],
+                    "trust_with_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b", "c"],
+                "stored_with": {1, 2, 3},
+                "plaintext_sets": [{1, 2}, {3}, {1}],
+                "trust_with_sets": [{1, 2}, {3}, {1}]
+            }
+        ],
+        {
+            "node_order": [Create, MinMaxMedian, Collect],
+            "requires_mpc": [True, True, False],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1, 2}, {3}, {1}],
+                    "trust_with_sets": [{1, 2}, {3}, {1}]
+                },
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1, 2}, set(), set(), set()],
+                    "trust_with_sets": [{1, 2}, set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}, {3}],
+                    "plaintext_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}],
+                    "trust_with_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}]
+                }
+            ]
+        }
+    )
+])
+def test_mmm(party_data, expected):
+
+    input_cols = create_cols(party_data[0])
+    c = create("in1", input_cols, party_data[0]["stored_with"])
+    a = min_max_median(c, "agg", [party_data[0]["col_names"][0]], party_data[0]["col_names"][1])
+    collect(a, {1, 2, 3})
+
+    d = Dag({c})
+    compare_to_expected(d, expected)
+
+
+@pytest.mark.parametrize("party_data, expected", [
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1, 2, 3},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            }
+        ],
+        {
+            "node_order": [Create, MinMaxMedian, Collect],
+            "requires_mpc": [True, True, False],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [set(), set()],
+                    "trust_with_sets": [set(), set()]
+                },
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [set(), set(), set()],
+                    "trust_with_sets": [set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}, {3}],
+                    "plaintext_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}],
+                    "trust_with_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1, 2, 3},
+                "plaintext_sets": [{1, 2, 3}, set()],
+                "trust_with_sets": [{1, 2, 3}, set()]
+            }
+        ],
+        {
+            "node_order": [Create, MinMaxMedian, Collect],
+            "requires_mpc": [True, True, False],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1, 2, 3}, set()],
+                    "trust_with_sets": [{1, 2, 3}, set()]
+                },
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [set(), set(), set()],
+                    "trust_with_sets": [set(), set(), set()]
+                },
+                {
+                    "stored_with": [{1}, {2}, {3}],
+                    "plaintext_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}],
+                    "trust_with_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1, 2, 3},
+                "plaintext_sets": [{1}, {2}],
+                "trust_with_sets": [{1}, {2}]
+            }
+        ],
+        {
+            "node_order": [Create, MinMaxMedian, Collect],
+            "requires_mpc": [True, True, False],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1}, {2}],
+                    "trust_with_sets": [{1}, {2}]
+                },
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{2}, {2}, {2}],
+                    "trust_with_sets": [{2}, {2}, {2}]
+                },
+                {
+                    "stored_with": [{1}, {2}, {3}],
+                    "plaintext_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}],
+                    "trust_with_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}]
+                }
+            ]
+        }
+    ),
+    (
+        [
+            {
+                "col_names": ["a", "b", "c"],
+                "stored_with": {1, 2, 3},
+                "plaintext_sets": [{1, 2}, {3}, {1}],
+                "trust_with_sets": [{1, 2}, {3}, {1}]
+            }
+        ],
+        {
+            "node_order": [Create, MinMaxMedian, Collect],
+            "requires_mpc": [True, True, False],
+            "ownership_data": [
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{1, 2}, {3}, {1}],
+                    "trust_with_sets": [{1, 2}, {3}, {1}]
+                },
+                {
+                    "stored_with": [{1, 2, 3}],
+                    "plaintext_sets": [{3}, {3}, {3}],
+                    "trust_with_sets": [{3}, {3}, {3}]
+                },
+                {
+                    "stored_with": [{1}, {2}, {3}],
+                    "plaintext_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}],
+                    "trust_with_sets": [{1, 2, 3}, {1, 2, 3}, {1, 2, 3}]
+                }
+            ]
+        }
+    )
+])
+def test_mmm_no_group_col(party_data, expected):
+
+    input_cols = create_cols(party_data[0])
+    c = create("in1", input_cols, party_data[0]["stored_with"])
+    a = min_max_median(c, "agg", [], party_data[0]["col_names"][1])
+    collect(a, {1, 2, 3})
+
+    d = Dag({c})
+    compare_to_expected(d, expected)
+
+
+@pytest.mark.parametrize("party_data, expected", [
+    (
+        [
+            {
+                "col_names": ["a", "b"],
+                "stored_with": {1, 2, 3},
+                "plaintext_sets": [set(), set()],
+                "trust_with_sets": [set(), set()]
+            }
+        ],
+        {
             "node_order": [Create, Project, Collect],
             "requires_mpc": [True, True, False],
             "ownership_data": [
