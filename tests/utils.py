@@ -20,7 +20,6 @@ def create_cols(party_data):
 def compare_to_expected(d, expected):
 
     zip_node_order = zip(d.top_sort(), expected["node_order"])
-    ts = d.top_sort()
     node_order_checks = [isinstance(z[0], z[1]) for z in zip_node_order]
     assert all(node_order_checks)
 
