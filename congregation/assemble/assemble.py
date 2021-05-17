@@ -81,6 +81,10 @@ class Assemble:
         return self
 
     @staticmethod
+    def construct_dag(roots: set):
+        return Dag(roots)
+
+    @staticmethod
     def compile(protocol: callable, enable_optimizations: [bool, None] = True):
 
         dag = Dag(protocol())

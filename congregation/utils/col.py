@@ -143,4 +143,3 @@ def construct_target_col(
     out_target_col.trust_with = min_ts
 
     return out_target_col
-
