@@ -217,10 +217,11 @@ class AggregateStdDev(GroupedOpNode):
 
         self.update_op_specific_cols()
         temp_cols = self.group_cols + [self.agg_col]
-        if self.push_up_optimized:
+        if self.requires_mpc() and self.push_up_optimized:
             mean_squares_col = Column(
                 self.out_rel.name,
-                "__MEAN_SQUARES__", 2,
+                "__MEAN_SQUARES__",
+                len(self.group_cols) + 1,
                 self.agg_col.type_str,
                 copy.deepcopy(self.agg_col.trust_with),
                 copy.deepcopy(self.agg_col.plaintext)
@@ -254,7 +255,7 @@ class AggregateVariance(GroupedOpNode):
 
         self.update_op_specific_cols()
         temp_cols = self.group_cols + [self.agg_col]
-        if self.push_up_optimized:
+        if self.requires_mpc() and self.push_up_optimized:
             mean_squares_col = Column(
                 self.out_rel.name,
                 "__MEAN_SQUARES__", 2,
@@ -307,6 +308,51 @@ class Deciles(GroupedOpNode):
             "1-DECILE", "2-DECILE", "3-DECILE", "4-DECILE", "5-DECILE",
             "6-DECILE", "7-DECILE", "8-DECILE", "9-DECILE"
         ]
+        stats_cols = self.build_extra_cols(col_names)
+
+        self.out_rel.columns = self.group_cols + stats_cols
+        self.out_rel.update_columns()
+
+
+class AllStats(GroupedOpNode):
+    def __init__(
+            self,
+            out_rel: Relation,
+            parent: OpNode,
+            group_cols: [list, None],
+            agg_col: Column,
+            push_up_optimized: [bool, None] = False
+    ):
+        super(AllStats, self).__init__("all_stats", out_rel, parent, group_cols, agg_col)
+        self.push_up_optimized = push_up_optimized
+
+    def update_out_rel_cols(self):
+
+        self.update_op_specific_cols()
+
+        col_names = [
+            "__SUM__",
+            "__MEAN__",
+            "__VARIANCE__",
+            "__STD_DEV__",
+            "__MIN__",
+            "__MAX__",
+            "__MEDIAN__",
+            "__1_DECILE__",
+            "__2_DECILE__",
+            "__3_DECILE__",
+            "__4_DECILE__",
+            "__5_DECILE__",
+            "__6_DECILE__",
+            "__7_DECILE__",
+            "__8_DECILE__",
+            "__9_DECILE__",
+            "__COUNT__"
+        ]
+
+        if self.requires_mpc() and self.push_up_optimized:
+            col_names.append("__MEAN_SQUARES__")
+
         stats_cols = self.build_extra_cols(col_names)
 
         self.out_rel.columns = self.group_cols + stats_cols

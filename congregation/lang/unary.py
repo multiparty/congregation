@@ -141,6 +141,49 @@ def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, cou
     return op
 
 
+def all_stats(input_op_node: OpNode, name: str, group_col_names: [list, None], target_col_name: str):
+
+    cols_to_construct = [
+        "__SUM__",
+        "__MEAN__",
+        "__VARIANCE__",
+        "__STD_DEV__",
+        "__MIN__",
+        "__MAX__",
+        "__MEDIAN__",
+        "__1_DECILE__",
+        "__2_DECILE__",
+        "__3_DECILE__",
+        "__4_DECILE__",
+        "__5_DECILE__",
+        "__6_DECILE__",
+        "__7_DECILE__",
+        "__8_DECILE__",
+        "__9_DECILE__",
+        "__COUNT__"
+    ]
+
+    in_rel = input_op_node.out_rel
+    in_cols = in_rel.columns
+
+    group_cols, out_group_cols = construct_group_cols(in_cols, group_col_names)
+
+    out_agg_cols = [
+        construct_target_col(in_cols, target_col_name, out_group_cols, c)
+        for c in cols_to_construct
+    ]
+
+    out_rel_cols = out_group_cols + [copy.deepcopy(c) for c in out_agg_cols]
+
+    out_rel = Relation(name, out_rel_cols, copy.copy(in_rel.stored_with))
+    out_rel.update_columns()
+
+    op = AllStats(out_rel, input_op_node, group_cols, copy.deepcopy(find(in_cols, target_col_name)))
+    input_op_node.children.add(op)
+
+    return op
+
+
 def project(input_op_node: OpNode, name: str, selected_col_names: list):
 
     in_rel = input_op_node.out_rel
