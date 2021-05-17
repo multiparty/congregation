@@ -45,6 +45,9 @@ class InsertOpenOps(DagRewriter):
     def _rewrite_deciles(self, node: Deciles):
         self._rewrite_default(node)
 
+    def _rewrite_all_stats(self, node: AllStats):
+        self._rewrite_default(node)
+
     def _rewrite_project(self, node: Project):
         self._rewrite_default(node)
 

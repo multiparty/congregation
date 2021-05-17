@@ -30,6 +30,8 @@ class DagRewriter:
                 self._rewrite_min_max_median(node)
             elif isinstance(node, Deciles):
                 self._rewrite_deciles(node)
+            elif isinstance(node, AllStats):
+                self._rewrite_all_stats(node)
             elif isinstance(node, Project):
                 self._rewrite_project(node)
             elif isinstance(node, Add):
@@ -82,6 +84,8 @@ class DagRewriter:
                 self._rewrite_aggregate_std_dev_local_sqrt(node)
             elif isinstance(node, AggregateVarianceLocalDiff):
                 self._rewrite_aggregate_variance_local_diff(node)
+            elif isinstance(node, AllStatsLocalSqrt):
+                self._rewrite_all_stats_local_sqrt(node)
             elif isinstance(node, ColSum):
                 self._rewrite_col_sum(node)
             elif isinstance(node, MemberFilter):
@@ -113,6 +117,9 @@ class DagRewriter:
         pass
 
     def _rewrite_deciles(self, node: Deciles):
+        pass
+
+    def _rewrite_all_stats(self, node: AllStats):
         pass
 
     def _rewrite_project(self, node: Project):
@@ -191,6 +198,9 @@ class DagRewriter:
         pass
 
     def _rewrite_aggregate_variance_local_diff(self, node: AggregateVarianceLocalDiff):
+        pass
+
+    def _rewrite_all_stats_local_sqrt(self, node: AllStatsLocalSqrt):
         pass
 
     def _rewrite_col_sum(self, node: ColSum):

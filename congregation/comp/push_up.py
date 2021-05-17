@@ -37,6 +37,7 @@ class PushUp(DagRewriter):
     def _rewrite_aggregate_std_dev(self, node: AggregateStdDev):
 
         if node.is_lower_boundary():
+
             local_sqrt = AggregateStdDevLocalSqrt.from_existing_agg(node)
             local_sqrt.parents = set()
             local_sqrt.children = set()
@@ -57,7 +58,7 @@ class PushUp(DagRewriter):
             local_sqrt.out_rel.assign_new_trust(copy.copy(sw_to_set))
         else:
             print(
-                f"INFO: Encountered standard deviation node that couldn't "
+                f"WARN: Encountered standard deviation node that couldn't "
                 f"be split. The output column that represents \n the standard "
                 f"deviation will instead represent the variance. The standard \n"
                 f"deviation can be inferred from this value by taking its square"
@@ -67,6 +68,7 @@ class PushUp(DagRewriter):
     def _rewrite_aggregate_variance(self, node: AggregateVariance):
 
         if node.is_lower_boundary():
+
             local_diff = AggregateVarianceLocalDiff.from_existing_agg(node)
             local_diff.parents = set()
             local_diff.children = set()
@@ -85,6 +87,37 @@ class PushUp(DagRewriter):
             local_diff.out_rel.stored_with = copy.copy(flat_sw)
             local_diff.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
             local_diff.out_rel.assign_new_trust(copy.copy(sw_to_set))
+
+    def _rewrite_all_stats(self, node: AllStats):
+
+        if node.is_lower_boundary():
+
+            local_sqrt = AllStatsLocalSqrt.from_existing_all_stats(node)
+            local_sqrt.parents = set()
+            local_sqrt.children = set()
+            insert_between(node, next(iter(node.children)), local_sqrt)
+
+            temp_sw = copy.copy(node.out_rel.stored_with)
+            flat_sw = [{s} for c in temp_sw for s in c]
+            sw_to_set = set().union(*flat_sw)
+
+            node.push_up_optimized = True
+            node.update_out_rel_cols()
+            node.out_rel.stored_with = copy.copy(flat_sw)
+            node.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
+            node.out_rel.assign_new_trust(copy.copy(sw_to_set))
+
+            local_sqrt.out_rel.stored_with = copy.copy(flat_sw)
+            local_sqrt.out_rel.assign_new_plaintext(copy.copy(sw_to_set))
+            local_sqrt.out_rel.assign_new_trust(copy.copy(sw_to_set))
+        else:
+            print(
+                f"WARN: Encountered standard deviation node that couldn't "
+                f"be split. The output column that represents \n the standard "
+                f"deviation will instead represent the variance. The standard \n"
+                f"deviation can be inferred from this value by taking its square"
+                f"root."
+            )
 
     def _rewrite_project(self, node: Project):
         self._rewrite_unary_default(node)
