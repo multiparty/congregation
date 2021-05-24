@@ -109,6 +109,9 @@ def aggregate_variance_local_diff(rel: list):
     return ret
 
 
+def all_stats_local_sqrt(rel: list):
+    return []
+
 
 def col_sum(rel: list):
     return [[sum(r) for r in zip(*rel)]]

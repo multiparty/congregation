@@ -82,6 +82,11 @@ class PythonCodeGen(CodeGen):
         return f"\n{self.space}{node.out_rel.name} = " \
                f"deciles({node.get_in_rel().name}, {group_cols_idx}, {node.agg_col.idx})"
 
+    def _generate_all_stats(self, node: AllStats):
+        group_cols_idx = [c.idx for c in node.group_cols]
+        return f"\n{self.space}{node.out_rel.name} = " \
+               f"all_stats({node.get_in_rel().name}, {group_cols_idx}, {node.agg_col.idx})"
+
     def _generate_project(self, node: Project):
 
         proj_cols_idx = [c.idx for c in node.selected_cols]
@@ -228,6 +233,10 @@ class PythonCodeGen(CodeGen):
     def _generate_aggregate_variance_local_diff(self, node: AggregateVarianceLocalDiff):
         return f"\n{self.space}{node.out_rel.name} = " \
                f"aggregate_variance_local_diff({node.get_in_rel().name})"
+
+    def _generate_all_stats_local_sqrt(self, node: AllStatsLocalSqrt):
+        return f"\n{self.space}{node.out_rel.name} = " \
+               f"all_stats_local_sqrt({node.get_in_rel().name})"
 
     def _generate_col_sum(self, node: ColSum):
         return f"\n{self.space}{node.out_rel.name} = col_sum({node.get_in_rel().name})"

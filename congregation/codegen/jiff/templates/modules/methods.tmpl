@@ -204,7 +204,7 @@
       return await exports._aggregateMean(newRelData[0], newRelData[1], 0, [1], 2, jiffInstance);
     } else {
       newRelData = exports._formatAggMeanNoKeyCol(inRel, keepRows, aggCol, withCountCol, jiffInstance);
-      return await exports._aggregateMeanNoKeyCol(inRel, keepRows, [0], 1, jiffInstance)
+      return await exports._aggregateMeanNoKeyCol(newRelData[0], newRelData[1], [0], 1, jiffInstance)
     }
   }
 

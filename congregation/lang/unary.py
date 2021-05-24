@@ -117,16 +117,21 @@ def deciles(input_op_node: OpNode, name: str, group_col_names: [list, None], tar
     return op
 
 
-def aggregate_count(input_op_node: OpNode, name: str, group_col_names: list, count_col_name: [str, None] = "__COUNT__"):
+def aggregate_count(
+        input_op_node: OpNode,
+        name: str,
+        group_col_names: [list, None],
+        count_col_name: [str, None] = "__COUNT__"
+):
 
     in_rel = input_op_node.out_rel
     in_cols = in_rel.columns
-    group_cols = sorted([find(in_cols, group_col_name) for group_col_name in group_col_names], key=lambda c: c.idx)
+    group_cols, out_group_cols = construct_group_cols(in_cols, group_col_names)
     count_col = Column(name, count_col_name, len(group_cols), "INTEGER", set(), set())
 
     min_trust = min_trust_with_from_cols(group_cols)
     min_pt = min_pt_set_from_cols(group_cols)
-    out_rel_cols = [copy.deepcopy(group_col) for group_col in group_cols] + [count_col]
+    out_rel_cols = out_group_cols + [count_col]
 
     for c in out_rel_cols:
         c.plaintext = min_pt

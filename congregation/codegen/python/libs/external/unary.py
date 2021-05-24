@@ -139,9 +139,9 @@ def _get_deciles_from_group(values: list):
     """
 
     ret = []
-    deciles = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
+    ds = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
 
-    for d in deciles:
+    for d in ds:
         d_idx = int(len(values) * d)
         ret.append(values[d_idx])
 
@@ -175,6 +175,41 @@ def deciles(rel: list, group_cols: list, agg_col: int):
         rel_copy = deepcopy(ac)
         rel_copy.sort()
         return [_get_deciles_from_group(rel_copy)]
+
+
+"""
+
+TODO: will need to write an entirely new method and not reuse
+    the stuff from before, as we dont want to do 6 passes over
+    the input dataset
+TODO: would be nice to make it so as to not load everything in
+    memory, right now its just an in memory dict which would be
+    a problem for larger datasets (though i suppose the pyspark
+    backend would likely be the solution to that)
+        "__SUM__",
+        "__MEAN__",
+        "__VARIANCE__",
+        "__STD_DEV__",
+        "__MIN__",
+        "__MAX__",
+        "__MEDIAN__",
+        "__1_DECILE__",
+        "__2_DECILE__",
+        "__3_DECILE__",
+        "__4_DECILE__",
+        "__5_DECILE__",
+        "__6_DECILE__",
+        "__7_DECILE__",
+        "__8_DECILE__",
+        "__9_DECILE__",
+        "__COUNT__"
+"""
+def all_stats(rel: list, group_cols: list, agg_col: int):
+
+    if group_cols:
+        pass
+    else:
+        pass
 
 
 def project(rel: list, selected_cols: list):
@@ -400,11 +435,29 @@ def _filter_against_col_lt(rel: list, filter_col: int, against_col: int):
     return ret
 
 
+def _filter_against_col_lteq(rel: list, filter_col: int, against_col: int):
+
+    ret = []
+    for row in rel:
+        if row[filter_col] <= row[against_col]:
+            ret.append(row)
+    return ret
+
+
 def _filter_against_col_gt(rel: list, filter_col: int, against_col: int):
 
     ret = []
     for row in rel:
         if row[filter_col] > row[against_col]:
+            ret.append(row)
+    return ret
+
+
+def _filter_against_col_gteq(rel: list, filter_col: int, against_col: int):
+
+    ret = []
+    for row in rel:
+        if row[filter_col] >= row[against_col]:
             ret.append(row)
     return ret
 
@@ -426,6 +479,10 @@ def filter_against_col(rel: list, filter_col: int, against_col: int, operator: s
         return _filter_against_col_gt(rel, filter_col, against_col)
     elif operator == "==":
         return _filter_against_col_eq(rel, filter_col, against_col)
+    elif operator == "<=":
+        return _filter_against_col_lteq(rel, filter_col, against_col)
+    elif operator == ">=":
+        return _filter_against_col_gteq(rel, filter_col, against_col)
     else:
         raise Exception(f"Unknown operator: {operator}")
 

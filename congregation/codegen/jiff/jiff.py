@@ -445,11 +445,10 @@ class JiffCodeGen(CodeGen):
 
     def _generate_divide(self, node: Divide):
 
-        if len(node.get_in_rel().columns) == len(node.get_in_rel().columns) \
+        if len(node.get_in_rel().columns) != len(node.out_rel.columns) \
                 and not isinstance(node.operands[0], Column):
-            # can't have operands list starting with a scalar because we can't do
-            # arithmetic operations in jiff like <scalar>.<operation>(<share>)
-            # note that this is only the case for division since it isn't commutative
+            # if we're creating a new column, then the first element of this
+            # operands list must be that to-be-created column.
             raise Exception(
                 f"Encountered operands list for Divide node whose first element is not of "
                 f"Column type in code generation for Jiff job {self.job_name}."

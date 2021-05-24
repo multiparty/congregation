@@ -51,6 +51,7 @@ class CodeGen:
             AggregateVariance: self._generate_aggregate_variance,
             MinMaxMedian: self._generate_aggregate_min_max_median,
             Deciles: self._generate_deciles,
+            AllStats: self._generate_all_stats,
             Project: self._generate_project,
             Add: self._generate_add,
             Subtract: self._generate_subtract,
@@ -106,6 +107,9 @@ class CodeGen:
         return ""
 
     def _generate_deciles(self, node: Deciles):
+        return ""
+
+    def _generate_all_stats(self, node: AllStats):
         return ""
 
     def _generate_project(self, node: Project):
@@ -184,6 +188,9 @@ class CodeGen:
         return ""
 
     def _generate_aggregate_variance_local_diff(self, node: AggregateVarianceLocalDiff):
+        return ""
+
+    def _generate_all_stats_local_sqrt(self, node: AllStatsLocalSqrt):
         return ""
 
     def _generate_col_sum(self, node: ColSum):
