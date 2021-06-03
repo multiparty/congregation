@@ -83,6 +83,7 @@ class PythonCodeGen(CodeGen):
                f"deciles({node.get_in_rel().name}, {group_cols_idx}, {node.agg_col.idx})"
 
     def _generate_all_stats(self, node: AllStats):
+
         group_cols_idx = [c.idx for c in node.group_cols]
         return f"\n{self.space}{node.out_rel.name} = " \
                f"all_stats({node.get_in_rel().name}, {group_cols_idx}, {node.agg_col.idx})"

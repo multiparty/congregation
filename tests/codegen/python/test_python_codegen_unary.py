@@ -190,11 +190,11 @@ def test_aggregate_std_dev(path_to_rel: str, use_floats: bool, expected: list):
     ),
     (
             f"{inputs_path}/rel_three.csv",
-            None,
-            [3, 9, 6]
+            [],
+            [[3, 9, 6]]
     )
 ])
-def test_aggregate_min_max_median(path_to_rel: str, group_cols: [list, None], expected: list):
+def test_aggregate_min_max_median(path_to_rel: str, group_cols: list, expected: list):
 
     r = create(path_to_rel)
     mmm = min_max_median(r, group_cols, 2)
@@ -213,25 +213,51 @@ def test_aggregate_min_max_median(path_to_rel: str, group_cols: [list, None], ex
     ),
     (
         f"{inputs_path}/rel_seven.csv",
-        None,
+        [],
         [
             [1, 1, 2, 3, 6, 7, 7, 9, 9]
         ]
     ),
     (
         f"{inputs_path}/rel_six.csv",
-        None,
+        [],
         [
             [52, 52, 52, 52, 83, 83, 83, 83, 83]
         ]
     )
 ])
-def test_deciles(path_to_rel: str, group_cols: [list, None], expected: list):
+def test_deciles(path_to_rel: str, group_cols: list, expected: list):
 
     r = create(path_to_rel)
     dec = deciles(r, group_cols, 2)
 
     assert dec == expected
+
+
+@pytest.mark.parametrize("path_to_rel, group_cols, expected", [
+    (
+            f"{inputs_path}/rel_seven.csv",
+            [],
+            [
+                [99, 4.95, 10.147499999999997, 3.185514087239295, 1, 10, 6, 1, 1, 2, 3, 6, 7, 7, 9, 9, 20]
+            ]
+    ),
+    (
+            f"{inputs_path}/rel_seven.csv",
+            [1],
+            [
+                [34, 3.7777777777777777, 9.061728395061728, 3.010270485365348, 1, 10, 3, 1, 1, 1, 2, 3, 3, 6, 7, 10, 9],
+                [65, 5.909090909090909, 8.991735537190081, 2.9986222731764802, 1, 9, 7, 1, 2, 6, 6, 7, 7, 8, 9, 9, 11]
+            ]
+    )
+
+])
+def test_all_stats(path_to_rel: str, group_cols: list, expected: list):
+
+    r = create(path_to_rel)
+    allstats = all_stats(r, group_cols, 2)
+
+    assert allstats == expected
 
 
 @pytest.mark.parametrize("path_to_rel, use_floats, expected", [

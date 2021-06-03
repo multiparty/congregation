@@ -8,208 +8,213 @@ def create(path_to_rel: str, use_floats: [bool, None] = False):
     return read_rel(path_to_rel, use_floats=use_floats)
 
 
+def _aggregate_count(entry: dict):
+    return entry["__COUNT__"]
+
+
 def aggregate_count(rel: list, group_cols: list):
 
-    acc = {}
-    for row in rel:
-        k = tuple(row[idx] for idx in group_cols)
-        if k in acc:
-            acc[k] += 1
-        else:
-            acc[k] = 1
+    acc = construct_acc_dict(
+        rel,
+        group_cols,
+        None,
+        include_count=True
+    )
 
     ret = []
     for k in acc.keys():
-        ret.append(list(k) + [acc[k]])
+        ret.append(list(k) + [_aggregate_count(acc[k])])
 
     return ret
+
+
+def _aggregate_sum(entry: dict):
+    return entry["__SUM__"]
 
 
 def aggregate_sum(rel: list, group_cols: list, agg_col: int):
 
-    acc = {}
-    for row in rel:
-        k = tuple(row[idx] for idx in group_cols)
-        if k in acc:
-            acc[k] += row[agg_col]
-        else:
-            acc[k] = row[agg_col]
+    acc = construct_acc_dict(
+        rel,
+        group_cols,
+        agg_col,
+        include_sum=True
+    )
 
     ret = []
     for k in acc.keys():
-        ret.append(list(k) + [acc[k]])
+        ret.append(list(k) + [_aggregate_sum(acc[k])])
 
     return ret
+
+
+def _aggregate_mean(entry: dict):
+    return entry["__SUM__"] / entry["__COUNT__"]
 
 
 def aggregate_mean(rel: list, group_cols: list, agg_col: int):
 
-    acc = {}
-    for row in rel:
-        k = tuple(row[idx] for idx in group_cols)
-        if k in acc:
-            acc[k]["__SUM__"] += row[agg_col]
-            acc[k]["__COUNT__"] += 1
-        else:
-            acc[k] = {}
-            acc[k]["__SUM__"] = row[agg_col]
-            acc[k]["__COUNT__"] = 1
+    acc = construct_acc_dict(
+        rel,
+        group_cols,
+        agg_col,
+        include_sum=True,
+        include_count=True
+    )
 
     ret = []
     for k in acc.keys():
-        m = acc[k]["__SUM__"] / acc[k]["__COUNT__"]
-        ret.append(list(k) + [m])
+        ret.append(list(k) + [_aggregate_mean(acc[k])])
 
     return ret
+
+
+def _aggregate_variance(entry: dict):
+
+    _count = entry["__COUNT__"]
+    _sum = entry["__SUM__"]
+    _values = entry["__VALUES__"]
+
+    _mean = _sum / _count
+    _mean_squared = math.pow(_mean, 2)
+    _sum_squares = sum([math.pow(v, 2) for v in _values])
+    _sum_squares_mean = _sum_squares / _count
+    _variance = _sum_squares_mean - _mean_squared
+
+    return _variance
 
 
 def aggregate_variance(rel: list, group_cols: list, agg_col: int):
 
-    acc = {}
-    for row in rel:
-        k = tuple(row[idx] for idx in group_cols)
-        if k in acc:
-            acc[k]["__VALUES__"].append(row[agg_col])
-            acc[k]["__SUM__"] += row[agg_col]
-            acc[k]["__COUNT__"] += 1
-        else:
-            acc[k] = {}
-            acc[k]["__VALUES__"] = [row[agg_col]]
-            acc[k]["__SUM__"] = row[agg_col]
-            acc[k]["__COUNT__"] = 1
+    acc = construct_acc_dict(
+        rel,
+        group_cols,
+        agg_col,
+        include_sum=True,
+        include_count=True,
+        include_values=True
+    )
 
     ret = []
     for k in acc.keys():
-
-        count = acc[k]["__COUNT__"]
-        m = acc[k]["__SUM__"] / acc[k]["__COUNT__"]
-        squared_mean = math.pow(m, 2)
-        sum_squares = sum([math.pow(v, 2) for v in acc[k]["__VALUES__"]])
-        sum_squares_mean = sum_squares / count
-        std_dev = sum_squares_mean - squared_mean
-        ret.append(list(k) + [std_dev])
+        ret.append(list(k) + [_aggregate_variance(acc[k])])
 
     return ret
+
+
+def _aggregate_std_dev(entry: dict):
+    return math.sqrt(_aggregate_variance(entry))
 
 
 def aggregate_std_dev(rel: list, group_cols: list, agg_col: int):
 
-    variance_rel = aggregate_variance(rel, group_cols, agg_col)
-
-    ret = []
-    for row in variance_rel:
-        v = math.sqrt(row[-1])
-        ret.append(row[:-1] + [v])
-
-    return ret
-
-
-def _min_max_median_with_group_cols(acc: dict):
+    acc = construct_acc_dict(
+        rel,
+        group_cols,
+        agg_col,
+        include_sum=True,
+        include_values=True,
+        include_count=True
+    )
 
     ret = []
     for k in acc.keys():
-        acc[k].sort()
-        middle_idx = int(len(acc[k]) / 2)
-        mmm = [acc[k][0], acc[k][-1], acc[k][middle_idx]]
-        ret.append(list(k) + mmm)
+        ret.append(list(k) + [_aggregate_std_dev(acc[k])])
+
     return ret
+
+
+def _min_max_median(entry: dict):
+
+    _values = entry["__VALUES__"]
+    _values.sort()
+    middle_idx = int(len(_values) / 2)
+
+    return [_values[0], _values[-1], _values[middle_idx]]
 
 
 def min_max_median(rel: list, group_cols: list, agg_col: int):
 
-    if group_cols:
-        acc = {}
-        for row in rel:
-            k = tuple(row[idx] for idx in group_cols)
-            if k in acc:
-                acc[k].append(row[agg_col])
-            else:
-                acc[k] = [row[agg_col]]
-        return _min_max_median_with_group_cols(acc)
-    else:
-        rel_copy = deepcopy(rel)
-        rel_copy.sort(key=lambda r: r[agg_col])
-        middle_idx = int(len(rel_copy) / 2)
-        return [rel_copy[0][agg_col], rel_copy[-1][agg_col], rel_copy[middle_idx][agg_col]]
+    acc = construct_acc_dict(
+        rel,
+        group_cols,
+        agg_col,
+        include_values=True
+    )
+
+    ret = []
+    for k in acc.keys():
+        ret.append(list(k) + _min_max_median(acc[k]))
+
+    return ret
 
 
-def _get_deciles_from_group(values: list):
-    """
-    Note: this method assumes the input list is already sorted
-    """
+def _deciles(entry: dict):
+
+    _values = entry["__VALUES__"]
+    _values.sort()
 
     ret = []
     ds = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
 
     for d in ds:
-        d_idx = int(len(values) * d)
-        ret.append(values[d_idx])
-
-    return ret
-
-
-def _decile_with_group_cols(acc: dict):
-
-    ret = []
-    for k in acc.keys():
-        acc[k].sort()
-        dcs = _get_deciles_from_group(acc[k])
-        ret.append(list(k) + dcs)
+        d_idx = int(len(_values) * d)
+        ret.append(_values[d_idx])
 
     return ret
 
 
 def deciles(rel: list, group_cols: list, agg_col: int):
 
-    if group_cols:
-        acc = {}
-        for row in rel:
-            k = tuple(row[idx] for idx in group_cols)
-            if k in acc:
-                acc[k].append(row[agg_col])
-            else:
-                acc[k] = [row[agg_col]]
-        return _decile_with_group_cols(acc)
-    else:
-        ac = [r[agg_col] for r in rel]
-        rel_copy = deepcopy(ac)
-        rel_copy.sort()
-        return [_get_deciles_from_group(rel_copy)]
+    acc = construct_acc_dict(
+        rel,
+        group_cols,
+        agg_col,
+        include_values=True
+    )
+
+    ret = []
+    for k in acc.keys():
+        ret.append(list(k) + _deciles(acc[k]))
+
+    return ret
 
 
-"""
+def _all_stats(acc: dict):
 
-TODO: will need to write an entirely new method and not reuse
-    the stuff from before, as we dont want to do 6 passes over
-    the input dataset
-TODO: would be nice to make it so as to not load everything in
-    memory, right now its just an in memory dict which would be
-    a problem for larger datasets (though i suppose the pyspark
-    backend would likely be the solution to that)
-        "__SUM__",
-        "__MEAN__",
-        "__VARIANCE__",
-        "__STD_DEV__",
-        "__MIN__",
-        "__MAX__",
-        "__MEDIAN__",
-        "__1_DECILE__",
-        "__2_DECILE__",
-        "__3_DECILE__",
-        "__4_DECILE__",
-        "__5_DECILE__",
-        "__6_DECILE__",
-        "__7_DECILE__",
-        "__8_DECILE__",
-        "__9_DECILE__",
-        "__COUNT__"
-"""
+    ret = []
+    for k in acc.keys():
+
+        _sum = _aggregate_sum(acc[k])
+        _mean = _aggregate_mean(acc[k])
+        _variance = _aggregate_variance(acc[k])
+        _std_dev = _aggregate_std_dev(acc[k])
+        _mmm = _min_max_median(acc[k])
+        _dcs = _deciles(acc[k])
+        _count = _aggregate_count(acc[k])
+
+        ret.append(
+            [_sum, _mean, _variance, _std_dev] +
+            _mmm +
+            _dcs +
+            [_count]
+        )
+
+    return ret
+
+
 def all_stats(rel: list, group_cols: list, agg_col: int):
 
-    if group_cols:
-        pass
-    else:
-        pass
+    return _all_stats(
+        construct_acc_dict(
+            rel,
+            group_cols,
+            agg_col,
+            include_sum=True,
+            include_count=True,
+            include_values=True
+        )
+    )
 
 
 def project(rel: list, selected_cols: list):
