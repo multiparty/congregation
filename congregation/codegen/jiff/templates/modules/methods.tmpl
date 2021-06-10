@@ -1,72 +1,128 @@
 (function (exports) {
 
   let helpers = require('./helpers');
-  exports._aggregateCount = async function (inRel, keepRows, keyCol, jiffInstance) {
 
-    let newRel = [];
-    for (let i = 0; i < inRel.length; i++) {
-      newRel.push([inRel[i][keyCol], keepRows[i]]);
-    }
-
-    return await exports._aggregateSum(newRel, keepRows, 0, 1, jiffInstance);
-  }
-
-  exports.aggregateCount = async function (inRel, keepRows, keyCol, jiffInstance) {
-
-    if (keyCol !== null) {
-      return await exports._aggregateCount(inRel, keepRows, keyCol, jiffInstance);
-    } else {
-      return exports.numRows(keepRows);
-    }
-  }
-
-  exports._aggregateSum = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+  exports._formatAggRel = function (inRel, keyCol, aggCol) {
 
     let newRel = [];
     for (let i = 0; i < inRel.length; i++) {
       newRel.push([inRel[i][keyCol], inRel[i][aggCol]]);
     }
 
-    let sorted = await exports.oddEvenSort(newRel, keepRows, 0, jiffInstance);
-    let sortedData = sorted[0];
-    let sortedKeepRows = sorted[1];
+    return newRel;
+  }
 
-    for (let i = 0; i < sortedData.length - 1; i++) {
+  exports._formatCountRel = function (inRel, keepRows, keyCol) {
+
+    let newRel = [];
+    for (let i = 0; i < inRel.length; i++) {
+      newRel.push([inRel[i][keyCol], keepRows[i]]);
+    }
+
+    return newRel;
+  }
+
+  exports._aggregateCount = async function (inRel, keepRows, jiffInstance) {
+    return await exports._aggregateSum(newRel, keepRows, jiffInstance);
+  }
+
+  exports.aggregateCount = async function (inRel, keepRows, keyCol, jiffInstance) {
+
+    if (keyCol !== null) {
+
+      // strip non-relevant columns from relation
+      let newRel = exports._formatCountRel(inRel, keepRows, keyCol);
+
+      // sort relation
+      let sorted = await exports.oddEvenSort(newRel, keepRows, 0, jiffInstance);
+      let sortedData = sorted[0];
+      let sortedKeepRows = sorted[1];
+
+      // take count grouped by keyCol
+      return await exports._aggregateCount(sortedData, sortedKeepRows, keyCol, jiffInstance);
+    } else {
+      return exports.numRows(keepRows);
+    }
+  }
+
+  exports._aggregateSum = async function (inRel, keepRows, jiffInstance) {
+    /*
+      Take sum of a relation grouped by a key column. Input data is assumed
+      to be pre-sorted and formatted such that each row consists only of a
+      key column and an aggregation column in columns 0 and 1, respectively.
+    */
+
+    for (let i = 0; i < inRel.length - 1; i++) {
       let step = jiffInstance.start_barrier();
 
-      let firstRowValid = sortedData[i][1].smult(sortedKeepRows[i]);
-      let secondRowValid = sortedData[i+1][1].smult(sortedKeepRows[i+1]);
+      // each value is 0 if the row is to be discarded, and the value
+      // of the aggregation column otherwise.
+      let firstRowValid = inRel[i][1].smult(keepRows[i]);
+      let secondRowValid = inRel[i+1][1].smult(keepRows[i+1]);
+
+      // add these two values together
       let rowSum = firstRowValid.sadd(secondRowValid);
-      let areEqual = sortedData[i][0].eq(sortedData[i+1][0]);
+
+      // a bit indicating whether the values in each row's key column are equal
+      let areEqual = inRel[i][0].eq(inRel[i+1][0]);
+
+      // a bit indicating whether at least one of the rows contain valid data
       let atLeastOne = keepRows[i].or_bit(keepRows[i+1]);
 
-      sortedData[i+1][1] = areEqual.if_else(rowSum, sortedData[i+1][1]);
-      sortedKeepRows[i] = areEqual.if_else(0, sortedKeepRows[i]);
-      sortedKeepRows[i+1] = areEqual.if_else(atLeastOne, sortedKeepRows[i+1]);
+      // if the key columns are equal, store their sum (which has been modified
+      // according to whether they each store valid data). else, leave the value
+      // unchanged. note also that if the key columns *were* equal, but only the
+      // row at location i was valid, the data from row i is moved into row i+1.
+      inRel[i+1][1] = areEqual.if_else(rowSum, inRel[i+1][1]);
+
+      // if the key columns are equal, set the keepRows value at row i to 0. else,
+      // leave it unchanged.
+      keepRows[i] = areEqual.if_else(0, keepRows[i]);
+
+      // if the rows were equal *and* at least one of them stored valid data, set
+      // keepRows to 1 at location i+1. else, leave the keepRows value at this
+      // location unchanged.
+      keepRows[i+1] = areEqual.if_else(atLeastOne, keepRows[i+1]);
 
       await jiffInstance.end_barrier(step);
     }
 
-    return [sortedData, sortedKeepRows];
+    return [inRel, keepRows];
+  }
+
+  exports._aggregateSumNoKeyCol = function (inRel, keepRows) {
+
+    let ret = inRel[0][0].smult(keepRows[0]);
+    let keepRowsSum = keepRows[0];
+
+    for (let i = 1; i < inRel.length; i++) {
+
+      let tmp = inRel[i][0].smult(keepRows[i]);
+      ret = ret.sadd(tmp);
+      keepRowsSum = keepRowsSum.sadd(keepRows[i]);
+    }
+    let keepRowsResult = keepRowsSum.gteq(1);
+
+    return [[[ret]], [keepRowsResult]];
   }
 
   exports.aggregateSum = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
 
     if (keyCol !== null) {
-      return await exports._aggregateSum(inRel, keepRows, keyCol, aggCol, jiffInstance);
+
+      // strip non-relevant columns from relation
+      let newRel = exports._formatAggRel(inRel, keyCol, aggCol);
+
+      // sort relation
+      let sorted = await exports.oddEvenSort(newRel, keepRows, 0, jiffInstance);
+      let sortedData = sorted[0];
+      let sortedKeepRows = sorted[1];
+
+      return await exports._aggregateSum(sortedData, sortedKeepRows, jiffInstance);
     } else {
 
-      let ret = inRel[0][aggCol].smult(keepRows[0]);
-      let keepRowsSum = keepRows[0];
-      for (let i = 1; i < inRel.length; i++) {
-
-        let temp = inRel[i][aggCol].smult(keepRows[i]);
-        ret = ret.sadd(temp);
-        keepRowsSum = keepRowsSum.sadd(keepRows[i]);
-      }
-      let keepRowsResult = keepRowsSum.gteq(1);
-
-      return [[[ret]], [keepRowsResult]];
+      let formattedRel = exports.project(inRel, keepRows, [aggCol]);
+      return exports._aggregateSumNoKeyCol(formattedRel[0], formattedRel[1]);
     }
   }
 
@@ -334,24 +390,24 @@
   exports.min_max_median = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
 
     if (keyCol !== null) {
-    	console.log("TODO");
+      console.log("TODO");
     } else {
 
-    	let filteredData = await exports.filterRel(inRel, keepRows, jiffInstance);
-    	let filteredRel = filteredData[0];
-    	let filteredKeepRows = filteredData[1];
+      let filteredData = await exports.filterRel(inRel, keepRows, jiffInstance);
+      let filteredRel = filteredData[0];
+      let filteredKeepRows = filteredData[1];
 
-    	let sortedData = await exports.oddEvenSort(filteredRel, filteredKeepRows, aggCol, jiffInstance);
-    	let sortedRel = sortedData[0];
-    	let sortedKeepRows = sortedData[1];
+      let sortedData = await exports.oddEvenSort(filteredRel, filteredKeepRows, aggCol, jiffInstance);
+      let sortedRel = sortedData[0];
+      let sortedKeepRows = sortedData[1];
 
         let ret = [];
-    	let middleIdx = Math.floor(sortedRel.length / 2);
+      let middleIdx = Math.floor(sortedRel.length / 2);
 
-    	ret.push([sortedRel[0][aggCol], sortedRel[middleIdx][aggCol], sortedRel[sortedRel.length - 1][aggCol]]);
-    	retKeepRows = [sortedKeepRows[0], sortedKeepRows[middleIdx], sortedKeepRows[sortedKeepRows.length - 1]];
+      ret.push([sortedRel[0][aggCol], sortedRel[middleIdx][aggCol], sortedRel[sortedRel.length - 1][aggCol]]);
+      retKeepRows = [sortedKeepRows[0], sortedKeepRows[middleIdx], sortedKeepRows[sortedKeepRows.length - 1]];
 
-    	return [ret, retKeepRows];
+      return [ret, retKeepRows];
     }
   }
 
@@ -380,6 +436,38 @@
         }
 
         return [[ret], retKeepRows];
+    }
+  }
+
+  exports._allStatsNoKeyCol = async function (inRel, keepRows, aggCol, jiffInstance) {
+
+  }
+
+  exports.allStats = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+    /*
+            "__SUM__",
+            "__MEAN__",
+            "__VARIANCE__",
+            "__STD_DEV__",
+            "__MIN__",
+            "__MAX__",
+            "__MEDIAN__",
+            "__1_DECILE__",
+            "__2_DECILE__",
+            "__3_DECILE__",
+            "__4_DECILE__",
+            "__5_DECILE__",
+            "__6_DECILE__",
+            "__7_DECILE__",
+            "__8_DECILE__",
+            "__9_DECILE__",
+            "__COUNT__"
+    */
+
+    if (keyCol != null) {
+        console.log("TODO");
+    } else {
+
     }
   }
 
@@ -812,28 +900,28 @@
 
   exports.filterRel = async function(inRel, keepRows, jiffInstance) {
 
-  	let newRel = [];
-  	let newKeepRows = [];
+    let newRel = [];
+    let newKeepRows = [];
 
-  	for (let i = 0; i < inRel.length; i++) {
+    for (let i = 0; i < inRel.length; i++) {
 
-  		let sharedVal = keepRows[i];
-  		let keepRowVal = await exports.openValue(sharedVal, jiffInstance);
-  		if (keepRowVal > 0) {
-  			newRel.push(inRel[i]);
-  			newKeepRows.push(keepRows[i]);
-  		}
-  	}
+      let sharedVal = keepRows[i];
+      let keepRowVal = await exports.openValue(sharedVal, jiffInstance);
+      if (keepRowVal > 0) {
+        newRel.push(inRel[i]);
+        newKeepRows.push(keepRows[i]);
+      }
+    }
 
-  	return [newRel, newKeepRows];
+    return [newRel, newKeepRows];
   }
 
   exports.openValue = async function (val, jiffInstance) {
 
-  	let promise = jiffInstance.open(val);
-  	return promise.then(function(v) {
-  		return v;
-  	});
+    let promise = jiffInstance.open(val);
+    return promise.then(function(v) {
+      return v;
+    });
   }
 
   exports.open = function (inRel, keepRows, jiffInstance) {

@@ -378,6 +378,13 @@ class JiffCodeGen(CodeGen):
 
         return pystache.render(template, data)
 
+    def _generate_all_stats(self, node: AllStats):
+
+        if node.group_cols:
+            raise Exception("Group cols for all stats operation not yet implemented.")
+
+        return ""
+
     def _generate_project(self, node: Project):
 
         template = open(f"{self.templates_dir}/mpc/methods/project.tmpl").read()
