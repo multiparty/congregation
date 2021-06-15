@@ -126,47 +126,48 @@
     }
   }
 
-  exports._formatAggMeanWithKeyCol = async function (inRel, keepRows, keyCol, aggCol, withCountCol, jiffInstance) {
-
-    let ret = [];
-    let keepRowsResult = [];
-    let countNum;
+  exports._addCountColumn = function (inRel, keepRows) {
+    /*
+      If no count column is supplied along with the aggMean function, create a
+      column of counts using the keepRows value for each row.
+    */
 
     for (let i = 0; i < inRel.length; i++) {
-      if (!withCountCol) {
-        ret.push([inRel[i][keyCol], inRel[i][aggCol], keepRows[i]]);
-        keepRowsResult.push(keepRows[i]);
-      } else {
-        countNum = inRel[i][inRel[i].length - 1].smult(keepRows[i]);
-        ret.push([inRel[i][keyCol], inRel[i][aggCol], countNum]);
-        keepRowsResult.push(keepRows[i]);
-      }
+      inRel[i].push(keepRows[i]);
     }
 
-    return await exports.oddEvenSort(ret, keepRowsResult, 0, jiffInstance);
+    return inRel;
   }
 
-  exports._formatAggMeanNoKeyCol = function (inRel, keepRows, aggCol, withCountCol, jiffInstance) {
+  exports._formatAggMeanWithKeyCol = function (inRel, keyCol, aggCol) {
     /*
-      If a countCol was not supplied with the input relation, this method creates it
+      Formats the input relation such that each row contains only the key column,
+      the column to be aggregated over, and the column indicating row counts for
+      each key. This method assumes that the last column of the input relation
+      stores these row counts.
     */
 
     let ret = [];
-    let keepRowsResult = [];
-    let countNum;
-
     for (let i = 0; i < inRel.length; i++) {
-      if (!withCountCol) {
-        ret.push([inRel[i][aggCol], keepRows[i]]);
-        keepRowsResult.push(keepRows[i]);
-      } else {
-        countNum = inRel[i][inRel[i].length - 1].smult(keepRows[i]);
-        ret.push([inRel[i][aggCol], countNum]);
-        keepRowsResult.push(keepRows[i]);
-      }
+      ret.push([inRel[i][keyCol], inRel[i][aggCol], inRel[i][inRel[i].length - 1]]);
     }
 
-    return [ret, keepRowsResult];
+    return ret;
+  }
+
+  exports._formatAggMeanNoKeyCol = function (inRel, aggCol) {
+    /*
+      Formats the input relation such that each row contains only the column to
+      be aggregated over and the column indicating row counts. This method assumes
+      that the last column of the input relation stores these row counts.
+    */
+
+    let ret = [];
+    for (let i = 0; i < inRel.length; i++) {
+      ret.push([inRel[i][aggCol], inRel[i][inRel[i].length - 1]]);
+    }
+
+    return ret;
   }
 
   exports._aggregateMean = async function (inRel, keepRows, keyCol, aggCols, countCol, jiffInstance) {
@@ -254,13 +255,20 @@
 
   exports.aggregateMean = async function (inRel, keepRows, keyCol, aggCol, withCountCol, jiffInstance) {
 
-    let newRelData;
+    if (!withCountCol) {
+      inRel = exports._addCountColumn(inRel, keepRows);
+    }
+
+    let formattedRel;
     if (keyCol !== null) {
-      newRelData = await exports._formatAggMeanWithKeyCol(inRel, keepRows, keyCol, aggCol, withCountCol, jiffInstance);
-      return await exports._aggregateMean(newRelData[0], newRelData[1], 0, [1], 2, jiffInstance);
+
+      formattedRel = exports._formatAggMeanWithKeyCol(inRel, keyCol, aggCol);
+      let sortedRelData = await exports.oddEvenSort(formattedRel, keepRows, 0, jiffInstance);
+      return await exports._aggregateMean(sortedRelData[0], sortedRelData[1], 0, [1], 2, jiffInstance);
     } else {
-      newRelData = exports._formatAggMeanNoKeyCol(inRel, keepRows, aggCol, withCountCol, jiffInstance);
-      return await exports._aggregateMeanNoKeyCol(newRelData[0], newRelData[1], [0], 1, jiffInstance)
+
+      formattedRel = exports._formatAggMeanNoKeyCol(inRel, aggCol);
+      return await exports._aggregateMeanNoKeyCol(formattedRel, keepRows, [0], 1, jiffInstance);
     }
   }
 
@@ -805,11 +813,13 @@
       let end = lo+n-r;
       let steps = Math.floor((end-start)/m);
       let chunks = Math.floor(steps/20);
+      let minVal;
+      let maxVal;
 
       if (chunks > 0) {
         for (let i = 0; i < chunks; i++) {
-          let minVal = start + (i*20)*m;
-          let maxVal = minVal + (20*m);
+          minVal = start + (i*20)*m;
+          maxVal = minVal + (20*m);
           await exports.compareExchangeBatched(inRel, keepRows, jiffInstance, keyCol, numCols, minVal, maxVal, m, r);
         }
         // finish last bit
