@@ -78,6 +78,7 @@ class CodeGen:
             AggregateSumSquaresAndCount: self._generate_aggregate_sum_squares_and_count,
             AggregateStdDevLocalSqrt: self._generate_aggregate_std_dev_local_sqrt,
             AggregateVarianceLocalDiff: self._generate_aggregate_variance_local_diff,
+            AllStatsLocalSqrt: self._generate_all_stats_local_sqrt,
             ColSum: self._generate_col_sum,
             MemberFilter: self._generate_member_filter,
             ColumnUnion: self._generate_column_union

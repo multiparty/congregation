@@ -171,6 +171,9 @@
   }
 
   exports._aggregateMean = async function (inRel, keepRows, keyCol, aggCols, countCol, jiffInstance) {
+    /*
+    this function assumes that the input relation has already been sorted
+    */
 
     for (let i = 0; i < inRel.length - 1; i++) {
       let step = jiffInstance.start_barrier();
@@ -395,7 +398,22 @@
     return await exports.aggregateStdDev(inRel, keepRows, keyCol, aggCol, squaresCol, countCol, doSquaredDiff, jiffInstance);
   }
 
-  exports.min_max_median = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+  exports._minMaxMedianNoKeyCol = function(inRel, keepRows, jiffInstance) {
+    /*
+    this function assumes that inRel is an already sorted single column relation
+    which consists only of valid rows (i.e. - rows for which the corresponding
+    keepRows index is 1)
+    */
+
+    let ret = [];
+    let middleIdx = Math.floor(inRel.length / 2);
+    ret.push([inRel[0][0], inRel[inRel.length - 1][0], inRel[middleIdx][0]]);
+    retKeepRows = [keepRows[0], keepRows[keepRows.length - 1], keepRows[middleIdx]];
+
+    return [ret, retKeepRows];
+  }
+
+  exports.minMaxMedian = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
 
     if (keyCol !== null) {
       console.log("TODO");
@@ -405,18 +423,43 @@
       let filteredRel = filteredData[0];
       let filteredKeepRows = filteredData[1];
 
+      // TODO: write a sort function that only operates on a relation and not it's corresponding
+      // keepRows array. no need to sort the keepRows array if the input relation has already been
+      // filtered (as is the case here)
       let sortedData = await exports.oddEvenSort(filteredRel, filteredKeepRows, aggCol, jiffInstance);
       let sortedRel = sortedData[0];
       let sortedKeepRows = sortedData[1];
 
-        let ret = [];
-      let middleIdx = Math.floor(sortedRel.length / 2);
+      let aggColOnly = exports.project(sortedRel, keepRows, [aggCol]);
+      let aggColRel = aggColOnly[0];
+      let aggColKeepRows = aggColOnly[1];
 
-      ret.push([sortedRel[0][aggCol], sortedRel[middleIdx][aggCol], sortedRel[sortedRel.length - 1][aggCol]]);
-      retKeepRows = [sortedKeepRows[0], sortedKeepRows[middleIdx], sortedKeepRows[sortedKeepRows.length - 1]];
+      let ret = exports._minMaxMedianNoKeyCol(aggColRel, aggColKeepRows, jiffInstance);
+      let retRel = ret[0];
+      let retKeepRows = ret[1];
 
-      return [ret, retKeepRows];
+      return [retRel, retKeepRows];
     }
+  }
+
+  exports._decilesNoKeyCol = function(inRel, keepRows, jiffInstance) {
+    /*
+    this function assumes that inRel is an already sorted single column relation
+    which consists only of valid rows (i.e. - rows for which the corresponding
+    keepRows index is 1)
+    */
+
+    let ret = [];
+    let retKeepRows = [];
+    let dcs = [.1, .2, .3, .4, .5, .6, .7, .8, .9];
+
+    for (let i = 0; i < dcs.length; i++) {
+      let idx = Math.floor(inRel.length * dcs[i]);
+      ret.push(inRel[idx][0]);
+      retKeepRows.push(keepRows[idx]);
+    }
+
+    return [[ret], retKeepRows];
   }
 
   exports.deciles = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
@@ -433,25 +476,46 @@
         let sortedRel = sortedData[0];
         let sortedKeepRows = sortedData[1];
 
-        let ret = [];
-        let retKeepRows = [];
-        let dcs = [.1, .2, .3, .4, .5, .6, .7, .8, .9];
+        let aggColOnly = exports.project(sortedRel, keepRows, [aggCol]);
+        let aggColOnlyRel = aggColOnly[0];
+        let aggColOnlyKeepRows = aggColOnly[1];
 
-        for (let i = 0; i < dcs.length; i++) {
-            let idx = Math.floor(sortedRel.length * dcs[i]);
-            ret.push(sortedRel[idx][aggCol]);
-            retKeepRows.push(sortedKeepRows[idx]);
-        }
+        let ret = exports._decilesNoKeyCol(aggColOnlyRel, aggColOnlyKeepRows, jiffInstance)
+        let retRel = ret[0];
+        let retKeepRows = ret[1];
 
-        return [[ret], retKeepRows];
+        return [retRel, retKeepRows];
     }
   }
 
-  exports._allStatsNoKeyCol = async function (inRel, keepRows, aggCol, jiffInstance) {
+  exports._allStatsNoKeyCol = async function (inRel, keepRows, aggCol, doSquaredDiff, jiffInstance) {
 
+      let sum = await exports.aggregateSum(inRel, keepRows, null, aggCol, jiffInstance);
+      let mean = await exports.aggregateMean(inRel, keepRows, null, aggCol, false, jiffInstance);
+      // variance is equal to stdDev since taking square root of variance happens on the plaintext data
+      let stdDev = await exports.aggregateStdDev(inRel, keepRows, null, aggCol, null, null, doSquaredDiff, jiffInstance);
+
+      let filteredData = await exports.filterRel(inRel, keepRows, jiffInstance);
+      let filteredRel = filteredData[0];
+      let filteredKeepRows = filteredData[1];
+
+      let sortedData = await exports.oddEvenSort(filteredRel, filteredKeepRows, aggCol, jiffInstance);
+      let sortedRel = sortedData[0];
+      let sortedKeepRows = sortedData[1];
+
+      let aggColOnly = exports.project(sortedRel, sortedKeepRows, [aggCol]);
+      let aggColOnlyRel = aggColOnly[0];
+      let aggColOnlyKeepRows = aggColOnly[1];
+
+      let minMaxMedian = exports._minMaxMedianNoKeyCol(aggColOnlyRel, aggColOnlyKeepRows, jiffInstance);
+      let deciles = exports._decilesNoKeyCol(aggColOnlyRel, aggColOnlyKeepRows, jiffInstance);
+
+      let count = exports.numRows(keepRows);
+
+      return exports.concatHorizontal([sum[0], mean[0], stdDev[0], stdDev[0], minMaxMedian[0], deciles[0], count[0]], count[1]);
   }
 
-  exports.allStats = async function (inRel, keepRows, keyCol, aggCol, jiffInstance) {
+  exports.allStats = async function (inRel, keepRows, keyCol, aggCol, doSquaredDiff, jiffInstance) {
     /*
             "__SUM__",
             "__MEAN__",
@@ -475,7 +539,7 @@
     if (keyCol != null) {
         console.log("TODO");
     } else {
-
+        return await exports._allStatsNoKeyCol(inRel, keepRows, aggCol, doSquaredDiff, jiffInstance);
     }
   }
 
@@ -879,6 +943,26 @@
 
     return [ret, keepRowsResult];
   }
+
+  exports.concatHorizontal = function(inRels, keepRows) {
+
+    let ret = [];
+    let currentRow;
+
+    // assumes that each relation has the same number of rows,
+    //  since horizontal concat wouldnt be possible otherwise
+    for (let i = 0; i < inRels[0].length; i++) {
+      currentRow = [];
+      for (let j = 0; j < inRels.length; j++) {
+        currentRow.push(...inRels[j][i]);
+      }
+      ret.push(currentRow);
+    }
+
+    return [ret, keepRows];
+  }
+
+
 
   exports.join = function (leftRel, rightRel, leftKeepRows, rightKeepRows, leftKeyCol, rightKeyCol) {
 
